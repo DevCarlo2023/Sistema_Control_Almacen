@@ -4,6 +4,7 @@ import { Analytics } from '@vercel/analytics/next'
 import { Toaster } from 'sonner'
 import './globals.css'
 
+import { Suspense } from 'react'
 import { MobileNav } from '@/components/ui/mobile-nav'
 
 const inter = Inter({ subsets: ["latin"] });
@@ -31,7 +32,9 @@ export default function RootLayout({
     <html lang="es">
       <body className={`${inter.className} antialiased pb-20 lg:pb-0`}>
         {children}
-        <MobileNav />
+        <Suspense fallback={null}>
+          <MobileNav />
+        </Suspense>
         <Toaster position="top-right" expand={true} richColors />
         <Analytics />
       </body>
