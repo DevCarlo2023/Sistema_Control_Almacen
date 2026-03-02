@@ -178,10 +178,28 @@ export default function EquipmentPage() {
             const { data: authorized } = await supabase.from('authorized_users').select('email').eq('email', session.user.email).single();
             if (!authorized) { await supabase.auth.signOut(); router.push('/login?error=Unauthorized'); return; }
             setUser(session.user);
+
+            // Check for initial tab in URL
+            const urlParams = new URLSearchParams(window.location.search);
+            const tab = urlParams.get('tab');
+            if (tab === 'workers') {
+                setActiveTab('workers');
+            } else if (tab === 'equipment') {
+                setActiveTab('equipment');
+            }
+
             // Artificial delay for visibility
             setTimeout(() => setLoading(false), 1200);
         };
         checkAuth();
+
+        const setActiveTab = (val: string) => {
+            const tabsElement = document.querySelector('[role="tablist"]');
+            if (tabsElement) {
+                const trigger = tabsElement.querySelector(`[value="${val}"]`) as HTMLElement;
+                if (trigger) trigger.click();
+            }
+        };
     }, [router]);
 
     const handleLogout = async () => { await supabase.auth.signOut(); router.push('/login'); };
@@ -194,34 +212,54 @@ export default function EquipmentPage() {
         <div className="min-h-screen bg-background">
             {/* Header */}
             <header className="sticky top-0 z-40 border-b border-border/50 bg-background/80 backdrop-blur-xl print:hidden">
-                <div className="max-w-[1600px] mx-auto px-6 py-3 flex items-center justify-between">
-                    <div className="flex items-center gap-4">
-                        <div className="flex items-center p-1.5 bg-white/5 rounded-xl border border-white/10 shadow-lg">
-                            <img src="/logo-promet.png" alt="PROMET Logo" className="h-10 w-auto object-contain" />
+                <div className="max-w-[1600px] mx-auto px-4 sm:px-6 py-3 flex items-center justify-between">
+                    <div className="flex items-center gap-3 sm:gap-4">
+                        {/* Desktop & Tablet Header (Logo + Title) */}
+                        <div className="flex items-center gap-3 hide-logo-xs">
+                            <div className="flex items-center p-1.5 bg-white/5 rounded-xl border border-white/10 shadow-lg">
+                                <img src="/logo-promet.png" alt="PROMET Logo" className="h-8 sm:h-10 w-auto object-contain" />
+                            </div>
+                            <div className="flex flex-col border-l border-border/50 pl-3 sm:pl-4">
+                                <h1 className="text-lg sm:text-xl font-extrabold tracking-tight leading-none uppercase">
+                                    CONTROL <span className="text-primary">EQUIPOS</span>
+                                </h1>
+                                <span className="text-[8px] sm:text-[9px] uppercase font-black tracking-[0.2em] sm:tracking-[0.3em] text-muted-foreground opacity-60">Industrial Tech v2.0</span>
+                            </div>
                         </div>
-                        <div className="flex flex-col border-l border-border/50 pl-4">
-                            <h1 className="text-xl font-extrabold tracking-tight leading-none uppercase">CONTROL <span className="text-primary">EQUIPOS</span></h1>
-                            <span className="text-[9px] uppercase font-black tracking-[0.3em] text-muted-foreground opacity-60">Industrial Tech v2.0</span>
+
+                        {/* Mobile Header (Title Only - Order: EQUIPOS PROMET) */}
+                        <div className="flex-col show-logo-xs">
+                            <h1 className="text-sm font-black uppercase tracking-tight text-foreground">EQUIPOS <span className="text-primary text-xs">PROMET</span></h1>
                         </div>
                     </div>
-                    <div className="flex items-center gap-3">
-                        <Button variant="outline" size="sm" className="font-black uppercase text-[10px] tracking-widest rounded-xl hidden lg:flex" onClick={() => router.push('/inventory')}>
-                            ← Inventario
+                    <div className="flex items-center gap-2 sm:gap-3">
+                        <Button variant="outline" size="sm" className="font-black uppercase text-[9px] sm:text-[10px] tracking-widest rounded-xl hidden sm:flex h-9 sm:h-10 px-3 sm:px-5" onClick={() => router.push('/inventory')}>
+                            ← <span className="hidden md:inline ml-1">Inventario</span>
                         </Button>
                         <div className="hidden md:flex flex-col items-end bg-muted/30 px-4 py-1.5 rounded-xl border border-border/30">
                             <span className="text-[10px] uppercase font-black text-primary tracking-widest opacity-80">Usuario Activo</span>
                             <span className="text-sm font-bold">{user?.email}</span>
                         </div>
-                        <Button variant="ghost" className="h-10 px-4 hover:bg-destructive/10 hover:text-destructive font-black uppercase text-[10px] tracking-widest rounded-xl hidden lg:flex" onClick={handleLogout}>Salir</Button>
+                        <Button variant="ghost" className="h-9 sm:h-10 px-3 sm:px-4 hover:bg-destructive/10 hover:text-destructive font-black uppercase text-[9px] sm:text-[10px] tracking-widest rounded-xl transition-all" onClick={handleLogout}>
+                            <span className="hidden sm:inline">Salir</span>
+                            <span className="sm:hidden text-base">✕</span>
+                        </Button>
                     </div>
                 </div>
             </header>
 
-            <main className="max-w-[1600px] mx-auto px-6 py-8">
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+            <main className="max-w-[1600px] mx-auto px-4 sm:px-6 py-6 sm:py-8">
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-8">
 
                     {/* Sidebar */}
                     <div className="lg:col-span-3 space-y-4 print:hidden">
+                        {/* Quick Navigation - Mobile only */}
+                        <div className="flex lg:hidden gap-3 mb-2">
+                            <Button variant="outline" size="sm" className="flex-1 font-black uppercase text-[9px] tracking-widest rounded-xl h-10" onClick={() => router.push('/inventory')}>
+                                ← Inventario
+                            </Button>
+                        </div>
+
                         {/* Movement form */}
                         <Card className="p-4 glass-card rounded-2xl border-primary/10 overflow-visible">
                             <h2 className="text-xs font-black uppercase text-primary tracking-[0.2em] mb-4 flex items-center gap-2">
@@ -230,33 +268,36 @@ export default function EquipmentPage() {
                             <EquipmentMovementForm onSuccess={refresh} />
                         </Card>
 
-                        {/* Import equipment */}
-                        <Card className="p-4 glass-card rounded-2xl border-blue-500/10">
-                            <h3 className="text-[10px] font-black uppercase text-primary tracking-widest mb-3">📦 Importar Equipos</h3>
-                            <ImportEquipment onSuccess={refresh} />
-                        </Card>
+                        {/* Import sections - Collapsible or Grid on small tablet */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-4">
+                            <Card className="p-4 glass-card rounded-2xl border-blue-500/10">
+                                <h3 className="text-[10px] font-black uppercase text-primary tracking-widest mb-3">📦 Importar Equipos</h3>
+                                <ImportEquipment onSuccess={refresh} />
+                            </Card>
 
-                        {/* Import workers */}
-                        <Card className="p-4 glass-card rounded-2xl border-purple-500/10">
-                            <h3 className="text-[10px] font-black uppercase text-primary tracking-widest mb-3">👷 Importar Trabajadores</h3>
-                            <ImportWorkers onSuccess={refresh} />
-                        </Card>
+                            <Card className="p-4 glass-card rounded-2xl border-purple-500/10">
+                                <h3 className="text-[10px] font-black uppercase text-primary tracking-widest mb-3">👷 Importar Personal</h3>
+                                <ImportWorkers onSuccess={refresh} />
+                            </Card>
+                        </div>
                     </div>
 
                     {/* Main area */}
-                    <div className="lg:col-span-9">
+                    <div className="lg:col-span-9 space-y-6 sm:space-y-8">
                         <Tabs defaultValue="history" className="w-full">
-                            <TabsList className="flex w-fit bg-muted/30 p-1 rounded-xl mb-6 glass border border-border/50 print:hidden">
-                                <TabsTrigger value="history" className="rounded-lg font-bold px-6 py-2.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-lg transition-all text-sm">
-                                    📜 Historial
-                                </TabsTrigger>
-                                <TabsTrigger value="equipment" className="rounded-lg font-bold px-6 py-2.5 data-[state=active]:bg-background data-[state=active]:shadow-lg transition-all text-sm">
-                                    🔧 Equipos
-                                </TabsTrigger>
-                                <TabsTrigger value="workers" className="rounded-lg font-bold px-6 py-2.5 data-[state=active]:bg-background data-[state=active]:shadow-lg transition-all text-sm">
-                                    👷 Trabajadores
-                                </TabsTrigger>
-                            </TabsList>
+                            <div className="overflow-x-auto compact-scrollbar pb-2 -mx-4 px-4 sm:mx-0 sm:px-0">
+                                <TabsList className="inline-flex w-full sm:w-fit bg-muted/30 p-1 rounded-xl glass border border-border/50 print:hidden min-w-max">
+                                    <TabsTrigger value="history" className="flex-1 sm:flex-none rounded-lg font-bold px-4 sm:px-6 py-2.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-lg transition-all text-xs sm:text-sm">
+                                        📜 Historial
+                                    </TabsTrigger>
+                                    <TabsTrigger value="equipment" className="flex-1 sm:flex-none rounded-lg font-bold px-4 sm:px-6 py-2.5 data-[state=active]:bg-background data-[state=active]:shadow-lg transition-all text-xs sm:text-sm">
+                                        🔧 Equipos
+                                    </TabsTrigger>
+                                    <TabsTrigger value="workers" className="flex-1 sm:flex-none rounded-lg font-bold px-4 sm:px-6 py-2.5 data-[state=active]:bg-background data-[state=active]:shadow-lg transition-all text-xs sm:text-sm">
+                                        👷 Trabajadores
+                                    </TabsTrigger>
+                                </TabsList>
+                            </div>
 
                             <TabsContent value="history" className="mt-0">
                                 <Card className="glass-card rounded-2xl overflow-hidden">

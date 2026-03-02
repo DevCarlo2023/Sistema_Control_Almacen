@@ -132,7 +132,16 @@
   }
 
   .mobile-safe-bottom {
-    padding-bottom: env(safe-area-inset-bottom);
+    padding-bottom: calc(env(safe-area-inset-bottom) + 1rem);
+  }
+
+  /* Responsive visibility helpers */
+  .hide-on-mobile {
+    @apply hidden lg:block;
+  }
+
+  .show-on-mobile {
+    @apply block lg:hidden;
   }
 
   .compact-scrollbar::-webkit-scrollbar {
@@ -143,6 +152,26 @@
   .compact-scrollbar::-webkit-scrollbar-thumb {
     @apply bg-muted-foreground/20 rounded-full;
   }
+}
+
+/* Custom breakpoint for very small screens */
+@media (max-width: 437px) {
+  .hide-logo-xs {
+    display: none !important;
+  }
+
+  html {
+    font-size: 13.5px;
+  }
+
+  .show-logo-xs {
+    display: flex !important;
+  }
+}
+
+/* Hidden by default, shown only below 437px */
+.show-logo-xs {
+  display: none;
 }
 
 @media print {

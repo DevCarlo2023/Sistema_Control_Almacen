@@ -99,25 +99,31 @@ export default function InventoryPage() {
 
       {/* Header */}
       <header className="sticky top-0 z-40 border-b border-border/50 bg-background/60 backdrop-blur-xl print:hidden">
-        <div className="max-w-[1600px] mx-auto px-6 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <div className="flex items-center p-1.5 bg-white/5 rounded-xl border border-white/10 shadow-lg transition-transform hover:scale-105 duration-300">
+        <div className="max-w-[1600px] mx-auto px-4 sm:px-6 py-3 flex items-center justify-between">
+          <div className="flex items-center gap-3 sm:gap-4">
+            <div className="flex items-center p-1.5 bg-white/5 rounded-xl border border-white/10 shadow-lg transition-transform hover:scale-105 duration-300 hide-logo-xs">
               <img
                 src="/logo-promet.png"
                 alt="PROMET Logo"
-                className="h-10 w-auto object-contain"
+                className="h-8 sm:h-10 w-auto object-contain"
               />
             </div>
-            <div className="flex flex-col border-l border-border/50 pl-4">
-              <h1 className="text-xl font-extrabold tracking-tight leading-none uppercase">CONTROL <span className="text-primary">ALMACÉN</span></h1>
-              <span className="text-[9px] uppercase font-black tracking-[0.3em] text-muted-foreground opacity-60">Industrial Tech v2.0</span>
+            <div className="flex flex-col border-l border-border/50 pl-3 sm:pl-4 hide-logo-xs">
+              <h1 className="text-lg sm:text-xl font-extrabold tracking-tight leading-none uppercase">
+                CONTROL <span className="text-primary">ALMACÉN</span>
+              </h1>
+              <span className="text-[8px] sm:text-[9px] uppercase font-black tracking-[0.2em] sm:tracking-[0.3em] text-muted-foreground opacity-60">Industrial Tech v2.0</span>
+            </div>
+            {/* Mobile-only title (Order: ALMACÉN PROMET) */}
+            <div className="flex-col show-logo-xs">
+              <h1 className="text-sm font-black uppercase tracking-tight text-foreground">ALMACÉN <span className="text-primary text-xs">PROMET</span></h1>
             </div>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3">
             <Button
               variant="outline"
               size="sm"
-              className="h-10 px-5 font-black uppercase text-[10px] tracking-widest rounded-xl border-primary/30 hover:bg-primary/10 hover:border-primary/60 transition-all gap-2 hidden lg:flex"
+              className="h-9 sm:h-10 px-3 sm:px-5 font-black uppercase text-[9px] sm:text-[10px] tracking-widest rounded-xl border-primary/30 hover:bg-primary/10 hover:border-primary/60 transition-all gap-2 hidden sm:flex"
               onClick={() => router.push('/equipment')}
             >
               🔧 Equipos
@@ -128,18 +134,19 @@ export default function InventoryPage() {
             </div>
             <Button
               variant="ghost"
-              className="h-10 px-4 hover:bg-destructive/10 hover:text-destructive font-black uppercase text-[10px] tracking-widest transition-all rounded-xl border border-transparent hover:border-destructive/20 hidden lg:flex"
+              className="h-9 sm:h-10 px-3 sm:px-4 hover:bg-destructive/10 hover:text-destructive font-black uppercase text-[9px] sm:text-[10px] tracking-widest transition-all rounded-xl border border-transparent hover:border-destructive/20"
               onClick={handleLogout}
             >
-              Salir
+              <span className="hidden sm:inline">Salir</span>
+              <span className="sm:hidden">X</span>
             </Button>
           </div>
         </div>
       </header>
 
       {/* Main Content */}
-      <main className="max-w-[1600px] mx-auto px-6 py-8 relative z-10">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+      <main className="max-w-[1600px] mx-auto px-4 sm:px-6 py-6 sm:py-8 relative z-10">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-8">
 
           {/* Sidebar - Controls */}
           <div className="lg:col-span-3 space-y-6 print:hidden">
@@ -154,13 +161,15 @@ export default function InventoryPage() {
 
               <div className="mt-3 space-y-3 pt-2 border-t border-border/50">
                 <h3 className="text-[10px] uppercase font-bold text-muted-foreground ml-1">Gestión</h3>
-                <ExportButton warehouseId={warehouseId} warehouseName={warehouseName} />
-                <ImportButton warehouseId={warehouseId} onImportSuccess={handleMovementSuccess} />
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-3">
+                  <ExportButton warehouseId={warehouseId} warehouseName={warehouseName} />
+                  <ImportButton warehouseId={warehouseId} onImportSuccess={handleMovementSuccess} />
+                </div>
               </div>
             </Card>
 
-            {/* Quick Status Card */}
-            <Card className="p-6 glass shadow-xl rounded-2xl hidden lg:block border-blue-500/10 hover:border-blue-500/30 transition-all duration-300">
+            {/* Quick Status Card - Hidden on very small mobile for space */}
+            <Card className="p-6 glass shadow-xl rounded-2xl hidden sm:block border-blue-500/10 hover:border-blue-500/30 transition-all duration-300">
               <div className="flex items-center gap-4 mb-3">
                 <div className="w-2 h-2 rounded-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.5)] animate-pulse" />
                 <span className="text-xs font-black uppercase tracking-[0.1em] text-foreground">PROYECTO SAN GABRIEL</span>
@@ -168,25 +177,15 @@ export default function InventoryPage() {
               <p className="text-[10px] text-muted-foreground leading-relaxed font-medium">
                 Sistema de Gestión implementado para el control de inventario en el proyecto.
               </p>
-              <div className="mt-4 pt-3 border-t border-border/30">
-                <span className="text-[9px] uppercase font-black text-primary tracking-widest block mb-2 opacity-70">Tecnologías Hub</span>
-                <div className="flex flex-wrap gap-1.5">
-                  {['Next.js', 'Supabase', 'Tailwind', 'TS', 'SheetJS'].map((tech) => (
-                    <span key={tech} className="px-1.5 py-0.5 rounded-md bg-muted/50 text-[8px] font-bold text-muted-foreground border border-border/50">
-                      {tech}
-                    </span>
-                  ))}
-                </div>
-              </div>
             </Card>
           </div>
 
           {/* Main Work Area */}
-          <div className="lg:col-span-9 space-y-8">
+          <div className="lg:col-span-9 space-y-6 sm:space-y-8">
             {/* Quick Action Bar (Unified) */}
-            <Card className="p-6 glass-card rounded-2xl border-l-4 border-l-primary shadow-2xl overflow-visible relative print:hidden">
+            <Card className="p-4 sm:p-6 glass-card rounded-2xl border-l-4 border-l-primary shadow-2xl overflow-visible relative print:hidden">
               <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full -mr-16 -mt-16 blur-3xl" />
-              <h2 className="text-lg font-bold mb-6 flex items-center gap-3">
+              <h2 className="text-base sm:text-lg font-bold mb-4 sm:mb-6 flex items-center gap-3">
                 <div className="bg-primary/20 p-2 rounded-lg">
                   <span className="text-primary">⚡</span>
                 </div>
@@ -202,20 +201,22 @@ export default function InventoryPage() {
 
             {/* Tabs for Table & History */}
             <Tabs defaultValue="global" className="w-full">
-              <TabsList className="flex w-fit bg-muted/30 p-1 rounded-xl mb-6 glass border border-border/50 print:hidden">
-                <TabsTrigger value="global" className="rounded-lg font-bold px-6 py-2.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-lg transition-all text-sm">
-                  🔍 Consulta Global
-                </TabsTrigger>
-                <TabsTrigger value="stock" className="rounded-lg font-bold px-6 py-2.5 data-[state=active]:bg-background data-[state=active]:shadow-lg transition-all">
-                  📦 Almacén
-                </TabsTrigger>
-                <TabsTrigger value="history" className="rounded-lg font-bold px-6 py-2.5 data-[state=active]:bg-background data-[state=active]:shadow-lg transition-all text-sm">
-                  📜 Historial
-                </TabsTrigger>
-                <TabsTrigger value="admin" className="rounded-lg font-bold px-6 py-2.5 data-[state=active]:bg-background data-[state=active]:shadow-lg transition-all">
-                  ⚙️ Admin
-                </TabsTrigger>
-              </TabsList>
+              <div className="overflow-x-auto compact-scrollbar pb-2 -mx-4 px-4 sm:mx-0 sm:px-0">
+                <TabsList className="inline-flex w-full sm:w-fit bg-muted/30 p-1 rounded-xl glass border border-border/50 print:hidden min-w-max">
+                  <TabsTrigger value="global" className="flex-1 sm:flex-none rounded-lg font-bold px-4 sm:px-6 py-2.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-lg transition-all text-xs sm:text-sm">
+                    🔍 Consulta
+                  </TabsTrigger>
+                  <TabsTrigger value="stock" className="flex-1 sm:flex-none rounded-lg font-bold px-4 sm:px-6 py-2.5 data-[state=active]:bg-background data-[state=active]:shadow-lg transition-all text-xs">
+                    📦 Stock
+                  </TabsTrigger>
+                  <TabsTrigger value="history" className="flex-1 sm:flex-none rounded-lg font-bold px-4 sm:px-6 py-2.5 data-[state=active]:bg-background data-[state=active]:shadow-lg transition-all text-xs sm:text-sm">
+                    📜 Log
+                  </TabsTrigger>
+                  <TabsTrigger value="admin" className="flex-1 sm:flex-none rounded-lg font-bold px-4 sm:px-6 py-2.5 data-[state=active]:bg-background data-[state=active]:shadow-lg transition-all text-xs">
+                    ⚙️ Admin
+                  </TabsTrigger>
+                </TabsList>
+              </div>
 
               <TabsContent value="global" className="mt-0 focus-visible:outline-none">
                 <Card className="glass-card rounded-2xl p-8 border-primary/20 shadow-2xl relative overflow-hidden">

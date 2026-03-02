@@ -1,19 +1,31 @@
 'use client';
 
-import { usePathname, useRouter } from 'next/navigation';
-import { Package, Wrench, History, LogOut } from 'lucide-react';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { Package, Wrench, Users, History, LogOut } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/lib/supabase';
 
 const navItems = [
     { label: 'Inventario', icon: Package, path: '/inventory' },
-    { label: 'Equipos', icon: Wrench, path: '/equipment' },
-    { label: 'Historial', icon: History, path: '/history' }, // Note: /history might need to be /inventory?tab=history or similar
+    {
+        label: 'Equipos',
+        icon: Wrench,
+        path: '/equipment',
+        matcher: (p: string, s: URLSearchParams) => p === '/equipment' && !s.get('tab')
+    },
+    {
+        label: 'Personal',
+        icon: Users,
+        path: '/equipment?tab=workers',
+        matcher: (p: string, s: URLSearchParams) => p === '/equipment' && s.get('tab') === 'workers'
+    },
+    { label: 'Historial', icon: History, path: '/history' },
 ];
 
 export function MobileNav() {
     const pathname = usePathname();
     const router = useRouter();
+    const searchParams = useSearchParams();
 
     if (pathname === '/login' || pathname === '/signup') return null;
 
@@ -23,40 +35,33 @@ export function MobileNav() {
     };
 
     const navigate = (path: string) => {
-        if (path === '/history') {
-            // Find if we are in equipment or inventory to redirect to the correct tab
-            if (pathname.includes('equipment')) {
-                router.push('/equipment?tab=history');
-            } else {
-                router.push('/inventory?tab=history');
-            }
-            return;
-        }
         router.push(path);
     };
 
     return (
-        <nav className="fixed bottom-0 left-0 right-0 z-50 lg:hidden mobile-safe-bottom">
-            <div className="mx-4 mb-4 glass-card rounded-2xl flex items-center justify-around p-2 shadow-2xl border-primary/20 bg-background/80 backdrop-blur-xl">
+        <nav className="fixed bottom-0 left-0 right-0 z-50 lg:hidden mobile-safe-bottom bg-background/80 backdrop-blur-xl border-t border-border/50 shadow-[0_-8px_30px_rgb(0,0,0,0.12)]">
+            <div className="flex items-center justify-around p-1.5">
                 {navItems.map((item) => {
                     const Icon = item.icon;
-                    const isActive = pathname === item.path || (item.path === '/history' && pathname.includes('history'));
+                    const isActive = item.matcher
+                        ? item.matcher(pathname, searchParams)
+                        : pathname === item.path || (item.path === '/history' && pathname.includes('history'));
 
                     return (
                         <button
                             key={item.label}
                             onClick={() => navigate(item.path)}
                             className={cn(
-                                "flex flex-col items-center gap-1 p-2 rounded-xl transition-all duration-300",
+                                "relative flex flex-col items-center gap-0.5 p-1 min-w-[3.2rem] rounded-xl transition-all duration-300",
                                 isActive
-                                    ? "text-primary bg-primary/10 scale-110"
+                                    ? "text-primary bg-primary/10"
                                     : "text-muted-foreground hover:bg-muted/50"
                             )}
                         >
-                            <Icon className={cn("size-5", isActive && "stroke-[2.5px]")} />
-                            <span className="text-[9px] font-black uppercase tracking-widest">{item.label}</span>
+                            <Icon className={cn("size-4", isActive && "stroke-[2.5px]")} />
+                            <span className="text-[7.5px] font-black uppercase tracking-tighter truncate w-full text-center">{item.label}</span>
                             {isActive && (
-                                <div className="absolute -bottom-1 w-1 h-1 rounded-full bg-primary shadow-glow" />
+                                <div className="absolute -bottom-0.5 w-1 h-1 rounded-full bg-primary shadow-glow" />
                             )}
                         </button>
                     );
@@ -64,10 +69,10 @@ export function MobileNav() {
 
                 <button
                     onClick={handleLogout}
-                    className="flex flex-col items-center gap-1 p-2 rounded-xl text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-all duration-300"
+                    className="flex flex-col items-center gap-1 p-1 min-w-[3rem] rounded-xl text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-all duration-300"
                 >
-                    <LogOut className="size-5" />
-                    <span className="text-[9px] font-black uppercase tracking-widest">Salir</span>
+                    <LogOut className="size-4 sm:size-5" />
+                    <span className="text-[8px] sm:text-[9px] font-black uppercase tracking-widest">Salir</span>
                 </button>
             </div>
         </nav>

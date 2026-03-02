@@ -93,26 +93,26 @@ export function EquipmentMovementForm({ onSuccess }: MovementFormProps) {
     return (
         <div className="space-y-4 md:space-y-5">
             {/* Movement type toggle */}
-            <div className="grid grid-cols-2 gap-2 md:gap-3">
+            <div className="grid grid-cols-2 gap-2 sm:gap-3">
                 <button
                     type="button"
                     onClick={() => setMovementType('ingreso')}
-                    className={`flex items-center justify-center gap-2 h-11 md:h-12 px-2 rounded-xl font-black uppercase text-[10px] md:text-[11px] tracking-widest border-2 transition-all ${movementType === 'ingreso'
+                    className={`flex flex-col sm:flex-row items-center justify-center gap-1.5 sm:gap-2 h-14 sm:h-12 px-2 rounded-xl font-black uppercase text-[9px] sm:text-[11px] tracking-widest border-2 transition-all ${movementType === 'ingreso'
                         ? 'bg-green-600 text-white border-green-600 shadow-lg'
                         : 'bg-white dark:bg-slate-900 text-slate-500 border-slate-200 dark:border-slate-800 hover:border-green-300'}`}
                 >
-                    <ArrowDownCircle className="w-3.5 h-3.5 md:w-4 md:h-4 shrink-0" />
-                    <span className="leading-tight text-center">Ingreso Almacén</span>
+                    <ArrowDownCircle className="w-4 h-4 shrink-0" />
+                    <span className="leading-[1.1] text-center">Ingreso Almacén</span>
                 </button>
                 <button
                     type="button"
                     onClick={() => setMovementType('egreso')}
-                    className={`flex items-center justify-center gap-2 h-11 md:h-12 px-2 rounded-xl font-black uppercase text-[10px] md:text-[11px] tracking-widest border-2 transition-all ${movementType === 'egreso'
+                    className={`flex flex-col sm:flex-row items-center justify-center gap-1.5 sm:gap-2 h-14 sm:h-12 px-2 rounded-xl font-black uppercase text-[9px] sm:text-[11px] tracking-widest border-2 transition-all ${movementType === 'egreso'
                         ? 'bg-red-600 text-white border-red-600 shadow-lg'
                         : 'bg-white dark:bg-slate-900 text-slate-500 border-slate-200 dark:border-slate-800 hover:border-red-300'}`}
                 >
-                    <ArrowUpCircle className="w-3.5 h-3.5 md:w-4 md:h-4 shrink-0" />
-                    <span className="leading-tight text-center">Egreso Campo</span>
+                    <ArrowUpCircle className="w-4 h-4 shrink-0" />
+                    <span className="leading-[1.1] text-center">Egreso Campo</span>
                 </button>
             </div>
 
