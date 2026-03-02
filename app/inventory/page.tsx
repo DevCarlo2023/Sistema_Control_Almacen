@@ -101,21 +101,21 @@ export default function InventoryPage() {
       <header className="sticky top-0 z-40 border-b border-border/50 bg-background/60 backdrop-blur-xl print:hidden">
         <div className="max-w-[1600px] mx-auto px-4 sm:px-6 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3 sm:gap-4">
-            <div className="flex items-center p-1.5 bg-white/5 rounded-xl border border-white/10 shadow-lg transition-transform hover:scale-105 duration-300 max-[480px]:hidden">
+            <div className="flex items-center p-1.5 bg-white/5 rounded-xl border border-white/10 shadow-lg transition-transform hover:scale-105 duration-300 hidden sm:flex">
               <img
                 src="/logo-promet.png"
                 alt="PROMET Logo"
                 className="h-8 sm:h-10 w-auto object-contain"
               />
             </div>
-            <div className="flex flex-col border-l border-border/50 pl-3 sm:pl-4 max-[480px]:hidden">
+            <div className="flex flex-col border-l border-border/50 pl-3 sm:pl-4 hidden sm:flex">
               <h1 className="text-lg sm:text-xl font-extrabold tracking-tight leading-none uppercase">
                 CONTROL <span className="text-primary">ALMACÉN</span>
               </h1>
               <span className="text-[8px] sm:text-[9px] uppercase font-black tracking-[0.2em] sm:tracking-[0.3em] text-muted-foreground opacity-60">Industrial Tech v2.0</span>
             </div>
             {/* Mobile-only title (Order: ALMACÉN PROMET) */}
-            <div className="flex-col hidden max-[480px]:flex">
+            <div className="flex-col flex sm:hidden">
               <h1 className="text-sm font-black uppercase tracking-tight text-foreground">ALMACÉN <span className="text-primary text-xs">PROMET</span></h1>
             </div>
           </div>
