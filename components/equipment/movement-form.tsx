@@ -91,50 +91,50 @@ export function EquipmentMovementForm({ onSuccess }: MovementFormProps) {
     };
 
     return (
-        <div className="space-y-5">
+        <div className="space-y-4 md:space-y-5">
             {/* Movement type toggle */}
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 gap-2 md:gap-3">
                 <button
                     type="button"
                     onClick={() => setMovementType('ingreso')}
-                    className={`flex items-center justify-center gap-2 h-12 px-2 rounded-xl font-black uppercase text-[11px] tracking-widest border-2 transition-all ${movementType === 'ingreso'
+                    className={`flex items-center justify-center gap-2 h-11 md:h-12 px-2 rounded-xl font-black uppercase text-[10px] md:text-[11px] tracking-widest border-2 transition-all ${movementType === 'ingreso'
                         ? 'bg-green-600 text-white border-green-600 shadow-lg'
-                        : 'bg-white text-slate-500 border-slate-200 hover:border-green-300'}`}
+                        : 'bg-white dark:bg-slate-900 text-slate-500 border-slate-200 dark:border-slate-800 hover:border-green-300'}`}
                 >
-                    <ArrowDownCircle className="w-4 h-4 shrink-0" />
-                    <span className="leading-tight text-center">Ingreso a Almacén</span>
+                    <ArrowDownCircle className="w-3.5 h-3.5 md:w-4 md:h-4 shrink-0" />
+                    <span className="leading-tight text-center">Ingreso Almacén</span>
                 </button>
                 <button
                     type="button"
                     onClick={() => setMovementType('egreso')}
-                    className={`flex items-center justify-center gap-2 h-12 px-2 rounded-xl font-black uppercase text-[11px] tracking-widest border-2 transition-all ${movementType === 'egreso'
+                    className={`flex items-center justify-center gap-2 h-11 md:h-12 px-2 rounded-xl font-black uppercase text-[10px] md:text-[11px] tracking-widest border-2 transition-all ${movementType === 'egreso'
                         ? 'bg-red-600 text-white border-red-600 shadow-lg'
-                        : 'bg-white text-slate-500 border-slate-200 hover:border-red-300'}`}
+                        : 'bg-white dark:bg-slate-900 text-slate-500 border-slate-200 dark:border-slate-800 hover:border-red-300'}`}
                 >
-                    <ArrowUpCircle className="w-4 h-4 shrink-0" />
-                    <span className="leading-tight text-center">Egreso a Campo</span>
+                    <ArrowUpCircle className="w-3.5 h-3.5 md:w-4 md:h-4 shrink-0" />
+                    <span className="leading-tight text-center">Egreso Campo</span>
                 </button>
             </div>
 
             {/* Equipment search */}
-            <div className="space-y-1.5">
-                <label className="text-[10px] uppercase font-black text-primary tracking-widest ml-1">Equipo</label>
+            <div className="space-y-1 md:space-y-1.5">
+                <label className="text-[9px] md:text-[10px] uppercase font-black text-primary tracking-widest ml-1">Equipo</label>
                 {selectedEquipment ? (
-                    <div className={`flex items-center justify-between px-4 py-2.5 rounded-xl border-2 ${locationConflict ? 'border-amber-400 bg-amber-50' : 'border-primary/30 bg-primary/5'}`}>
-                        <div>
-                            <div className="font-black text-sm uppercase">{selectedEquipment.name}</div>
+                    <div className={`flex items-center justify-between px-3 md:px-4 py-2 md:py-2.5 rounded-xl border-2 ${locationConflict ? 'border-amber-400 bg-amber-50 dark:bg-amber-950/20' : 'border-primary/30 bg-primary/5'}`}>
+                        <div className="min-w-0">
+                            <div className="font-black text-xs md:text-sm uppercase truncate">{selectedEquipment.name}</div>
                             <div className="flex items-center gap-2 mt-0.5">
                                 {selectedEquipment.serial_number && (
-                                    <span className="text-[10px] text-muted-foreground font-bold">S/N: {selectedEquipment.serial_number}</span>
+                                    <span className="text-[9px] md:text-[10px] text-muted-foreground font-bold truncate">S/N: {selectedEquipment.serial_number}</span>
                                 )}
-                                <span className={`text-[9px] font-black uppercase px-1.5 py-0.5 rounded ${selectedEquipment.current_location === 'campo'
-                                    ? 'bg-red-100 text-red-600'
-                                    : 'bg-green-100 text-green-700'}`}>
-                                    {selectedEquipment.current_location === 'campo' ? '🚧 En Campo' : '🏭 En Almacén'}
+                                <span className={`text-[8px] md:text-[9px] font-black uppercase px-1.5 py-0.5 rounded shrink-0 ${selectedEquipment.current_location === 'campo'
+                                    ? 'bg-red-100 dark:bg-red-950/40 text-red-600'
+                                    : 'bg-green-100 dark:bg-green-950/40 text-green-700'}`}>
+                                    {selectedEquipment.current_location === 'campo' ? '🚧 Campo' : '🏭 Almacén'}
                                 </span>
                             </div>
                         </div>
-                        <button type="button" onClick={() => setSelectedEquipment(null)} className="text-muted-foreground hover:text-red-500 font-black text-xs transition-colors">✕</button>
+                        <button type="button" onClick={() => setSelectedEquipment(null)} className="ml-2 p-1 text-muted-foreground hover:text-red-500 transition-colors">✕</button>
                     </div>
                 ) : (
                     <EquipmentSearch onSelect={setSelectedEquipment} selected={selectedEquipment} />
@@ -143,19 +143,19 @@ export function EquipmentMovementForm({ onSuccess }: MovementFormProps) {
 
             {/* Location conflict warning */}
             {locationConflict && (
-                <div className="flex items-start gap-2 rounded-xl bg-amber-50 border border-amber-300 px-3 py-2.5">
-                    <AlertCircle className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
-                    <p className="text-[11px] font-bold text-amber-700">{locationConflict}</p>
+                <div className="flex items-start gap-2 rounded-xl bg-amber-50 dark:bg-amber-950/10 border border-amber-300 dark:border-amber-900/50 px-3 py-2">
+                    <AlertCircle className="w-3.5 h-3.5 text-amber-500 shrink-0 mt-0.5" />
+                    <p className="text-[10px] md:text-[11px] font-bold text-amber-700 dark:text-amber-400">{locationConflict}</p>
                 </div>
             )}
 
             {/* Warehouse selector */}
-            <div className="space-y-1.5">
-                <label className="text-[10px] uppercase font-black text-primary tracking-widest ml-1">
+            <div className="space-y-1 md:space-y-1.5">
+                <label className="text-[9px] md:text-[10px] uppercase font-black text-primary tracking-widest ml-1">
                     {movementType === 'ingreso' ? 'Almacén de Destino' : 'Almacén de Origen'}
                 </label>
                 <select
-                    className="w-full h-11 rounded-xl bg-white border-2 border-slate-200 font-bold text-sm px-3 focus:outline-none focus:border-primary/50"
+                    className="w-full h-10 md:h-11 rounded-xl bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-800 font-bold text-xs md:text-sm px-3 focus:outline-none focus:border-primary/50"
                     value={selectedWarehouseId}
                     onChange={e => {
                         const id = e.target.value;
@@ -173,62 +173,64 @@ export function EquipmentMovementForm({ onSuccess }: MovementFormProps) {
                 </select>
             </div>
 
-            {/* Responsible — ALMACÉN for ingreso, WorkerSelector for egreso */}
-            <div className="space-y-1.5">
-                <label className="text-[10px] uppercase font-black text-primary tracking-widest ml-1">
+            {/* Responsible */}
+            <div className="space-y-1 md:space-y-1.5">
+                <label className="text-[9px] md:text-[10px] uppercase font-black text-primary tracking-widest ml-1">
                     {movementType === 'ingreso' ? 'Responsable de Ingreso' : 'Trabajador Asignado'}
                 </label>
                 {movementType === 'ingreso' ? (
-                    <div className="flex items-center justify-center h-11 px-4 rounded-xl border-2 border-green-300 bg-green-50 gap-2">
-                        <span className="text-sm font-black uppercase text-green-700">🏭 ALMACÉN</span>
-                        <span className="text-[10px] text-green-600 font-bold ml-1">(automático)</span>
+                    <div className="flex items-center justify-center h-10 md:h-11 px-4 rounded-xl border-2 border-green-300 dark:border-green-900/50 bg-green-50 dark:bg-green-950/10 gap-2">
+                        <span className="text-xs md:text-sm font-black uppercase text-green-700 dark:text-green-400">🏭 ALMACÉN</span>
+                        <span className="text-[9px] text-green-600 dark:text-green-500 font-bold ml-1">(automático)</span>
                     </div>
                 ) : (
                     <WorkerSelector onSelect={setSelectedWorker} selected={selectedWorker} onClear={() => setSelectedWorker(null)} />
                 )}
             </div>
 
-            {/* Area — required for BOTH ingreso and egreso */}
-            <div className="space-y-1.5">
-                <label className="text-[10px] uppercase font-black text-muted-foreground tracking-widest ml-1 flex items-center gap-1">
+            {/* Area */}
+            <div className="space-y-1 md:space-y-1.5">
+                <label className="text-[9px] md:text-[10px] uppercase font-black text-muted-foreground tracking-widest ml-1 flex items-center gap-1">
                     Área / Zona de Trabajo
                     <span className="text-red-500 text-[10px]">*</span>
                 </label>
                 <Input
-                    placeholder={movementType === 'ingreso' ? 'Ej: Almacén Principal, Bodega B...' : 'Ej: Zona norte, Patio satélite...'}
-                    className={`h-11 bg-white border-border rounded-xl font-bold ${!area.trim() && 'border-dashed'}`}
+                    placeholder={movementType === 'ingreso' ? 'Ej: Almacén Principal...' : 'Ej: Zona norte...'}
+                    className={`h-10 md:h-11 bg-white dark:bg-slate-900 border-border rounded-xl font-bold text-xs md:text-sm ${!area.trim() && 'border-dashed'}`}
                     value={area}
                     onChange={e => setArea(e.target.value)}
                 />
             </div>
 
             {/* Observations */}
-            <div className="space-y-1.5">
-                <label className="text-[10px] uppercase font-black text-muted-foreground tracking-widest ml-1">Observaciones</label>
+            <div className="space-y-1 md:space-y-1.5">
+                <label className="text-[9px] md:text-[10px] uppercase font-black text-muted-foreground tracking-widest ml-1">Observaciones</label>
                 <Input
                     placeholder="Notas adicionales..."
-                    className="h-11 bg-white border-border rounded-xl font-bold"
+                    className="h-10 md:h-11 bg-white dark:bg-slate-900 border-border rounded-xl font-bold text-xs md:text-sm"
                     value={observations}
                     onChange={e => setObservations(e.target.value)}
                 />
             </div>
 
             {/* Submit */}
-            <Button
-                onClick={handleSubmit}
-                disabled={loading || !!locationConflict}
-                className={`w-full h-12 rounded-xl font-black uppercase tracking-widest text-[11px] flex items-center justify-center gap-2 transition-all ${movementType === 'ingreso'
-                    ? 'bg-green-600 hover:bg-green-700 shadow-[0_0_20px_rgba(22,163,74,0.3)]'
-                    : 'bg-red-600 hover:bg-red-700 shadow-[0_0_20px_rgba(220,38,38,0.3)]'
-                    } disabled:opacity-50 disabled:cursor-not-allowed`}
-            >
-                {loading
-                    ? <Loader2 className="w-4 h-4 animate-spin" />
-                    : movementType === 'ingreso'
-                        ? <><ArrowDownCircle className="w-4 h-4 shrink-0" /><span>Registrar Ingreso</span></>
-                        : <><ArrowUpCircle className="w-4 h-4 shrink-0" /><span>Registrar Egreso</span></>
-                }
-            </Button>
+            <div className="pt-1">
+                <Button
+                    onClick={handleSubmit}
+                    disabled={loading || !!locationConflict}
+                    className={`w-full h-11 md:h-12 rounded-xl font-black uppercase tracking-widest text-[10px] md:text-[11px] flex items-center justify-center gap-2 transition-all ${movementType === 'ingreso'
+                        ? 'bg-green-600 hover:bg-green-700 shadow-[0_0_20px_rgba(22,163,74,0.3)]'
+                        : 'bg-red-600 hover:bg-red-700 shadow-[0_0_20px_rgba(220,38,38,0.3)]'
+                        } disabled:opacity-50 disabled:cursor-not-allowed`}
+                >
+                    {loading
+                        ? <Loader2 className="w-4 h-4 animate-spin" />
+                        : movementType === 'ingreso'
+                            ? <><ArrowDownCircle className="w-4 h-4 shrink-0" /><span>Registrar Ingreso</span></>
+                            : <><ArrowUpCircle className="w-4 h-4 shrink-0" /><span>Registrar Egreso</span></>
+                    }
+                </Button>
+            </div>
         </div>
     );
 }

@@ -133,12 +133,12 @@ export function MovementForm({
   };
 
   return (
-    <div className="space-y-8">
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 items-end">
-        <div className="md:col-span-1 space-y-2">
-          <label className="text-[10px] uppercase font-black text-muted-foreground tracking-widest ml-1">Tipo de Operación</label>
+    <div className="space-y-4 md:space-y-8">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 md:gap-6 items-end">
+        <div className="md:col-span-1 space-y-1.5 md:space-y-2">
+          <label className="text-[9px] md:text-[10px] uppercase font-black text-muted-foreground tracking-widest ml-1">Tipo de Operación</label>
           <Select value={movementType} onValueChange={(value: any) => setMovementType(value)}>
-            <SelectTrigger className="h-12 bg-white dark:bg-slate-900 border-border rounded-xl font-bold">
+            <SelectTrigger className="h-11 md:h-12 bg-white dark:bg-slate-900 border-border rounded-xl font-bold">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -148,22 +148,22 @@ export function MovementForm({
           </Select>
         </div>
 
-        <div className="md:col-span-2 space-y-2">
-          <label className="text-[10px] uppercase font-black text-primary tracking-widest ml-1">Buscar Producto (Código o Nombre)</label>
+        <div className="md:col-span-2 space-y-1.5 md:space-y-2">
+          <label className="text-[9px] md:text-[10px] uppercase font-black text-primary tracking-widest ml-1">Buscar Producto (Código o Nombre)</label>
           <MaterialSearch
             onSelectMaterial={onSelectMaterial}
             selectedMaterial={selectedMaterial}
           />
         </div>
 
-        <div className="md:col-span-1 space-y-2">
-          <label className="text-[10px] uppercase font-black text-muted-foreground tracking-widest ml-1">Cantidad neta</label>
+        <div className="md:col-span-1 space-y-1.5 md:space-y-2">
+          <label className="text-[9px] md:text-[10px] uppercase font-black text-muted-foreground tracking-widest ml-1">Cantidad neta</label>
           <Input
             type="number"
             placeholder="0.00"
             step="0.01"
             min="0"
-            className="h-12 bg-white dark:bg-slate-900 border-border rounded-xl font-bold text-lg"
+            className="h-11 md:h-12 bg-white dark:bg-slate-900 border-border rounded-xl font-bold text-lg"
             value={quantity}
             onChange={(e) => setQuantity(e.target.value)}
             required
@@ -172,20 +172,20 @@ export function MovementForm({
       </div>
 
       {selectedMaterial && (
-        <div className="flex items-center gap-4 p-4 bg-primary/10 rounded-2xl border border-primary/20 glass animate-in fade-in slide-in-from-top-2">
-          <div className="bg-primary text-primary-foreground h-12 w-12 rounded-xl flex items-center justify-center shadow-lg glow-primary">
-            <span className="text-[10px] font-black uppercase text-center leading-tight">
+        <div className="flex items-center gap-3 md:gap-4 p-3 md:p-4 bg-primary/10 rounded-2xl border border-primary/20 glass animate-in fade-in slide-in-from-top-2">
+          <div className="bg-primary text-primary-foreground h-10 w-10 md:h-12 md:w-12 rounded-xl flex items-center justify-center shadow-lg glow-primary shrink-0">
+            <span className="text-[9px] md:text-[10px] font-black uppercase text-center leading-tight">
               {selectedMaterial.unit_of_measure}
             </span>
           </div>
-          <div className="flex-1">
-            <p className="text-sm font-black uppercase tracking-tight">{selectedMaterial.name}</p>
-            <p className="text-xs text-muted-foreground font-medium italic">{selectedMaterial.description}</p>
+          <div className="flex-1 min-w-0">
+            <p className="text-xs md:text-sm font-black uppercase tracking-tight truncate">{selectedMaterial.name}</p>
+            <p className="text-[10px] md:text-xs text-muted-foreground font-medium italic truncate">{selectedMaterial.description}</p>
           </div>
           <Button
             variant="ghost"
             size="sm"
-            className="h-10 w-10 rounded-full hover:bg-destructive/10 hover:text-destructive"
+            className="h-8 w-8 md:h-10 md:w-10 rounded-full hover:bg-destructive/10 hover:text-destructive"
             onClick={() => onSelectMaterial(null)}
           >
             ✕
@@ -193,15 +193,15 @@ export function MovementForm({
         </div>
       )}
 
-      <div className="flex flex-col md:flex-row gap-6 items-center pt-2">
-        <div className="flex-1 w-full space-y-2">
-          <label className="text-[10px] uppercase font-black text-muted-foreground tracking-widest ml-1">Notas de Auditoría (Opcional)</label>
+      <div className="flex flex-col md:flex-row gap-4 md:gap-6 items-center pt-1 md:pt-2">
+        <div className="flex-1 w-full space-y-1.5 md:space-y-2">
+          <label className="text-[9px] md:text-[10px] uppercase font-black text-muted-foreground tracking-widest ml-1">Notas de Auditoría (Opcional)</label>
           <Input
             type="text"
-            placeholder="Ej: Entrega de proveedor / Salida de taller..."
+            placeholder="Ej: Entrega de proveedor..."
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
-            className="h-12 bg-white dark:bg-slate-900 border-border rounded-xl"
+            className="h-11 md:h-12 bg-white dark:bg-slate-900 border-border rounded-xl"
           />
         </div>
         <div className="w-full md:w-auto md:pt-6">
@@ -210,7 +210,7 @@ export function MovementForm({
             onClick={handleSubmit}
             disabled={loading || !warehouseId || !selectedMaterial}
             className={`
-              h-12 w-full md:w-56 rounded-xl font-black uppercase tracking-widest text-xs transition-all duration-300
+              h-12 w-full md:w-56 rounded-xl font-black uppercase tracking-widest text-[10px] md:text-xs transition-all duration-300
               ${movementType === 'entrada'
                 ? 'bg-green-600 hover:bg-green-700 shadow-[0_0_20px_rgba(22,163,74,0.3)] hover:shadow-[0_0_30px_rgba(22,163,74,0.5)]'
                 : 'bg-destructive hover:bg-destructive/90 shadow-[0_0_20px_rgba(239,68,68,0.3)] hover:shadow-[0_0_30px_rgba(239,68,68,0.5)]'
@@ -223,21 +223,21 @@ export function MovementForm({
                 <span>Procesando</span>
               </div>
             ) : (
-              `Ejecutar ${movementType}`
+              `Registrar ${movementType}`
             )}
           </Button>
         </div>
       </div>
 
       {error && (
-        <div className="p-4 bg-destructive/10 text-destructive border border-destructive/20 rounded-xl text-sm font-bold flex items-center gap-3">
-          <span className="text-xl">⚠️</span> {error}
+        <div className="p-3 md:p-4 bg-destructive/10 text-destructive border border-destructive/20 rounded-xl text-[11px] md:text-sm font-bold flex items-center gap-3">
+          <span className="text-lg">⚠️</span> {error}
         </div>
       )}
 
       {success && (
-        <div className="p-4 bg-green-500/10 text-green-600 border border-green-500/20 rounded-xl text-sm font-bold flex items-center gap-3 animate-in zoom-in-95">
-          <span className="text-xl">✅</span> Registro exitoso en la base de datos
+        <div className="p-3 md:p-4 bg-green-500/10 text-green-600 border border-green-500/20 rounded-xl text-[11px] md:text-sm font-bold flex items-center gap-3 animate-in zoom-in-95">
+          <span className="text-lg">✅</span> Registro exitoso
         </div>
       )}
     </div>

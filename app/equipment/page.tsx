@@ -110,40 +110,52 @@ function CompactImportBar({ onSuccess }: { onSuccess: () => void }) {
     const tooltip = 'pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 rounded-lg bg-slate-800 text-white text-[9px] font-black uppercase tracking-widest whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-150 z-50';
 
     return (
-        <Card className="p-3 glass-card rounded-2xl border-border/20">
-            <p className="text-[9px] font-black uppercase text-muted-foreground tracking-widest mb-2">Gestión</p>
+        <Card className="p-3 glass-card rounded-2xl border-border/20 shadow-lg">
+            <div className="flex items-center justify-between mb-3 px-1">
+                <p className="text-[9px] font-black uppercase text-primary tracking-[0.2em]">Gestión de Base de Datos</p>
+                <div className="flex gap-1">
+                    <div className="w-1 h-1 rounded-full bg-primary/40" />
+                    <div className="w-1 h-1 rounded-full bg-primary/20" />
+                </div>
+            </div>
             <input type="file" accept=".xlsx,.xls" className="hidden" ref={equipFileRef} onChange={e => e.target.files?.[0] && importFile(e.target.files[0], 'equipment')} />
             <input type="file" accept=".xlsx,.xls" className="hidden" ref={workerFileRef} onChange={e => e.target.files?.[0] && importFile(e.target.files[0], 'workers')} />
-            <div className="flex items-center gap-2 flex-wrap">
+            <div className="flex items-center gap-2.5 flex-wrap">
                 {/* Download equip template */}
-                <button className={iconBtn} onClick={downloadEquipTemplate} title="">
-                    <FileDown className="w-4 h-4 text-blue-500" />
+                <button className={iconBtn} onClick={downloadEquipTemplate}>
+                    <FileDown className="w-4 h-4 text-blue-500 shrink-0" />
                     <span className={tooltip}>Plantilla Equipos</span>
                 </button>
                 {/* Import equip */}
-                <button className={iconBtn} onClick={() => equipFileRef.current?.click()} disabled={loadingEq} title="">
-                    {loadingEq ? <Loader2 className="w-4 h-4 animate-spin text-blue-500" /> : <Package className="w-4 h-4 text-blue-500" />}
+                <button className={iconBtn} onClick={() => equipFileRef.current?.click()} disabled={loadingEq}>
+                    {loadingEq ? <Loader2 className="w-4 h-4 animate-spin text-blue-500" /> : <Package className="w-4 h-4 text-blue-500 shrink-0" />}
                     <span className={tooltip}>Importar Equipos</span>
                 </button>
+
+                <div className="w-px h-6 bg-border/50 mx-0.5" />
+
                 {/* Download workers template */}
-                <button className={iconBtn} onClick={downloadWorkerTemplate} title="">
-                    <FileDown className="w-4 h-4 text-purple-500" />
-                    <span className={tooltip}>Plantilla Trabajadores</span>
+                <button className={iconBtn} onClick={downloadWorkerTemplate}>
+                    <FileDown className="w-4 h-4 text-purple-500 shrink-0" />
+                    <span className={tooltip}>Plantilla Personal</span>
                 </button>
                 {/* Import workers */}
-                <button className={iconBtn} onClick={() => workerFileRef.current?.click()} disabled={loadingWk} title="">
-                    {loadingWk ? <Loader2 className="w-4 h-4 animate-spin text-purple-500" /> : <Users className="w-4 h-4 text-purple-500" />}
-                    <span className={tooltip}>Importar Trabajadores</span>
+                <button className={iconBtn} onClick={() => workerFileRef.current?.click()} disabled={loadingWk}>
+                    {loadingWk ? <Loader2 className="w-4 h-4 animate-spin text-purple-500" /> : <Users className="w-4 h-4 text-purple-500 shrink-0" />}
+                    <span className={tooltip}>Importar Personal</span>
                 </button>
+
+                <div className="flex-1" />
+
                 {/* Revert */}
                 {showConfirm ? (
-                    <div className="flex items-center gap-1 ml-1">
-                        <button onClick={handleRevert} className="px-2 py-1 text-[9px] font-black uppercase bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors">✓ Sí</button>
-                        <button onClick={() => setShowConfirm(false)} className="px-2 py-1 text-[9px] font-black uppercase bg-muted text-muted-foreground rounded-lg hover:bg-muted/80 transition-colors">No</button>
+                    <div className="flex items-center gap-1.5 animate-in fade-in zoom-in-95">
+                        <button onClick={handleRevert} className="h-9 px-3 text-[9px] font-black uppercase bg-red-600 text-white rounded-xl hover:bg-red-700 shadow-lg shadow-red-600/20 transition-all">Confirmar</button>
+                        <button onClick={() => setShowConfirm(false)} className="h-9 px-3 text-[9px] font-black uppercase bg-muted text-muted-foreground rounded-xl hover:bg-muted/80 transition-all">No</button>
                     </div>
                 ) : (
-                    <button className={`${iconBtn} hover:bg-red-50 hover:border-red-300`} onClick={() => setShowConfirm(true)} disabled={reverting} title="">
-                        {reverting ? <Loader2 className="w-4 h-4 animate-spin text-red-500" /> : <RotateCcw className="w-4 h-4 text-red-400" />}
+                    <button className={`${iconBtn} hover:bg-red-50 dark:hover:bg-red-950/20 hover:border-red-300 dark:hover:border-red-900/50`} onClick={() => setShowConfirm(true)} disabled={reverting}>
+                        {reverting ? <Loader2 className="w-4 h-4 animate-spin text-red-500" /> : <RotateCcw className="w-4 h-4 text-red-400 shrink-0" />}
                         <span className={`${tooltip} bg-red-700`}>Revertir Carga</span>
                     </button>
                 )}

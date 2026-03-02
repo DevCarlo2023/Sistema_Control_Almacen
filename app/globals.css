@@ -94,14 +94,16 @@
 
   body {
     @apply bg-background text-foreground;
-    text-transform: uppercase;
   }
 
-  input,
-  textarea,
-  select,
-  button {
+  /* Keep uppercase for headers and industrial labels, but allow normal case for content */
+  h1,
+  h2,
+  h3,
+  h4,
+  .industrial-label {
     text-transform: uppercase;
+    letter-spacing: 0.05em;
   }
 }
 
@@ -115,18 +117,31 @@
 
   .glass-card {
     background: var(--glass-bg);
-    backdrop-filter: blur(var(--glass-blur));
-    -webkit-backdrop-filter: blur(var(--glass-blur));
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
     border: 1px solid var(--glass-border);
-    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.2);
+    box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1), inset 0 1px 0 0 rgba(255, 255, 255, 0.05);
+  }
+
+  .glass-card-hover {
+    @apply transition-all duration-300 hover:shadow-2xl hover:border-primary/30 hover:bg-primary/[0.02];
   }
 
   .glow-primary {
-    box-shadow: 0 0 15px var(--primary);
+    box-shadow: 0 0 20px -5px var(--primary);
   }
 
-  .animate-pulse-slow {
-    animation: pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  .mobile-safe-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  .compact-scrollbar::-webkit-scrollbar {
+    width: 4px;
+    height: 4px;
+  }
+
+  .compact-scrollbar::-webkit-scrollbar-thumb {
+    @apply bg-muted-foreground/20 rounded-full;
   }
 }
 

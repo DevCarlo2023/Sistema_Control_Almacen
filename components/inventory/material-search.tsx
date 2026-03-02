@@ -93,59 +93,53 @@ export function MaterialSearch({ onSelectMaterial, selectedMaterial }: MaterialS
 
   const dropdown = showResults && results.length > 0 ? (
     <div
+      className="glass-card shadow-2xl overflow-hidden animate-in fade-in slide-in-from-top-2"
       style={{
         position: 'absolute',
         top: dropdownPos.top,
         left: dropdownPos.left,
         width: dropdownPos.width,
         zIndex: 99999,
-        backgroundColor: '#ffffff',
-        borderRadius: '12px',
-        border: '1px solid #e2e8f0',
-        boxShadow: '0 10px 40px rgba(0,0,0,0.15)',
-        maxHeight: '360px',
-        overflowY: 'auto',
+        maxHeight: '400px',
+        display: 'flex',
+        flexDirection: 'column',
       }}
     >
-      <div style={{ padding: '8px 12px', borderBottom: '1px solid #f1f5f9', position: 'sticky', top: 0, backgroundColor: '#ffffff' }}>
-        <span style={{ fontSize: '9px', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.1em', color: '#2563eb' }}>
-          {results.length} Resultado{results.length !== 1 ? 's' : ''} encontrado{results.length !== 1 ? 's' : ''}
+      <div className="px-4 py-2 border-b border-border/50 bg-muted/30 flex items-center justify-between sticky top-0 z-10 backdrop-blur-md">
+        <span className="text-[9px] font-black uppercase tracking-[0.2em] text-primary">
+          {results.length} RESULTADO{results.length !== 1 ? 'S' : ''} ENCONTRADO{results.length !== 1 ? 'S' : ''}
         </span>
+        <button
+          onClick={() => setShowResults(false)}
+          className="text-[9px] font-black uppercase tracking-widest text-muted-foreground hover:text-foreground md:hidden"
+        >
+          Cerrar
+        </button>
       </div>
-      <div style={{ padding: '6px' }}>
+      <div className="p-1.5 overflow-y-auto compact-scrollbar bg-card/50">
         {results.map((material) => (
           <button
             key={material.id}
             type="button"
             onMouseDown={(e) => {
-              e.preventDefault(); // prevent blur before click
+              e.preventDefault();
               handleSelectMaterial(material);
             }}
-            style={{
-              width: '100%',
-              textAlign: 'left',
-              padding: '10px 12px',
-              borderRadius: '8px',
-              border: 'none',
-              background: 'none',
-              cursor: 'pointer',
-              display: 'block',
-            }}
-            onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#f8fafc')}
-            onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+            className="w-full text-left p-3 rounded-xl transition-all duration-200 hover:bg-primary/10 group mb-1 last:mb-0 border border-transparent hover:border-primary/20"
           >
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px' }}>
-              <div style={{ fontWeight: 900, fontSize: '13px', textTransform: 'uppercase', color: '#0f172a', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                {material.name}
+            <div className="flex justify-between items-start gap-3">
+              <div className="space-y-0.5 min-w-0">
+                <div className="font-black text-[13px] uppercase text-foreground leading-tight group-hover:text-primary transition-colors truncate">
+                  {material.name}
+                </div>
+                <div className="text-[11px] text-muted-foreground font-medium italic truncate">
+                  {material.description || 'Sin descripción disponible'}
+                </div>
               </div>
-              <span style={{ fontSize: '10px', fontWeight: 900, backgroundColor: '#eff6ff', color: '#2563eb', padding: '2px 8px', borderRadius: '4px', textTransform: 'uppercase', flexShrink: 0 }}>
+              <span className="text-[9px] font-black bg-primary/10 text-primary px-2 py-0.5 rounded-md uppercase shrink-0 border border-primary/20">
                 {material.unit_of_measure}
               </span>
             </div>
-            <div style={{ fontSize: '12px', color: '#64748b', marginTop: '3px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontStyle: 'italic' }}>
-              {material.description}
-            </div>
-
           </button>
         ))}
       </div>

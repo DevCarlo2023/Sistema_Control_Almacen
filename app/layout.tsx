@@ -4,6 +4,8 @@ import { Analytics } from '@vercel/analytics/next'
 import { Toaster } from 'sonner'
 import './globals.css'
 
+import { MobileNav } from '@/components/ui/mobile-nav'
+
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
@@ -27,8 +29,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="es">
-      <body className={`${inter.className} antialiased`}>
+      <body className={`${inter.className} antialiased pb-20 lg:pb-0`}>
         {children}
+        <MobileNav />
         <Toaster position="top-right" expand={true} richColors />
         <Analytics />
       </body>
