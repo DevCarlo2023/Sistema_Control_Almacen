@@ -187,7 +187,8 @@ export default function EquipmentPage() {
     const handleLogout = async () => { await supabase.auth.signOut(); router.push('/login'); };
     const refresh = () => setRefreshTrigger(p => p + 1);
 
-    if (loading) return <LoadingScreen />;
+    // No longer using internal loading screen to prioritize speed
+    const isInitialLoad = !user && loading;
 
     return (
         <div className="min-h-screen bg-background">
@@ -204,14 +205,14 @@ export default function EquipmentPage() {
                         </div>
                     </div>
                     <div className="flex items-center gap-3">
-                        <Button variant="outline" size="sm" className="font-black uppercase text-[10px] tracking-widest rounded-xl" onClick={() => router.push('/inventory')}>
+                        <Button variant="outline" size="sm" className="font-black uppercase text-[10px] tracking-widest rounded-xl hidden lg:flex" onClick={() => router.push('/inventory')}>
                             ← Inventario
                         </Button>
                         <div className="hidden md:flex flex-col items-end bg-muted/30 px-4 py-1.5 rounded-xl border border-border/30">
                             <span className="text-[10px] uppercase font-black text-primary tracking-widest opacity-80">Usuario Activo</span>
                             <span className="text-sm font-bold">{user?.email}</span>
                         </div>
-                        <Button variant="ghost" className="h-10 px-4 hover:bg-destructive/10 hover:text-destructive font-black uppercase text-[10px] tracking-widest rounded-xl" onClick={handleLogout}>Salir</Button>
+                        <Button variant="ghost" className="h-10 px-4 hover:bg-destructive/10 hover:text-destructive font-black uppercase text-[10px] tracking-widest rounded-xl hidden lg:flex" onClick={handleLogout}>Salir</Button>
                     </div>
                 </div>
             </header>

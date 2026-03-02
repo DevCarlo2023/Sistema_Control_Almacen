@@ -88,9 +88,8 @@ export default function InventoryPage() {
     setRefreshTrigger((prev) => prev + 1);
   };
 
-  if (loading) {
-    return <LoadingScreen />;
-  }
+  // No longer using internal loading screen to prioritize speed
+  const isInitialLoad = !user && loading;
 
   return (
     <div className="min-h-screen bg-background relative overflow-hidden">
@@ -118,7 +117,7 @@ export default function InventoryPage() {
             <Button
               variant="outline"
               size="sm"
-              className="h-10 px-5 font-black uppercase text-[10px] tracking-widest rounded-xl border-primary/30 hover:bg-primary/10 hover:border-primary/60 transition-all gap-2"
+              className="h-10 px-5 font-black uppercase text-[10px] tracking-widest rounded-xl border-primary/30 hover:bg-primary/10 hover:border-primary/60 transition-all gap-2 hidden lg:flex"
               onClick={() => router.push('/equipment')}
             >
               🔧 Equipos
@@ -129,7 +128,7 @@ export default function InventoryPage() {
             </div>
             <Button
               variant="ghost"
-              className="h-10 px-4 hover:bg-destructive/10 hover:text-destructive font-black uppercase text-[10px] tracking-widest transition-all rounded-xl border border-transparent hover:border-destructive/20"
+              className="h-10 px-4 hover:bg-destructive/10 hover:text-destructive font-black uppercase text-[10px] tracking-widest transition-all rounded-xl border border-transparent hover:border-destructive/20 hidden lg:flex"
               onClick={handleLogout}
             >
               Salir
