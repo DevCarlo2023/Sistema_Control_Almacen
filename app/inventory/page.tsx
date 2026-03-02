@@ -16,7 +16,6 @@ import { type Material } from '@/lib/types';
 import { MovementHistory } from '@/components/inventory/movement-history';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AdminTabs } from '@/components/admin/admin-tabs';
-import { LoadingScreen } from '@/components/ui/loading-screen';
 
 export default function InventoryPage() {
   const router = useRouter();
@@ -26,7 +25,6 @@ export default function InventoryPage() {
   const [warehouseLocation, setWarehouseLocation] = useState('');
   const [selectedMaterial, setSelectedMaterial] = useState<Material | null>(null);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
-  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -54,8 +52,6 @@ export default function InventoryPage() {
       }
 
       setUser(session.user);
-      // Artificial delay to ensure user sees the professional loading screen
-      setTimeout(() => setLoading(false), 1200);
     };
 
     checkAuth();
@@ -88,8 +84,6 @@ export default function InventoryPage() {
     setRefreshTrigger((prev) => prev + 1);
   };
 
-  // No longer using internal loading screen to prioritize speed
-  const isInitialLoad = !user && loading;
 
   return (
     <div className="min-h-screen bg-background relative overflow-hidden">

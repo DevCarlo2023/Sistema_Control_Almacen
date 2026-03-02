@@ -16,7 +16,6 @@ import { FileDown, Package, Users, Loader2, RotateCcw } from 'lucide-react';
 import { formatText } from '@/lib/utils';
 import { ImportEquipment } from '@/components/equipment/import-equipment';
 import { ImportWorkers } from '@/components/equipment/import-workers';
-import { LoadingScreen } from '@/components/ui/loading-screen';
 
 // ── Compact icon-only import toolbar ──────────────────────────────────────────
 function CompactImportBar({ onSuccess }: { onSuccess: () => void }) {
@@ -168,7 +167,6 @@ function CompactImportBar({ onSuccess }: { onSuccess: () => void }) {
 export default function EquipmentPage() {
     const router = useRouter();
     const [user, setUser] = useState<any>(null);
-    const [loading, setLoading] = useState(true);
     const [refreshTrigger, setRefreshTrigger] = useState(0);
 
     useEffect(() => {
@@ -187,9 +185,6 @@ export default function EquipmentPage() {
             } else if (tab === 'equipment') {
                 setActiveTab('equipment');
             }
-
-            // Artificial delay for visibility
-            setTimeout(() => setLoading(false), 1200);
         };
         checkAuth();
 
@@ -205,8 +200,6 @@ export default function EquipmentPage() {
     const handleLogout = async () => { await supabase.auth.signOut(); router.push('/login'); };
     const refresh = () => setRefreshTrigger(p => p + 1);
 
-    // No longer using internal loading screen to prioritize speed
-    const isInitialLoad = !user && loading;
 
     return (
         <div className="min-h-screen bg-background">

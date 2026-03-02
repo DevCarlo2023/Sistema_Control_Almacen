@@ -117,78 +117,149 @@ export function EquipmentMovementHistory({ refreshTrigger }: Props) {
                 <div className="text-center py-12 text-muted-foreground animate-pulse font-bold text-xs uppercase">Cargando historial...</div>
             ) : (
                 <div className="overflow-x-auto">
-                    <Table>
-                        <TableHeader>
-                            <TableRow className="bg-muted/30">
-                                <TableHead className="px-4 py-3 text-[10px] uppercase font-black tracking-widest text-muted-foreground">Fecha</TableHead>
-                                <TableHead className="px-4 py-3 text-[10px] uppercase font-black tracking-widest text-muted-foreground text-center">Tipo</TableHead>
-                                <TableHead className="px-4 py-3 text-[10px] uppercase font-black tracking-widest text-muted-foreground">Equipo</TableHead>
-                                <TableHead className="px-4 py-3 text-[10px] uppercase font-black tracking-widest text-muted-foreground">Almacén</TableHead>
-                                <TableHead className="px-4 py-3 text-[10px] uppercase font-black tracking-widest text-muted-foreground">Trabajador</TableHead>
-                                <TableHead className="px-4 py-3 text-[10px] uppercase font-black tracking-widest text-muted-foreground">Área</TableHead>
-                                <TableHead className="px-4 py-3 text-[10px] uppercase font-black tracking-widest text-muted-foreground">Observaciones</TableHead>
-                                <TableHead className="px-4 py-3 text-[10px] uppercase font-black tracking-widest text-muted-foreground text-center print:hidden">Eliminar</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {filtered.length === 0 ? (
-                                <TableRow><TableCell colSpan={7} className="py-12 text-center text-muted-foreground italic">Sin movimientos registrados.</TableCell></TableRow>
-                            ) : filtered.map(m => (
-                                <TableRow key={m.id} className="group border-b border-border/30 hover:bg-primary/5 transition-colors">
-                                    <TableCell className="px-4 py-3">
-                                        <div className="text-[11px] font-black">{format(new Date(m.created_at), 'dd/MM/yyyy', { locale: es })}</div>
-                                        <div className="text-[10px] text-muted-foreground">{format(new Date(m.created_at), 'HH:mm', { locale: es })}</div>
-                                    </TableCell>
-                                    <TableCell className="px-4 py-3 text-center">
-                                        <span className={`inline-flex items-center px-2 py-1 rounded-md text-[9px] font-black uppercase ${m.movement_type === 'ingreso' ? 'bg-green-500/10 text-green-600 border border-green-500/20' : 'bg-red-500/10 text-red-600 border border-red-500/20'
-                                            }`}>
+                    {/* Desktop Table View */}
+                    <div className="hidden sm:block">
+                        <Table>
+                            <TableHeader>
+                                <TableRow className="bg-muted/30">
+                                    <TableHead className="px-4 py-3 text-[10px] uppercase font-black tracking-widest text-muted-foreground">Fecha</TableHead>
+                                    <TableHead className="px-4 py-3 text-[10px] uppercase font-black tracking-widest text-muted-foreground text-center">Tipo</TableHead>
+                                    <TableHead className="px-4 py-3 text-[10px] uppercase font-black tracking-widest text-muted-foreground">Equipo</TableHead>
+                                    <TableHead className="px-4 py-3 text-[10px] uppercase font-black tracking-widest text-muted-foreground">Almacén</TableHead>
+                                    <TableHead className="px-4 py-3 text-[10px] uppercase font-black tracking-widest text-muted-foreground">Trabajador</TableHead>
+                                    <TableHead className="px-4 py-3 text-[10px] uppercase font-black tracking-widest text-muted-foreground">Área</TableHead>
+                                    <TableHead className="px-4 py-3 text-[10px] uppercase font-black tracking-widest text-muted-foreground">Observaciones</TableHead>
+                                    <TableHead className="px-4 py-3 text-[10px] uppercase font-black tracking-widest text-muted-foreground text-center print:hidden">Eliminar</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {filtered.length === 0 ? (
+                                    <TableRow><TableCell colSpan={7} className="py-12 text-center text-muted-foreground italic">Sin movimientos registrados.</TableCell></TableRow>
+                                ) : filtered.map(m => (
+                                    <TableRow key={m.id} className="group border-b border-border/30 hover:bg-primary/5 transition-colors">
+                                        <TableCell className="px-4 py-3">
+                                            <div className="text-[11px] font-black">{format(new Date(m.created_at), 'dd/MM/yyyy', { locale: es })}</div>
+                                            <div className="text-[10px] text-muted-foreground">{format(new Date(m.created_at), 'HH:mm', { locale: es })}</div>
+                                        </TableCell>
+                                        <TableCell className="px-4 py-3 text-center">
+                                            <span className={`inline-flex items-center px-2 py-1 rounded-md text-[9px] font-black uppercase ${m.movement_type === 'ingreso' ? 'bg-green-500/10 text-green-600 border border-green-500/20' : 'bg-red-500/10 text-red-600 border border-red-500/20'
+                                                }`}>
+                                                {m.movement_type === 'ingreso' ? '▼ Ingreso' : '▲ Egreso'}
+                                            </span>
+                                        </TableCell>
+                                        <TableCell className="px-4 py-3">
+                                            <div className="font-black text-sm uppercase">{m.equipment?.name || '-'}</div>
+                                            {m.equipment?.serial_number && <div className="text-[10px] text-muted-foreground">S/N: {m.equipment.serial_number}</div>}
+                                        </TableCell>
+                                        <TableCell className="px-4 py-3">
+                                            {m.warehouse ? (
+                                                <span className="text-[11px] font-bold text-primary flex items-center gap-1 uppercase">
+                                                    📍 {m.warehouse.name}
+                                                </span>
+                                            ) : <span className="text-muted-foreground text-[11px]">—</span>}
+                                        </TableCell>
+                                        <TableCell className="px-4 py-3">
+                                            {m.workers ? (
+                                                <>
+                                                    <div className="font-bold text-sm">{m.workers.full_name}</div>
+                                                    <div className="text-[10px] text-muted-foreground">{m.workers.position}</div>
+                                                </>
+                                            ) : m.movement_type === 'ingreso' ? (
+                                                <div className="flex flex-col">
+                                                    <span className="text-sm font-black uppercase text-green-700">🏭 ALMACÉN</span>
+                                                    <span className="text-[9px] text-green-600/70 font-bold uppercase">(responsable)</span>
+                                                </div>
+                                            ) : (
+                                                <span className="text-muted-foreground text-sm">—</span>
+                                            )}
+                                        </TableCell>
+                                        <TableCell className="px-4 py-3 text-sm text-muted-foreground">{m.area || '—'}</TableCell>
+                                        <TableCell className="px-4 py-3 text-sm text-muted-foreground max-w-[1600px] truncate">{m.observations || '—'}</TableCell>
+                                        <TableCell className="px-4 py-3 text-center print:hidden">
+                                            {confirmId === m.id ? (
+                                                <div className="flex items-center gap-1 justify-center">
+                                                    <button onClick={() => handleDelete(m)} className="text-[9px] font-black uppercase px-2 py-1 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors">✓ Sí</button>
+                                                    <button onClick={() => setConfirmId(null)} className="text-[9px] font-black uppercase px-2 py-1 bg-muted text-muted-foreground rounded-md hover:bg-muted/80 transition-colors">No</button>
+                                                </div>
+                                            ) : (
+                                                <button onClick={() => setConfirmId(m.id)} disabled={deletingId === m.id} className="opacity-0 group-hover:opacity-100 transition-opacity p-1.5 rounded-lg hover:bg-red-50 text-red-400 hover:text-red-600">
+                                                    {deletingId === m.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+                                                </button>
+                                            )}
+                                        </TableCell>
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
+                    </div>
+
+                    {/* Mobile Card View */}
+                    <div className="flex flex-col gap-4 p-4 sm:hidden print:hidden">
+                        {filtered.length === 0 ? (
+                            <div className="py-12 text-center text-muted-foreground italic text-sm">
+                                Sin movimientos registrados.
+                            </div>
+                        ) : (
+                            filtered.map((m) => (
+                                <div key={m.id} className="p-4 rounded-2xl bg-muted/20 border border-border/50 space-y-3 relative overflow-hidden group">
+                                    <div className="flex justify-between items-start">
+                                        <div className="flex flex-col">
+                                            <span className="text-[10px] font-black uppercase text-primary tracking-widest">{format(new Date(m.created_at), 'dd MMM yyyy', { locale: es })}</span>
+                                            <span className="text-sm font-bold truncate max-w-[180px]">{m.equipment?.name || '-'}</span>
+                                            {m.equipment?.serial_number && <span className="text-[9px] text-muted-foreground font-bold">S/N: {m.equipment.serial_number}</span>}
+                                        </div>
+                                        <span className={`
+                                            inline-flex items-center px-2 py-0.5 rounded-full text-[8px] font-black tracking-widest uppercase
+                                            ${m.movement_type === 'ingreso'
+                                                ? 'bg-green-500/10 text-green-600 border border-green-500/20'
+                                                : 'bg-red-500/10 text-red-600 border border-red-500/20'
+                                            }
+                                        `}>
                                             {m.movement_type === 'ingreso' ? '▼ Ingreso' : '▲ Egreso'}
                                         </span>
-                                    </TableCell>
-                                    <TableCell className="px-4 py-3">
-                                        <div className="font-black text-sm uppercase">{m.equipment?.name || '-'}</div>
-                                        {m.equipment?.serial_number && <div className="text-[10px] text-muted-foreground">S/N: {m.equipment.serial_number}</div>}
-                                    </TableCell>
-                                    <TableCell className="px-4 py-3">
-                                        {m.warehouse ? (
-                                            <span className="text-[11px] font-bold text-primary flex items-center gap-1 uppercase">
-                                                📍 {m.warehouse.name}
-                                            </span>
-                                        ) : <span className="text-muted-foreground text-[11px]">—</span>}
-                                    </TableCell>
-                                    <TableCell className="px-4 py-3">
-                                        {m.workers ? (
-                                            <>
-                                                <div className="font-bold text-sm">{m.workers.full_name}</div>
-                                                <div className="text-[10px] text-muted-foreground">{m.workers.position}</div>
-                                            </>
-                                        ) : m.movement_type === 'ingreso' ? (
-                                            <div className="flex flex-col">
-                                                <span className="text-sm font-black uppercase text-green-700">🏭 ALMACÉN</span>
-                                                <span className="text-[9px] text-green-600/70 font-bold uppercase">(responsable)</span>
-                                            </div>
-                                        ) : (
-                                            <span className="text-muted-foreground text-sm">—</span>
+                                    </div>
+
+                                    <div className="grid grid-cols-2 gap-2 pb-2 border-b border-border/30">
+                                        <div className="flex flex-col">
+                                            <span className="text-[8px] uppercase font-bold text-muted-foreground/60 tracking-wider">Responsable</span>
+                                            <span className="text-[10px] font-bold truncate">{m.workers?.full_name || (m.movement_type === 'ingreso' ? '🏭 ALMACÉN' : '—')}</span>
+                                        </div>
+                                        <div className="flex flex-col items-end">
+                                            <span className="text-[8px] uppercase font-bold text-muted-foreground/60 tracking-wider">Área / Destino</span>
+                                            <span className="text-[10px] font-bold truncate">{m.area || '—'}</span>
+                                        </div>
+                                    </div>
+
+                                    <div className="flex justify-between items-end">
+                                        <div className="flex flex-col gap-1">
+                                            {m.observations && <p className="text-[10px] text-muted-foreground italic line-clamp-1 italic">"{m.observations}"</p>}
+                                            <span className="text-[9px] font-bold text-muted-foreground/60 uppercase">Hora: {format(new Date(m.created_at), 'HH:mm', { locale: es })}</span>
+                                        </div>
+                                        {m.warehouse && (
+                                            <span className="text-[9px] font-bold text-primary uppercase">📍 {m.warehouse.name}</span>
                                         )}
-                                    </TableCell>
-                                    <TableCell className="px-4 py-3 text-sm text-muted-foreground">{m.area || '—'}</TableCell>
-                                    <TableCell className="px-4 py-3 text-sm text-muted-foreground max-w-[160px] truncate">{m.observations || '—'}</TableCell>
-                                    <TableCell className="px-4 py-3 text-center print:hidden">
+                                    </div>
+
+                                    {/* Mobile Delete Button */}
+                                    <div className="absolute top-2 right-2">
                                         {confirmId === m.id ? (
-                                            <div className="flex items-center gap-1 justify-center">
-                                                <button onClick={() => handleDelete(m)} className="text-[9px] font-black uppercase px-2 py-1 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors">✓ Sí</button>
-                                                <button onClick={() => setConfirmId(null)} className="text-[9px] font-black uppercase px-2 py-1 bg-muted text-muted-foreground rounded-md hover:bg-muted/80 transition-colors">No</button>
+                                            <div className="flex items-center gap-1 bg-background/80 backdrop-blur-sm p-1 rounded-lg border border-border/50">
+                                                <button onClick={() => handleDelete(m)} className="text-[8px] font-bold uppercase px-2 py-1 bg-red-600 text-white rounded-md">✓ Borrar</button>
+                                                <button onClick={() => setConfirmId(null)} className="text-[8px] font-bold uppercase px-2 py-1 bg-muted text-muted-foreground rounded-md">X</button>
                                             </div>
                                         ) : (
-                                            <button onClick={() => setConfirmId(m.id)} disabled={deletingId === m.id} className="opacity-0 group-hover:opacity-100 transition-opacity p-1.5 rounded-lg hover:bg-red-50 text-red-400 hover:text-red-600">
-                                                {deletingId === m.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+                                            <button
+                                                onClick={() => setConfirmId(m.id)}
+                                                className="p-2 rounded-full bg-destructive/5 text-destructive/40 hover:text-destructive transition-colors"
+                                            >
+                                                {deletingId === m.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <Trash2 className="w-3 h-3" />}
                                             </button>
                                         )}
-                                    </TableCell>
-                                </TableRow>
-                            ))}
-                        </TableBody>
-                    </Table>
+                                    </div>
+                                </div>
+                            ))
+                        )}
+                    </div>
                 </div>
             )}
         </div>

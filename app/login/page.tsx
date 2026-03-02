@@ -7,7 +7,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import Link from 'next/link';
-import { LoadingScreen } from '@/components/ui/loading-screen';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -36,12 +35,10 @@ export default function LoginPage() {
     } catch (err) {
       setError('Error al iniciar sesión. Por favor, intenta de nuevo.');
     } finally {
-      // Artificial delay for visibility of the professional screen
-      setTimeout(() => setLoading(false), 1000);
+      setLoading(false);
     }
   };
 
-  if (loading) return <LoadingScreen />;
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4 relative overflow-hidden">
