@@ -154,14 +154,15 @@
   }
 }
 
-/* Custom breakpoint for very small screens */
-@media (max-width: 437px) {
+/* Custom breakpoint for very small screens - Refined to ensure it triggers in Chrome/Safari */
+@media screen and (max-width: 480px) {
   .hide-logo-xs {
     display: none !important;
   }
 
+  /* Force lower font size for mobile utility feel */
   html {
-    font-size: 13.5px;
+    font-size: 13.5px !important;
   }
 
   .show-logo-xs {
@@ -169,7 +170,7 @@
   }
 }
 
-/* Hidden by default, shown only below 437px */
+/* Base state for show-logo-xs to ensure it's hidden on larger screens */
 .show-logo-xs {
   display: none;
 }
