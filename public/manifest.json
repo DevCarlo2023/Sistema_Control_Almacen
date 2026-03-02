@@ -1,0 +1,29 @@
+{
+    "name": "PROMET Control de Almacén",
+    "short_name": "PROMET",
+    "description": "Sistema Industrial de Control de Inventarios y Equipos",
+    "start_url": "/",
+    "display": "standalone",
+    "background_color": "#020617",
+    "theme_color": "#020617",
+    "orientation": "portrait",
+    "icons": [
+        {
+            "src": "/logo-promet.png",
+            "sizes": "192x192",
+            "type": "image/png",
+            "purpose": "any maskable"
+        },
+        {
+            "src": "/logo-promet.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "any maskable"
+        }
+    ],
+    "categories": [
+        "business",
+        "productivity",
+        "industrial"
+    ]
+}
