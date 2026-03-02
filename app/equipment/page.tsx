@@ -215,7 +215,7 @@ export default function EquipmentPage() {
                 <div className="max-w-[1600px] mx-auto px-4 sm:px-6 py-3 flex items-center justify-between">
                     <div className="flex items-center gap-3 sm:gap-4">
                         {/* Desktop & Tablet Header (Logo + Title) */}
-                        <div className="flex items-center gap-3 hide-logo-xs">
+                        <div className="flex items-center gap-3 max-[480px]:hidden">
                             <div className="flex items-center p-1.5 bg-white/5 rounded-xl border border-white/10 shadow-lg">
                                 <img src="/logo-promet.png" alt="PROMET Logo" className="h-8 sm:h-10 w-auto object-contain" />
                             </div>
@@ -228,7 +228,7 @@ export default function EquipmentPage() {
                         </div>
 
                         {/* Mobile Header (Title Only - Order: EQUIPOS PROMET) */}
-                        <div className="flex-col show-logo-xs">
+                        <div className="flex-col hidden max-[480px]:flex">
                             <h1 className="text-sm font-black uppercase tracking-tight text-foreground">EQUIPOS <span className="text-primary text-xs">PROMET</span></h1>
                         </div>
                     </div>
