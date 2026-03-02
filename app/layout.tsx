@@ -14,13 +14,19 @@ export const metadata: Metadata = {
   description: 'Sistema Industrial de Gestión de Inventarios y Equipos',
   generator: 'v0.app',
   manifest: '/manifest.json',
-  themeColor: '#020617',
   appleWebApp: {
     capable: true,
     statusBarStyle: 'black-translucent',
     title: 'PROMET',
   },
-  viewport: 'width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no',
+}
+
+export const viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+  themeColor: '#020617',
 }
 
 export default function RootLayout({
