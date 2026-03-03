@@ -11,13 +11,13 @@ const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
   title: 'PROMET - Control de Almacén',
-  description: 'Sistema Industrial de Gestión de Inventarios y Equipos',
+  description: 'CARLO TECH V2.0 - Gestión de Inventarios y Equipos',
   generator: 'v0.app',
   manifest: '/manifest.json',
   appleWebApp: {
     capable: true,
     statusBarStyle: 'black-translucent',
-    title: 'PROMET',
+    title: 'CARLO TECH',
   },
 }
 

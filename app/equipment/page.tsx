@@ -112,7 +112,7 @@ function CompactImportBar({ onSuccess }: { onSuccess: () => void }) {
     return (
         <Card className="p-3 glass-card rounded-2xl border-border/20 shadow-lg">
             <div className="flex items-center justify-between mb-3 px-1">
-                <p className="text-[9px] font-black uppercase text-primary tracking-[0.25em]">Gestión de Base de Datos</p>
+                <p className="text-[9px] font-black uppercase text-primary tracking-[0.25em]">BASE DE DATOS CARLO TECH</p>
                 <div className="flex gap-1">
                     <div className="w-1 h-1 rounded-full bg-primary/40" />
                     <div className="w-1 h-1 rounded-full bg-primary/20" />
@@ -210,7 +210,7 @@ function EquipmentPageContent() {
                                 <h1 className="text-lg sm:text-xl font-extrabold tracking-tight leading-none uppercase">
                                     CONTROL <span className="text-primary">EQUIPOS</span>
                                 </h1>
-                                <span className="text-[8px] sm:text-[9px] uppercase font-black tracking-[0.2em] sm:tracking-[0.3em] text-muted-foreground opacity-60">Industrial Tech v2.0</span>
+                                <span className="text-[8px] sm:text-[9px] uppercase font-black tracking-[0.2em] sm:tracking-[0.3em] text-muted-foreground opacity-60">CARLO TECH V2.0</span>
                             </div>
                         </div>
 

@@ -106,7 +106,7 @@ export default function InventoryPage() {
               <h1 className="text-lg sm:text-xl font-extrabold tracking-tight leading-none uppercase">
                 CONTROL <span className="text-primary">ALMACÉN</span>
               </h1>
-              <span className="text-[8px] sm:text-[9px] uppercase font-black tracking-[0.2em] sm:tracking-[0.3em] text-muted-foreground opacity-60">Industrial Tech v2.0</span>
+              <span className="text-[8px] sm:text-[9px] uppercase font-black tracking-[0.2em] sm:tracking-[0.3em] text-muted-foreground opacity-60">CARLO TECH V2.0</span>
             </div>
             {/* Mobile-only title (Order: ALMACÉN PROMET) */}
             <div className="flex-col flex sm:hidden">
@@ -247,7 +247,7 @@ export default function InventoryPage() {
         <div className="flex items-center gap-4 opacity-50">
           <div className="w-1.5 h-1.5 rounded-full bg-primary" />
           <p className="text-[10px] font-black uppercase tracking-[0.5em] text-muted-foreground">
-            Industrial Logic System
+            BASE DE DATOS CARLO TECH
           </p>
           <div className="w-1.5 h-1.5 rounded-full bg-primary" />
         </div>

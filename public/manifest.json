@@ -1,6 +1,7 @@
+```json
 {
-    "name": "PROMET Control de Almacén",
-    "short_name": "PROMET",
+    "name": "CARLO TECH - Control Almacén",
+    "short_name": "CARLO TECH",
     "description": "Sistema Industrial de Control de Inventarios y Equipos",
     "start_url": "/",
     "display": "standalone",

@@ -7,7 +7,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import Link from 'next/link';
-import { LoadingScreen } from '@/components/ui/loading-screen';
 
 export default function SignupPage() {
   const [email, setEmail] = useState('');
@@ -50,8 +49,6 @@ export default function SignupPage() {
       setTimeout(() => setLoading(false), 800);
     }
   };
-
-  if (loading) return <LoadingScreen />;
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
@@ -112,7 +109,12 @@ export default function SignupPage() {
                 </div>
               )}
               <Button type="submit" className="w-full" disabled={loading}>
-                {loading ? 'Registrando...' : 'Registrarse'}
+                {loading ? (
+                  <div className="flex items-center gap-2">
+                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    <span>Registrando...</span>
+                  </div>
+                ) : 'Registrarse'}
               </Button>
             </form>
           )}

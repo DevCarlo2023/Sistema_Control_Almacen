@@ -65,7 +65,7 @@ export default function LoginPage() {
               Control <span className="text-primary">Almacén</span>
             </CardTitle>
             <CardDescription className="text-[10px] uppercase font-bold tracking-[0.4em] text-muted-foreground opacity-70">
-              Industrial Logic System v2.0
+              CARLO TECH V2.0
             </CardDescription>
           </div>
         </CardHeader>
@@ -140,7 +140,7 @@ export default function LoginPage() {
       {/* Footer Branding */}
       <div className="absolute bottom-6 left-0 w-full text-center pointer-events-none opacity-40">
         <p className="text-[9px] font-black uppercase tracking-[0.6em] text-muted-foreground">
-          Industrial Grade Security • 2026 Logic Core
+          CARLO TECH V2.0 • Security System
         </p>
       </div>
     </div>
