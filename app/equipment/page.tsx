@@ -112,7 +112,7 @@ function CompactImportBar({ onSuccess }: { onSuccess: () => void }) {
     return (
         <Card className="p-3 glass-card rounded-2xl border-border/20 shadow-lg">
             <div className="flex items-center justify-between mb-3 px-1">
-                <p className="text-[9px] font-black uppercase text-primary tracking-[0.2em]">Gestión de Base de Datos</p>
+                <p className="text-[9px] font-black uppercase text-primary tracking-[0.25em]">Gestión de Base de Datos</p>
                 <div className="flex gap-1">
                     <div className="w-1 h-1 rounded-full bg-primary/40" />
                     <div className="w-1 h-1 rounded-full bg-primary/20" />
