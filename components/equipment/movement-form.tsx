@@ -12,9 +12,10 @@ import { ArrowDownCircle, ArrowUpCircle, Loader2, AlertCircle } from 'lucide-rea
 
 interface MovementFormProps {
     onSuccess: () => void;
+    activeTab?: string;
 }
 
-export function EquipmentMovementForm({ onSuccess }: MovementFormProps) {
+export function EquipmentMovementForm({ onSuccess, activeTab = 'history' }: MovementFormProps) {
     const [movementType, setMovementType] = useState<'ingreso' | 'egreso'>('ingreso');
     const [selectedEquipment, setSelectedEquipment] = useState<Equipment | null>(null);
     const [selectedWorker, setSelectedWorker] = useState<Worker | null>(null);
@@ -116,9 +117,11 @@ export function EquipmentMovementForm({ onSuccess }: MovementFormProps) {
                 </button>
             </div>
 
-            {/* Equipment search */}
+            {/* Dynamic Search based on Tab */}
             <div className="space-y-1 md:space-y-1.5">
-                <label className="text-[9px] md:text-[10px] uppercase font-black text-primary tracking-widest ml-1">Equipo</label>
+                <label className="text-[9px] md:text-[10px] uppercase font-black text-primary tracking-widest ml-1">
+                    {activeTab === 'workers' ? 'Trabajador' : 'Equipo'}
+                </label>
                 {selectedEquipment ? (
                     <div className={`flex items-center justify-between px-3 md:px-4 py-2 md:py-2.5 rounded-xl border-2 ${locationConflict ? 'border-amber-400 bg-amber-50 dark:bg-amber-950/20' : 'border-primary/30 bg-primary/5'}`}>
                         <div className="min-w-0">
@@ -136,6 +139,8 @@ export function EquipmentMovementForm({ onSuccess }: MovementFormProps) {
                         </div>
                         <button type="button" onClick={() => setSelectedEquipment(null)} className="ml-2 p-1 text-muted-foreground hover:text-red-500 transition-colors">✕</button>
                     </div>
+                ) : activeTab === 'workers' ? (
+                    <WorkerSelector onSelect={setSelectedWorker} selected={selectedWorker} onClear={() => setSelectedWorker(null)} />
                 ) : (
                     <EquipmentSearch onSelect={setSelectedEquipment} selected={selectedEquipment} />
                 )}
@@ -182,6 +187,11 @@ export function EquipmentMovementForm({ onSuccess }: MovementFormProps) {
                     <div className="flex items-center justify-center h-10 md:h-11 px-4 rounded-xl border-2 border-green-300 dark:border-green-900/50 bg-green-50 dark:bg-green-950/10 gap-2">
                         <span className="text-xs md:text-sm font-black uppercase text-green-700 dark:text-green-400">🏭 ALMACÉN</span>
                         <span className="text-[9px] text-green-600 dark:text-green-500 font-bold ml-1">(automático)</span>
+                    </div>
+                ) : activeTab === 'workers' ? (
+                    <div className="flex items-center justify-center h-10 md:h-11 px-4 rounded-xl border-2 border-primary/30 bg-primary/5 gap-2">
+                        <span className="text-xs md:text-sm font-black uppercase text-primary">👷 PERSONAL</span>
+                        <span className="text-[9px] text-primary/60 font-bold ml-1">(mismo que arriba)</span>
                     </div>
                 ) : (
                     <WorkerSelector onSelect={setSelectedWorker} selected={selectedWorker} onClear={() => setSelectedWorker(null)} />

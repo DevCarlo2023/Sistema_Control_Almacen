@@ -5,6 +5,7 @@ import { createPortal } from 'react-dom';
 import { supabase } from '@/lib/supabase';
 import { type Material } from '@/lib/types';
 import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
 
 interface MaterialSearchProps {
   onSelectMaterial: (material: Material) => void;
@@ -148,22 +149,37 @@ export function MaterialSearch({ onSelectMaterial, selectedMaterial }: MaterialS
 
   return (
     <div className="relative" ref={inputWrapperRef}>
-      <div className="relative flex items-center">
-        <Input
-          type="text"
-          placeholder="Escribe el código o el nombre..."
-          className="h-12 bg-white dark:bg-slate-900 border-border rounded-xl font-bold pr-10 shadow-sm"
-          value={search}
-          onChange={handleChange}
-          onFocus={handleFocus}
-        />
-        {loading && (
-          <div className="absolute right-3 top-1/2 -translate-y-1/2">
-            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
-          </div>
-        )}
+      <div className="flex gap-2">
+        <div className="relative flex-1">
+          <Input
+            type="text"
+            placeholder="Escribe el código o el nombre..."
+            className="h-12 bg-white dark:bg-slate-900 border-border rounded-xl font-bold pr-10 shadow-sm"
+            value={search}
+            onChange={handleChange}
+            onFocus={handleFocus}
+          />
+          {search && (
+            <button
+              onClick={() => { setSearch(''); setResults([]); setShowResults(false); }}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground p-1 transition-colors"
+            >
+              ✕
+            </button>
+          )}
+        </div>
+        <Button
+          onClick={() => searchMaterials(search)}
+          className="h-12 px-6 rounded-xl font-black uppercase text-[10px] tracking-widest bg-primary shadow-lg hover:scale-[1.02] active:scale-[0.98] transition-all"
+        >
+          Buscar
+        </Button>
       </div>
-
+      {loading && (
+        <div className="absolute right-16 top-1/2 -translate-y-1/2">
+          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
+        </div>
+      )}
       {typeof document !== 'undefined' && dropdown && createPortal(dropdown, document.body)}
     </div>
   );

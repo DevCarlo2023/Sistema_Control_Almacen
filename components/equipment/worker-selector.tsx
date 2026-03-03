@@ -5,6 +5,7 @@ import { createPortal } from 'react-dom';
 import { supabase } from '@/lib/supabase';
 import { type Worker } from '@/lib/types';
 import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
 
 interface WorkerSelectorProps {
     onSelect: (worker: Worker) => void;
@@ -102,15 +103,33 @@ export function WorkerSelector({ onSelect, selected, onClear }: WorkerSelectorPr
 
     return (
         <div className="relative" ref={wrapperRef}>
-            <Input
-                type="text"
-                placeholder="Buscar por nombre, DNI o N° trabajador..."
-                className="h-12 bg-white border-border rounded-xl font-bold shadow-sm"
-                value={search}
-                onChange={e => { setSearch(e.target.value); updatePos(); }}
-                onFocus={() => { updatePos(); if (search.length > 0) setShowResults(true); }}
-            />
-            {loading && <div className="absolute right-3 top-1/2 -translate-y-1/2"><div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary" /></div>}
+            <div className="flex gap-2">
+                <div className="relative flex-1">
+                    <Input
+                        type="text"
+                        placeholder="Buscar por nombre, DNI o N° trabajador..."
+                        className="h-12 bg-white border-border rounded-xl font-bold shadow-sm pr-10"
+                        value={search}
+                        onChange={e => { setSearch(e.target.value); updatePos(); }}
+                        onFocus={() => { updatePos(); if (search.length > 0) setShowResults(true); }}
+                    />
+                    {search && (
+                        <button
+                            onClick={() => { setSearch(''); setResults([]); setShowResults(false); }}
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground p-1 transition-colors"
+                        >
+                            ✕
+                        </button>
+                    )}
+                </div>
+                <Button
+                    onClick={() => searchWorkers(search)}
+                    className="h-12 px-6 rounded-xl font-black uppercase text-[10px] tracking-widest bg-primary shadow-lg hover:scale-[1.02] active:scale-[0.98] transition-all"
+                >
+                    Buscar
+                </Button>
+            </div>
+            {loading && <div className="absolute right-16 top-1/2 -translate-y-1/2"><div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary" /></div>}
             {typeof document !== 'undefined' && dropdown && createPortal(dropdown, document.body)}
         </div>
     );

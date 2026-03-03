@@ -12,6 +12,7 @@ import { EquipmentMovementHistory } from '@/components/equipment/movement-histor
 import { EquipmentTable } from '@/components/equipment/equipment-table';
 import { WorkerTable } from '@/components/equipment/worker-table';
 import { toast } from 'sonner';
+import { useSearchParams } from 'next/navigation';
 import { FileDown, Package, Users, Loader2, RotateCcw } from 'lucide-react';
 import { formatText } from '@/lib/utils';
 import { ImportEquipment } from '@/components/equipment/import-equipment';
@@ -168,6 +169,8 @@ export default function EquipmentPage() {
     const router = useRouter();
     const [user, setUser] = useState<any>(null);
     const [refreshTrigger, setRefreshTrigger] = useState(0);
+    const searchParams = useSearchParams();
+    const activeTab = searchParams.get('tab') || 'history';
 
     useEffect(() => {
         const checkAuth = async () => {
@@ -176,26 +179,15 @@ export default function EquipmentPage() {
             const { data: authorized } = await supabase.from('authorized_users').select('email').eq('email', session.user.email).single();
             if (!authorized) { await supabase.auth.signOut(); router.push('/login?error=Unauthorized'); return; }
             setUser(session.user);
-
-            // Check for initial tab in URL
-            const urlParams = new URLSearchParams(window.location.search);
-            const tab = urlParams.get('tab');
-            if (tab === 'workers') {
-                setActiveTab('workers');
-            } else if (tab === 'equipment') {
-                setActiveTab('equipment');
-            }
         };
         checkAuth();
-
-        const setActiveTab = (val: string) => {
-            const tabsElement = document.querySelector('[role="tablist"]');
-            if (tabsElement) {
-                const trigger = tabsElement.querySelector(`[value="${val}"]`) as HTMLElement;
-                if (trigger) trigger.click();
-            }
-        };
     }, [router]);
+
+    const onTabChange = (value: string) => {
+        const params = new URLSearchParams(searchParams.toString());
+        params.set('tab', value);
+        router.push(`/equipment?${params.toString()}`);
+    };
 
     const handleLogout = async () => { await supabase.auth.signOut(); router.push('/login'); };
     const refresh = () => setRefreshTrigger(p => p + 1);
@@ -258,7 +250,7 @@ export default function EquipmentPage() {
                             <h2 className="text-xs font-black uppercase text-primary tracking-[0.2em] mb-4 flex items-center gap-2">
                                 <span>⚡</span> Registrar Movimiento
                             </h2>
-                            <EquipmentMovementForm onSuccess={refresh} />
+                            <EquipmentMovementForm onSuccess={refresh} activeTab={activeTab} />
                         </Card>
 
                         {/* Import sections - Collapsible or Grid on small tablet */}
@@ -277,7 +269,7 @@ export default function EquipmentPage() {
 
                     {/* Main area */}
                     <div className="lg:col-span-9 space-y-6 sm:space-y-8">
-                        <Tabs defaultValue="history" className="w-full">
+                        <Tabs value={activeTab} onValueChange={onTabChange} className="w-full">
                             <div className="overflow-x-auto compact-scrollbar pb-2 -mx-4 px-4 sm:mx-0 sm:px-0">
                                 <TabsList className="inline-flex w-full sm:w-fit bg-muted/30 p-1 rounded-xl glass border border-border/50 print:hidden min-w-max">
                                     <TabsTrigger value="history" className="flex-1 sm:flex-none rounded-lg font-bold px-4 sm:px-6 py-2.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-lg transition-all text-xs sm:text-sm">
