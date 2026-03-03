@@ -13,18 +13,6 @@ const navItems = [
         path: '/equipment',
         matcher: (p: string, s: URLSearchParams) => p === '/equipment' && !s.get('tab')
     },
-    {
-        label: 'Personal',
-        icon: Users,
-        path: '/equipment?tab=workers',
-        matcher: (p: string, s: URLSearchParams) => p === '/equipment' && s.get('tab') === 'workers'
-    },
-    {
-        label: 'Historial',
-        icon: History,
-        path: '/inventory?tab=history',
-        matcher: (p: string, s: URLSearchParams) => s.get('tab') === 'history'
-    },
 ];
 
 export function MobileNav() {

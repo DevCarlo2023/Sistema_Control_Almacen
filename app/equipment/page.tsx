@@ -120,45 +120,47 @@ function CompactImportBar({ onSuccess }: { onSuccess: () => void }) {
             </div>
             <input type="file" accept=".xlsx,.xls" className="hidden" ref={equipFileRef} onChange={e => e.target.files?.[0] && importFile(e.target.files[0], 'equipment')} />
             <input type="file" accept=".xlsx,.xls" className="hidden" ref={workerFileRef} onChange={e => e.target.files?.[0] && importFile(e.target.files[0], 'workers')} />
-            <div className="flex items-center gap-2.5 flex-wrap">
-                {/* Download equip template */}
-                <button className={iconBtn} onClick={downloadEquipTemplate}>
-                    <FileDown className="w-4 h-4 text-blue-500 shrink-0" />
-                    <span className={tooltip}>Plantilla Equipos</span>
-                </button>
-                {/* Import equip */}
-                <button className={iconBtn} onClick={() => equipFileRef.current?.click()} disabled={loadingEq}>
-                    {loadingEq ? <Loader2 className="w-4 h-4 animate-spin text-blue-500" /> : <Package className="w-4 h-4 text-blue-500 shrink-0" />}
-                    <span className={tooltip}>Importar Equipos</span>
-                </button>
-
-                <div className="w-px h-6 bg-border/50 mx-0.5" />
-
-                {/* Download workers template */}
-                <button className={iconBtn} onClick={downloadWorkerTemplate}>
-                    <FileDown className="w-4 h-4 text-purple-500 shrink-0" />
-                    <span className={tooltip}>Plantilla Personal</span>
-                </button>
-                {/* Import workers */}
-                <button className={iconBtn} onClick={() => workerFileRef.current?.click()} disabled={loadingWk}>
-                    {loadingWk ? <Loader2 className="w-4 h-4 animate-spin text-purple-500" /> : <Users className="w-4 h-4 text-purple-500 shrink-0" />}
-                    <span className={tooltip}>Importar Personal</span>
-                </button>
-
-                <div className="flex-1" />
-
-                {/* Revert */}
-                {showConfirm ? (
-                    <div className="flex items-center gap-1.5 animate-in fade-in zoom-in-95">
-                        <button onClick={handleRevert} className="h-9 px-3 text-[9px] font-black uppercase bg-red-600 text-white rounded-xl hover:bg-red-700 shadow-lg shadow-red-600/20 transition-all">Confirmar</button>
-                        <button onClick={() => setShowConfirm(false)} className="h-9 px-3 text-[9px] font-black uppercase bg-muted text-muted-foreground rounded-xl hover:bg-muted/80 transition-all">No</button>
-                    </div>
-                ) : (
-                    <button className={`${iconBtn} hover:bg-red-50 dark:hover:bg-red-950/20 hover:border-red-300 dark:hover:border-red-900/50`} onClick={() => setShowConfirm(true)} disabled={reverting}>
-                        {reverting ? <Loader2 className="w-4 h-4 animate-spin text-red-500" /> : <RotateCcw className="w-4 h-4 text-red-400 shrink-0" />}
-                        <span className={`${tooltip} bg-red-700`}>Revertir Carga</span>
+            <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+                {/* Equipment Group */}
+                <div className="flex items-center gap-1.5 p-1 bg-blue-500/5 rounded-xl border border-blue-500/10">
+                    <button className={iconBtn} onClick={downloadEquipTemplate}>
+                        <FileDown className="w-4 h-4 text-blue-500 shrink-0" />
+                        <span className={tooltip}>Plantilla</span>
                     </button>
-                )}
+                    <button className={iconBtn} onClick={() => equipFileRef.current?.click()} disabled={loadingEq}>
+                        {loadingEq ? <Loader2 className="w-4 h-4 animate-spin text-blue-500" /> : <Package className="w-4 h-4 text-blue-500 shrink-0" />}
+                        <span className={tooltip}>Importar</span>
+                    </button>
+                </div>
+
+                {/* Worker Group */}
+                <div className="flex items-center gap-1.5 p-1 bg-purple-500/5 rounded-xl border border-purple-500/10">
+                    <button className={iconBtn} onClick={downloadWorkerTemplate}>
+                        <FileDown className="w-4 h-4 text-purple-500 shrink-0" />
+                        <span className={tooltip}>Plantilla</span>
+                    </button>
+                    <button className={iconBtn} onClick={() => workerFileRef.current?.click()} disabled={loadingWk}>
+                        {loadingWk ? <Loader2 className="w-4 h-4 animate-spin text-purple-500" /> : <Users className="w-4 h-4 text-purple-500 shrink-0" />}
+                        <span className={tooltip}>Importar</span>
+                    </button>
+                </div>
+
+                <div className="hidden sm:block flex-1" />
+
+                {/* Revert Group */}
+                <div className="flex-none ml-auto">
+                    {showConfirm ? (
+                        <div className="flex items-center gap-1.5 animate-in fade-in zoom-in-95 bg-red-500/5 p-1 rounded-xl border border-red-500/10">
+                            <button onClick={handleRevert} className="h-9 px-3 text-[9px] font-black uppercase bg-red-600 text-white rounded-lg hover:bg-red-700 shadow-lg shadow-red-600/20 transition-all">SÍ</button>
+                            <button onClick={() => setShowConfirm(false)} className="h-9 px-3 text-[9px] font-black uppercase bg-muted text-muted-foreground rounded-lg hover:bg-muted/80 transition-all">NO</button>
+                        </div>
+                    ) : (
+                        <button className={`${iconBtn} hover:bg-red-50 dark:hover:bg-red-950/20 hover:border-red-300 dark:hover:border-red-900/50`} onClick={() => setShowConfirm(true)} disabled={reverting}>
+                            {reverting ? <Loader2 className="w-4 h-4 animate-spin text-red-500" /> : <RotateCcw className="w-4 h-4 text-red-400 shrink-0" />}
+                            <span className={`${tooltip} bg-red-700`}>Eliminar</span>
+                        </button>
+                    )}
+                </div>
             </div>
         </Card>
     );
