@@ -19,7 +19,12 @@ const navItems = [
         path: '/equipment?tab=workers',
         matcher: (p: string, s: URLSearchParams) => p === '/equipment' && s.get('tab') === 'workers'
     },
-    { label: 'Historial', icon: History, path: '/history' },
+    {
+        label: 'Historial',
+        icon: History,
+        path: '/inventory?tab=history',
+        matcher: (p: string, s: URLSearchParams) => s.get('tab') === 'history'
+    },
 ];
 
 export function MobileNav() {
@@ -35,6 +40,14 @@ export function MobileNav() {
     };
 
     const navigate = (path: string) => {
+        if (path === '/inventory?tab=history') {
+            if (pathname === '/equipment') {
+                router.push('/equipment?tab=history');
+            } else {
+                router.push('/inventory?tab=history');
+            }
+            return;
+        }
         router.push(path);
     };
 
@@ -45,7 +58,7 @@ export function MobileNav() {
                     const Icon = item.icon;
                     const isActive = item.matcher
                         ? item.matcher(pathname, searchParams)
-                        : pathname === item.path || (item.path === '/history' && pathname.includes('history'));
+                        : pathname === item.path;
 
                     return (
                         <button
