@@ -23,6 +23,7 @@ export function ImportEquipment({ onSuccess }: Props) {
             { nombre: 'Amoladora Angular 7" DEWALT DWE402', numero_serie: 'AM-001', marca: 'DeWalt', modelo: 'DWE402', estado: 'operativo', categoría: 'PODER', ubicacion: 'ALMACÉN PRINCIPAL', precio_unitario: 350 },
             { nombre: 'Multímetro Digital Fluke 179', numero_serie: 'INST-005', marca: 'Fluke', modelo: '179', estado: 'operativo', categoría: 'INSTRUMENTACIÓN', ubicacion: 'ALMACÉN PRINCIPAL', precio_unitario: 850 },
             { nombre: 'Laptop HP ProBook 450 G8', numero_serie: 'COMP-010', marca: 'HP', modelo: 'ProBook 450', estado: 'operativo', categoría: 'CÓMPUTO', ubicacion: 'ALMACÉN PRINCIPAL', precio_unitario: 1200 },
+            { nombre: 'Tecle Eléctrico Yale 1T', numero_serie: 'IZA-001', marca: 'Yale', modelo: 'CBB-010', estado: 'operativo', categoría: 'IZAJE', ubicacion: 'ALMACÉN PRINCIPAL', precio_unitario: 2800 },
         ];
         const ws = XLSX.utils.json_to_sheet(template);
         const wb = XLSX.utils.book_new();
@@ -59,9 +60,10 @@ export function ImportEquipment({ onSuccess }: Props) {
 
                     // Map categories: normalize and match keys
                     const catRaw = get('categoría').toLowerCase();
-                    let category: 'poder' | 'computo' | 'instrumentacion' = 'poder';
+                    let category: 'poder' | 'computo' | 'instrumentacion' | 'izaje' = 'poder';
                     if (catRaw.includes('computo') || catRaw.includes('cómputo')) category = 'computo';
                     else if (catRaw.includes('instrument') || catRaw.includes('instrum')) category = 'instrumentacion';
+                    else if (catRaw.includes('izaje') || catRaw.includes('iza')) category = 'izaje';
 
                     const { error } = await supabase.from('equipment').insert({
                         name,

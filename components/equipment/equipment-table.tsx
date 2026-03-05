@@ -14,7 +14,7 @@ interface Props { refreshTrigger: number; }
 
 const EMPTY: Partial<Equipment> = { category: 'poder', status: 'operativo' };
 
-type CategoryFilter = 'all' | 'poder' | 'computo' | 'instrumentacion';
+type CategoryFilter = 'all' | 'poder' | 'computo' | 'instrumentacion' | 'izaje';
 type LocationFilter = 'all' | 'almacen' | 'campo';
 
 // Calibration helpers
@@ -162,6 +162,7 @@ export function EquipmentTable({ refreshTrigger }: Props) {
         poder: equipment.filter(e => e.category === 'poder').length,
         computo: equipment.filter(e => e.category === 'computo').length,
         instrumentacion: equipment.filter(e => e.category === 'instrumentacion').length,
+        izaje: equipment.filter(e => e.category === 'izaje').length,
     };
 
     const locCounts = {
@@ -181,6 +182,7 @@ export function EquipmentTable({ refreshTrigger }: Props) {
         poder: { label: `Poder (${catCounts.poder})`, emoji: '⚡', color: 'yellow' },
         computo: { label: `Cómputo (${catCounts.computo})`, emoji: '💻', color: 'blue' },
         instrumentacion: { label: `Instrumentación (${catCounts.instrumentacion})`, emoji: '📐', color: 'purple' },
+        izaje: { label: `Izaje (${catCounts.izaje})`, emoji: '🏗️', color: 'orange' },
     };
 
     const showCalibration = categoryFilter === 'instrumentacion' || categoryFilter === 'all';
@@ -215,10 +217,10 @@ export function EquipmentTable({ refreshTrigger }: Props) {
                     <h3 className="font-black text-xs uppercase tracking-[0.2em] text-primary">Equipos Registrados</h3>
                     {/* Category tabs */}
                     <div className="flex flex-wrap items-center gap-1">
-                        {(['all', 'poder', 'computo', 'instrumentacion'] as const).map(f => {
+                        {(['all', 'poder', 'computo', 'instrumentacion', 'izaje'] as const).map(f => {
                             const m = catMeta[f];
                             const isActive = categoryFilter === f;
-                            const activeColor = f === 'poder' ? 'bg-yellow-500 text-white' : f === 'computo' ? 'bg-blue-600 text-white' : f === 'instrumentacion' ? 'bg-purple-600 text-white' : 'bg-primary text-primary-foreground';
+                            const activeColor = f === 'poder' ? 'bg-yellow-500 text-white' : f === 'computo' ? 'bg-blue-600 text-white' : f === 'instrumentacion' ? 'bg-purple-600 text-white' : f === 'izaje' ? 'bg-orange-500 text-white' : 'bg-primary text-primary-foreground';
                             return (
                                 <button key={f} onClick={() => setCategoryFilter(f)}
                                     className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${isActive ? `${activeColor} shadow` : 'bg-muted/50 text-muted-foreground hover:bg-muted'}`}>
@@ -259,8 +261,8 @@ export function EquipmentTable({ refreshTrigger }: Props) {
                                 {/* Category selector */}
                                 <div className="space-y-1.5">
                                     <label className="text-[10px] uppercase font-black text-muted-foreground tracking-widest ml-1">Categoría *</label>
-                                    <div className="grid grid-cols-3 gap-2">
-                                        {([['poder', '⚡', 'Poder'], ['computo', '💻', 'Cómputo'], ['instrumentacion', '📐', 'Instrumentación']] as const).map(([val, emoji, label]) => (
+                                    <div className="grid grid-cols-4 gap-2">
+                                        {([['poder', '⚡', 'Poder'], ['computo', '💻', 'Cómputo'], ['instrumentacion', '📐', 'Instrumentación'], ['izaje', '🏗️', 'Izaje']] as const).map(([val, emoji, label]) => (
                                             <button key={val} type="button"
                                                 onClick={() => setCurrent(p => ({ ...p, category: val, calibration_start: undefined, calibration_end: undefined }))}
                                                 className={`flex flex-col items-center justify-center h-14 rounded-xl border-2 font-black text-[10px] uppercase tracking-widest transition-all ${current.category === val ? 'border-primary bg-primary/10 text-primary' : 'border-border/50 hover:border-primary/40 text-muted-foreground'}`}>

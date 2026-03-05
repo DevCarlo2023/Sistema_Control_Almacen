@@ -53,7 +53,7 @@ export interface Equipment {
   brand?: string;
   model?: string;
   status: 'operativo' | 'en_reparacion' | 'baja';
-  category: 'poder' | 'computo' | 'instrumentacion';
+  category: 'poder' | 'computo' | 'instrumentacion' | 'izaje';
   current_location: 'almacen' | 'campo';
   location?: string;
   unit_price?: number;
