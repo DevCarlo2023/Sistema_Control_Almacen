@@ -215,7 +215,7 @@ export function EquipmentTable({ refreshTrigger }: Props) {
 
             <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-4 px-6 pt-6">
                 <div className="space-y-2">
-                    <h3 className="font-black text-xs uppercase tracking-[0.2em] text-primary">Equipos Registrados</h3>
+                    <h3 className="font-black text-xs uppercase tracking-[0.2em] text-primary">Equipos Registrados (v3.0-IVA)</h3>
                     {/* Category tabs */}
                     <div className="flex flex-wrap items-center gap-1">
                         {(['all', 'poder', 'computo', 'instrumentacion', 'izaje'] as const).map(f => {
