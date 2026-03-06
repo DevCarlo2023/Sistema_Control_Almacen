@@ -388,7 +388,7 @@ export function EquipmentTable({ refreshTrigger }: Props) {
                                 const inField = eq.current_location === 'campo';
                                 const calStatus = eq.category === 'instrumentacion' ? getCalibrationStatus(eq.calibration_end) : null;
                                 const catEmoji = eq.category === 'poder' ? '⚡' : eq.category === 'computo' ? '💻' : eq.category === 'izaje' ? '🏗️' : '📐';
-                                const catLabel = eq.category === 'poder' ? 'Poder' : eq.category === 'computo' ? 'Cómputo' : eq.category === 'izaje' ? 'Izaje' : 'DEBUG-ME';
+                                const catLabel = eq.category === 'poder' ? 'Poder' : eq.category === 'computo' ? 'Cómputo' : eq.category === 'izaje' ? 'Izaje' : 'Instrumento';
                                 const catColor = eq.category === 'poder' ? 'bg-yellow-100 text-yellow-700' : eq.category === 'computo' ? 'bg-blue-100 text-blue-700' : eq.category === 'izaje' ? 'bg-orange-100 text-orange-700' : 'bg-purple-100 text-purple-700';
                                 return (
                                     <tr key={eq.id} className={`border-b border-border/30 hover:bg-primary/5 transition-colors group ${calStatus === 'vencido' ? 'bg-red-50/30' : calStatus === 'por_vencer' ? 'bg-amber-50/30' : ''}`}>
