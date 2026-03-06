@@ -16,6 +16,9 @@ import {
 
 import { MaterialSearch } from '@/components/inventory/material-search';
 
+import { db } from '@/lib/offline-db';
+import { useOfflineSync } from '@/hooks/use-offline-sync';
+
 interface MovementFormProps {
   warehouseId: string;
   selectedMaterial: Material | null;
@@ -29,6 +32,7 @@ export function MovementForm({
   onSelectMaterial,
   onMovementSuccess,
 }: MovementFormProps) {
+  const { performOperation } = useOfflineSync();
   const [movementType, setMovementType] = useState<'entrada' | 'salida'>('entrada');
   const [quantity, setQuantity] = useState('');
   const [notes, setNotes] = useState('');
@@ -70,30 +74,30 @@ export function MovementForm({
 
       const quantityNum = parseFloat(quantity);
 
-      // Create movement record
-      const { error: movementError } = await supabase.from('inventory_movements').insert({
-        warehouse_id: warehouseId,
-        material_id: selectedMaterial.id,
-        movement_type: movementType,
-        quantity: quantityNum,
-        notes: formatText(notes) || null,
-        user_id: user.id,
-      });
+      // Check Inventory (Hybrid approach)
+      let currentQuantity = 0;
+      let inventoryRecord: any = null;
 
-      if (movementError) throw movementError;
-
-      // Update inventory
-      const { data: currentInventory } = await supabase
-        .from('inventory')
-        .select('id, quantity')
-        .eq('warehouse_id', warehouseId)
-        .eq('material_id', selectedMaterial.id)
-        .single();
-
-      const currentQuantity = currentInventory?.quantity || 0;
+      if (navigator.onLine) {
+        const { data } = await supabase
+          .from('inventory')
+          .select('*')
+          .eq('warehouse_id', warehouseId)
+          .eq('material_id', selectedMaterial.id)
+          .single();
+        inventoryRecord = data;
+        currentQuantity = data?.quantity || 0;
+      } else {
+        // Offline check using Dexie
+        const localInv = await db.inventory
+          .where({ warehouse_id: warehouseId, material_id: selectedMaterial.id })
+          .first();
+        inventoryRecord = localInv;
+        currentQuantity = localInv?.quantity || 0;
+      }
 
       if (movementType === 'salida' && currentQuantity < quantityNum) {
-        setError(`Stock insuficiente en este almacén. Disponible: ${currentQuantity}`);
+        setError(`Stock insuficiente. Disponible: ${currentQuantity}`);
         setLoading(false);
         return;
       }
@@ -103,30 +107,34 @@ export function MovementForm({
           ? currentQuantity + quantityNum
           : currentQuantity - quantityNum;
 
-      if (currentInventory) {
-        await supabase
-          .from('inventory')
-          .update({ quantity: newQuantity })
-          .eq('id', currentInventory.id);
-      } else {
-        if (movementType === 'entrada') {
-          await supabase.from('inventory').insert({
-            warehouse_id: warehouseId,
-            material_id: selectedMaterial.id,
-            quantity: quantityNum,
-          });
-        }
-      }
+      // Register Movement
+      const movementData = {
+        warehouse_id: warehouseId,
+        material_id: selectedMaterial.id,
+        movement_type: movementType,
+        quantity: quantityNum,
+        notes: formatText(notes) || null,
+        user_id: user.id,
+      };
+
+      await performOperation('inventory_movements', 'INSERT', movementData);
+
+      // Update Inventory
+      const invData = inventoryRecord
+        ? { ...inventoryRecord, quantity: newQuantity }
+        : { warehouse_id: warehouseId, material_id: selectedMaterial.id, quantity: newQuantity };
+
+      const action = inventoryRecord ? 'UPDATE' : 'INSERT';
+      await performOperation('inventory', action, invData);
 
       setSuccess(true);
       setQuantity('');
       setNotes('');
       onMovementSuccess();
-
       setTimeout(() => setSuccess(false), 3000);
     } catch (err) {
       console.error('Error:', err);
-      setError('Error al procesar el movimiento. Intenta de nuevo.');
+      setError('Error al procesar el movimiento.');
     } finally {
       setLoading(false);
     }

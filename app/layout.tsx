@@ -29,6 +29,8 @@ export const viewport = {
   themeColor: '#020617',
 }
 
+import { OfflineSyncProvider } from '@/components/offline-sync-provider'
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -37,12 +39,14 @@ export default function RootLayout({
   return (
     <html lang="es">
       <body className={`${inter.className} antialiased pb-20 lg:pb-0`}>
-        {children}
-        <Suspense fallback={null}>
-          <MobileNav />
-        </Suspense>
-        <Toaster position="top-right" expand={true} richColors />
-        <Analytics />
+        <OfflineSyncProvider>
+          {children}
+          <Suspense fallback={null}>
+            <MobileNav />
+          </Suspense>
+          <Toaster position="top-right" expand={true} richColors />
+          <Analytics />
+        </OfflineSyncProvider>
       </body>
     </html>
   )

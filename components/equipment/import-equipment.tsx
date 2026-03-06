@@ -58,12 +58,12 @@ export function ImportEquipment({ onSuccess }: Props) {
                     const locName = get('ubicacion').toLowerCase();
                     const warehouse_id = warehouseMap.get(locName) || null;
 
-                    // Map categories: normalize and match keys
+                    // Map categories: normalize and match keys (Izaje takes priority)
                     const catRaw = get('categoría').toLowerCase();
                     let category: 'poder' | 'computo' | 'instrumentacion' | 'izaje' = 'poder';
-                    if (catRaw.includes('computo') || catRaw.includes('cómputo')) category = 'computo';
+                    if (catRaw.includes('izaje') || catRaw.includes('iza')) category = 'izaje';
+                    else if (catRaw.includes('computo') || catRaw.includes('cómputo')) category = 'computo';
                     else if (catRaw.includes('instrument') || catRaw.includes('instrum')) category = 'instrumentacion';
-                    else if (catRaw.includes('izaje') || catRaw.includes('iza')) category = 'izaje';
 
                     const { error } = await supabase.from('equipment').insert({
                         name,
@@ -92,12 +92,18 @@ export function ImportEquipment({ onSuccess }: Props) {
         setReverting(true);
         setShowConfirm(false);
         try {
-            // Delete all equipment with no movements (safe to revert)
+            // Delete all equipment with no movements (safe to revert) - LIMITED TO LAST 10 MINUTES
+            const tenMinutesAgo = new Date(Date.now() - 10 * 60000).toISOString();
             const { data: withMovements } = await supabase.from('equipment_movements').select('equipment_id');
             const usedIds = (withMovements || []).map((m: any) => m.equipment_id);
-            const { error } = usedIds.length > 0
-                ? await supabase.from('equipment').delete().not('id', 'in', `(${usedIds.map(id => `'${id}'`).join(',')})`)
-                : await supabase.from('equipment').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+
+            let q = supabase.from('equipment').delete().gt('created_at', tenMinutesAgo);
+
+            if (usedIds.length > 0) {
+                q = q.not('id', 'in', `(${usedIds.map(id => `'${id}'`).join(',')})`);
+            }
+
+            const { error } = await q;
             if (error) throw error;
             toast.success('Equipos sin movimientos eliminados.');
             onSuccess();

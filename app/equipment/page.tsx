@@ -93,14 +93,21 @@ function CompactImportBar({ onSuccess }: { onSuccess: () => void }) {
     const handleRevert = async () => {
         setReverting(true); setShowConfirm(false);
         try {
+            // Get current time minus 10 minutes
+            const tenMinutesAgo = new Date(Date.now() - 10 * 60000).toISOString();
+
             const { data: used } = await supabase.from('equipment_movements').select('equipment_id');
             const ids = (used || []).map((m: any) => m.equipment_id);
-            const q = ids.length > 0
-                ? supabase.from('equipment').delete().not('id', 'in', `(${ids.map((id: string) => `'${id}'`).join(',')})`)
-                : supabase.from('equipment').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+
+            let q = supabase.from('equipment').delete().gt('created_at', tenMinutesAgo);
+
+            if (ids.length > 0) {
+                q = q.not('id', 'in', `(${ids.map((id: string) => `'${id}'`).join(',')})`);
+            }
+
             const { error } = await q;
             if (error) throw error;
-            toast.success('Equipos sin movimientos eliminados.');
+            toast.success('Carga reciente (últimos 10 min) revertida.');
             onSuccess();
         } catch (err: any) { toast.error(err.message); }
         finally { setReverting(false); }
