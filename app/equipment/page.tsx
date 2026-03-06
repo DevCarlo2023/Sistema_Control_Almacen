@@ -28,7 +28,7 @@ function CompactImportBar({ onSuccess }: { onSuccess: () => void }) {
     const [showConfirm, setShowConfirm] = useState(false);
 
     const downloadEquipTemplate = () => {
-        const data = [{ nombre: 'Amoladora Angular 7" DEWALT DWE402', numero_serie: 'AM-001', marca: 'DeWalt', modelo: 'DWE402', estado: 'operativo', ubicacion: 'ALMACÉN PRINCIPAL', precio_unitario: 350 }];
+        const data = [{ nombre: 'Amoladora Angular 7" DEWALT DWE402', numero_serie: 'AM-001', marca: 'DeWalt', modelo: 'DWE402', estado: 'operativo', categoría: 'PODER', almacen: 'ALMACÉN PRINCIPAL', ubicacion: 'Rack-A1', precio_unitario: 350 }];
         const ws = XLSX.utils.json_to_sheet(data);
         const wb1 = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(wb1, ws, 'Equipos');
@@ -62,16 +62,29 @@ function CompactImportBar({ onSuccess }: { onSuccess: () => void }) {
                     if (type === 'equipment') {
                         const name = formatText(get('nombre'));
                         if (!name) continue;
-                        const locName = get('ubicacion').toLowerCase();
-                        const warehouse_id = warehouseMap.get(locName) || null;
+                        const whName = (get('almacen') || get('ubicación general') || get('ubicacion')).toLowerCase();
+                        const warehouse_id = warehouseMap.get(whName) || null;
+                        const catRaw = get('categoría').toLowerCase();
+                        const nameLow = name.toLowerCase();
+                        let category: 'poder' | 'computo' | 'instrumentacion' | 'izaje' = 'poder';
+                        const isIzaje = catRaw.includes('izaje') || catRaw.includes('iza') ||
+                            nameLow.includes('eslinga') || nameLow.includes('estrobo') ||
+                            nameLow.includes('grillete') || nameLow.includes('tecle') ||
+                            nameLow.includes('polipasto') || nameLow.includes('gancho');
+                        if (isIzaje) category = 'izaje';
+                        else if (catRaw.includes('computo') || catRaw.includes('cómputo')) category = 'computo';
+                        else if (catRaw.includes('instrument') || catRaw.includes('instrum')) category = 'instrumentacion';
+
                         const { error } = await supabase.from('equipment').upsert({
                             name,
                             serial_number: get('numero_serie') || null,
                             brand: formatText(get('marca')) || null,
                             model: formatText(get('modelo')) || null,
                             status: get('estado') || 'operativo',
+                            category,
                             warehouse_id,
                             unit_price: parseFloat(get('precio_unitario')) || 0,
+                            location: get('ubicacion') || get('posicion') || get('ubicación específica') || null,
                             current_location: 'almacen'
                         }, { onConflict: 'serial_number' });
                         if (!error) ok++;

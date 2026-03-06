@@ -108,6 +108,7 @@ export function EquipmentTable({ refreshTrigger }: Props) {
                 category: current.category || 'poder',
                 unit_price: parseFloat(current.unit_price as any) || 0,
                 warehouse_id: current.warehouse_id || null,
+                location: current.location || null,
             };
             if (current.category === 'instrumentacion') {
                 payload.calibration_start = current.calibration_start || null;
@@ -299,7 +300,11 @@ export function EquipmentTable({ refreshTrigger }: Props) {
                                         <Input placeholder="DWE402..." className="h-11 rounded-xl bg-muted/30 font-bold" value={current.model || ''} onChange={e => setCurrent({ ...current, model: e.target.value })} />
                                     </div>
                                     <div className="col-span-2 space-y-1.5">
-                                        <label className="text-[10px] uppercase font-black text-primary tracking-widest ml-1">📦 Ubicación (Almacén) *</label>
+                                        <label className="text-[10px] uppercase font-black text-primary tracking-widest ml-1">📍 Ubicación Específica / Rack (Ej: Estante-A1)</label>
+                                        <Input placeholder="Especifique el rack, gaveta o posición..." className="h-11 rounded-xl bg-muted/30 font-bold" value={current.location || ''} onChange={e => setCurrent({ ...current, location: e.target.value })} />
+                                    </div>
+                                    <div className="col-span-2 space-y-1.5">
+                                        <label className="text-[10px] uppercase font-black text-primary tracking-widest ml-1">📦 Almacén *</label>
                                         <select
                                             required
                                             className="w-full h-11 rounded-xl bg-muted/30 font-bold text-sm px-3 border border-border/50 focus:outline-none focus:ring-2 focus:ring-primary/30"
@@ -382,9 +387,9 @@ export function EquipmentTable({ refreshTrigger }: Props) {
                                 const s = statusStyles[eq.status] || statusStyles.operativo;
                                 const inField = eq.current_location === 'campo';
                                 const calStatus = eq.category === 'instrumentacion' ? getCalibrationStatus(eq.calibration_end) : null;
-                                const catEmoji = eq.category === 'poder' ? '⚡' : eq.category === 'computo' ? '💻' : '📐';
-                                const catLabel = eq.category === 'poder' ? 'Poder' : eq.category === 'computo' ? 'Cómputo' : 'Instrumento';
-                                const catColor = eq.category === 'poder' ? 'bg-yellow-100 text-yellow-700' : eq.category === 'computo' ? 'bg-blue-100 text-blue-700' : 'bg-purple-100 text-purple-700';
+                                const catEmoji = eq.category === 'poder' ? '⚡' : eq.category === 'computo' ? '💻' : eq.category === 'izaje' ? '🏗️' : '📐';
+                                const catLabel = eq.category === 'poder' ? 'Poder' : eq.category === 'computo' ? 'Cómputo' : eq.category === 'izaje' ? 'Izaje' : 'Instrumento';
+                                const catColor = eq.category === 'poder' ? 'bg-yellow-100 text-yellow-700' : eq.category === 'computo' ? 'bg-blue-100 text-blue-700' : eq.category === 'izaje' ? 'bg-orange-100 text-orange-700' : 'bg-purple-100 text-purple-700';
                                 return (
                                     <tr key={eq.id} className={`border-b border-border/30 hover:bg-primary/5 transition-colors group ${calStatus === 'vencido' ? 'bg-red-50/30' : calStatus === 'por_vencer' ? 'bg-amber-50/30' : ''}`}>
                                         <td className="px-4 py-3">
@@ -398,8 +403,9 @@ export function EquipmentTable({ refreshTrigger }: Props) {
                                                     {inField ? '🚧 En Campo' : '🏭 En Almacén'}
                                                 </span>
                                                 {!inField && eq.warehouse?.name && (
-                                                    <span className="text-[9px] font-bold text-muted-foreground ml-1 truncate max-w-[120px]">
+                                                    <span className="text-[9px] font-bold text-muted-foreground ml-1 truncate max-w-[120px] flex items-center gap-1">
                                                         📍 {eq.warehouse.name}
+                                                        {eq.location && <span className="text-primary/70">({eq.location})</span>}
                                                     </span>
                                                 )}
                                             </div>
