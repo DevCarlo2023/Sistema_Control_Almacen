@@ -110,7 +110,6 @@ export function EquipmentTable({ refreshTrigger }: Props) {
                 unit_price: parseFloat(current.unit_price as any) || 0,
                 ownership: current.ownership || 'propio',
                 warehouse_id: current.warehouse_id || null,
-                location: current.location || null,
             };
             if (current.category === 'instrumentacion') {
                 payload.calibration_start = current.calibration_start || null;
@@ -308,10 +307,6 @@ export function EquipmentTable({ refreshTrigger }: Props) {
                                         <Input placeholder="DWE402..." className="h-11 rounded-xl bg-muted/30 font-bold" value={current.model || ''} onChange={e => setCurrent({ ...current, model: e.target.value })} />
                                     </div>
                                     <div className="col-span-2 space-y-1.5">
-                                        <label className="text-[10px] uppercase font-black text-primary tracking-widest ml-1">📍 Ubicación Específica / Rack (Ej: Estante-A1)</label>
-                                        <Input placeholder="Especifique el rack, gaveta o posición..." className="h-11 rounded-xl bg-muted/30 font-bold" value={current.location || ''} onChange={e => setCurrent({ ...current, location: e.target.value })} />
-                                    </div>
-                                    <div className="col-span-2 space-y-1.5">
                                         <label className="text-[10px] uppercase font-black text-primary tracking-widest ml-1">📦 Almacén *</label>
                                         <select
                                             required
@@ -433,7 +428,6 @@ export function EquipmentTable({ refreshTrigger }: Props) {
                                                     return (
                                                         <span className={`text-[9px] font-black px-1.5 py-0.5 rounded uppercase tracking-tighter ml-1 truncate max-w-[120px] flex items-center gap-1 border ${whColor.bg} ${whColor.text} ${whColor.border}`}>
                                                             📍 {eq.warehouse.name}
-                                                            {eq.location && <span className="opacity-70">({eq.location})</span>}
                                                         </span>
                                                     );
                                                 })()}

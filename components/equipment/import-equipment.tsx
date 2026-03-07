@@ -20,10 +20,10 @@ export function ImportEquipment({ onSuccess }: Props) {
 
     const downloadTemplate = () => {
         const template = [
-            { nombre: 'Amoladora Angular 7" DEWALT DWE402', numero_serie: 'AM-001', marca: 'DeWalt', modelo: 'DWE402', estado: 'operativo', categoría: 'PODER', almacen: 'ALMACÉN PRINCIPAL', ubicacion: 'Rack-A1', precio_unitario: 350 },
-            { nombre: 'Multímetro Digital Fluke 179', numero_serie: 'INST-005', marca: 'Fluke', modelo: '179', estado: 'operativo', categoría: 'INSTRUMENTACIÓN', almacen: 'ALMACÉN PRINCIPAL', ubicacion: 'Gaveta-02', precio_unitario: 850 },
-            { nombre: 'Tecle Eléctrico Yale 1T', numero_serie: 'IZA-001', marca: 'Yale', modelo: 'CBB-010', estado: 'operativo', categoría: 'IZAJE', almacen: 'ALMACÉN PRINCIPAL', ubicacion: 'Estante-Izaje', precio_unitario: 2800 },
-            { nombre: 'Eslinga de Carga 3 Ton 6M', numero_serie: 'ESL-001', marca: 'SlingMax', modelo: 'S3-6M', estado: 'operativo', categoría: 'IZAJE', almacen: 'ALMACÉN PRINCIPAL', ubicacion: 'Rack-Ganchos', precio_unitario: 120 },
+            { nombre: 'Amoladora Angular 7" DEWALT DWE402', numero_serie: 'AM-001', marca: 'DeWalt', modelo: 'DWE402', estado: 'operativo', categoría: 'PODER', almacen: 'ALMACÉN PRINCIPAL', precio_unitario: 350 },
+            { nombre: 'Multímetro Digital Fluke 179', numero_serie: 'INST-005', marca: 'Fluke', modelo: '179', estado: 'operativo', categoría: 'INSTRUMENTACIÓN', almacen: 'ALMACÉN PRINCIPAL', precio_unitario: 850 },
+            { nombre: 'Tecle Eléctrico Yale 1T', numero_serie: 'IZA-001', marca: 'Yale', modelo: 'CBB-010', estado: 'operativo', categoría: 'IZAJE', almacen: 'ALMACÉN PRINCIPAL', precio_unitario: 2800 },
+            { nombre: 'Eslinga de Carga 3 Ton 6M', numero_serie: 'ESL-001', marca: 'SlingMax', modelo: 'S3-6M', estado: 'operativo', categoría: 'IZAJE', almacen: 'ALMACÉN PRINCIPAL', precio_unitario: 120 },
         ];
         const ws = XLSX.utils.json_to_sheet(template);
         const wb = XLSX.utils.book_new();
@@ -82,7 +82,6 @@ export function ImportEquipment({ onSuccess }: Props) {
                         category,
                         warehouse_id,
                         unit_price: parseFloat(get('precio_unitario')) || 0,
-                        location: get('ubicacion') || get('posicion') || get('ubicación específica') || null,
                         current_location: 'almacen'
                     });
                     if (error) { fail++; lastError = error.message; } else { ok++; }
