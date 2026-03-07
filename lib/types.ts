@@ -57,6 +57,7 @@ export interface Equipment {
   current_location: 'almacen' | 'campo';
   location?: string;
   unit_price?: number;
+  ownership?: 'propio' | 'alquilado' | 'prestado';
   warehouse_id?: string;
   warehouse?: Warehouse;
   calibration_start?: string;

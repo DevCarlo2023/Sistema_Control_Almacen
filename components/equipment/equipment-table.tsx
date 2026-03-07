@@ -108,6 +108,7 @@ export function EquipmentTable({ refreshTrigger }: Props) {
                 status: current.status || 'operativo',
                 category: current.category || 'poder',
                 unit_price: parseFloat(current.unit_price as any) || 0,
+                ownership: current.ownership || 'propio',
                 warehouse_id: current.warehouse_id || null,
                 location: current.location || null,
             };
@@ -177,6 +178,12 @@ export function EquipmentTable({ refreshTrigger }: Props) {
         operativo: { bg: 'bg-green-500/10', text: 'text-green-600', label: 'Operativo' },
         en_reparacion: { bg: 'bg-yellow-500/10', text: 'text-yellow-600', label: 'En Reparación' },
         baja: { bg: 'bg-red-500/10', text: 'text-red-600', label: 'Baja' },
+    };
+
+    const ownershipStyles: Record<string, { bg: string; text: string; label: string; emoji: string }> = {
+        propio: { bg: 'bg-indigo-500/10', text: 'text-indigo-600', label: 'Propio', emoji: '✅' },
+        alquilado: { bg: 'bg-amber-500/10', text: 'text-amber-600', label: 'Alquilado', emoji: '🏢' },
+        prestado: { bg: 'bg-purple-500/10', text: 'text-purple-600', label: 'Prestado', emoji: '🤝' },
     };
 
     const catMeta: Record<CategoryFilter, { label: string; emoji: string; color: string }> = {
@@ -319,6 +326,23 @@ export function EquipmentTable({ refreshTrigger }: Props) {
                                         </select>
                                     </div>
                                     <div className="col-span-2 space-y-1.5">
+                                        <label className="text-[10px] uppercase font-black text-muted-foreground tracking-widest ml-1">Origen / Propiedad</label>
+                                        <div className="grid grid-cols-3 gap-2">
+                                            {(['propio', 'alquilado', 'prestado'] as const).map(opt => {
+                                                const s = ownershipStyles[opt];
+                                                const isActive = current.ownership === opt || (!current.ownership && opt === 'propio');
+                                                return (
+                                                    <button key={opt} type="button"
+                                                        onClick={() => setCurrent({ ...current, ownership: opt })}
+                                                        className={`flex flex-col items-center justify-center py-2 rounded-xl border-2 font-black text-[9px] uppercase tracking-tighter transition-all ${isActive ? 'border-primary bg-primary/10 text-primary' : 'border-border/50 text-muted-foreground'}`}>
+                                                        <span className="text-sm mb-0.5">{s.emoji}</span>
+                                                        {s.label}
+                                                    </button>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
+                                    <div className="col-span-2 space-y-1.5">
                                         <label className="text-[10px] uppercase font-black text-muted-foreground tracking-widest ml-1">Precio Unitario (S/.)</label>
                                         <Input type="number" step="0.01" placeholder="0.00" className="h-11 rounded-xl bg-muted/30 font-bold" value={current.unit_price ?? ''} onChange={e => setCurrent({ ...current, unit_price: e.target.value === '' ? undefined : parseFloat(e.target.value) })} />
                                     </div>
@@ -375,6 +399,7 @@ export function EquipmentTable({ refreshTrigger }: Props) {
                                 <th className="px-4 py-3 text-left text-[10px] uppercase font-black tracking-widest text-muted-foreground">Nombre / Detalle</th>
                                 <th className="px-4 py-3 text-left text-[10px] uppercase font-black tracking-widest text-muted-foreground">N° Serie</th>
                                 <th className="px-4 py-3 text-left text-[10px] uppercase font-black tracking-widest text-muted-foreground">Marca / Modelo</th>
+                                <th className="px-4 py-3 text-left text-[10px] uppercase font-black tracking-widest text-muted-foreground">Origen</th>
                                 <th className="px-4 py-3 text-left text-[10px] uppercase font-black tracking-widest text-muted-foreground">Estado</th>
                                 {showCalibration && <th className="px-4 py-3 text-left text-[10px] uppercase font-black tracking-widest text-muted-foreground">Calibración</th>}
                                 <th className="px-4 py-3 text-left text-[10px] uppercase font-black tracking-widest text-muted-foreground">Precio</th>
@@ -419,6 +444,12 @@ export function EquipmentTable({ refreshTrigger }: Props) {
                                         <td className="px-4 py-3 text-sm text-muted-foreground">{[eq.brand, eq.model].filter(Boolean).join(' ') || '—'}</td>
                                         <td className="px-4 py-3">
                                             <span className={`px-2 py-1 rounded-md text-[9px] font-black uppercase ${s.bg} ${s.text}`}>{s.label}</span>
+                                        </td>
+                                        <td className="px-4 py-3">
+                                            {(() => {
+                                                const ow = ownershipStyles[eq.ownership || 'propio'];
+                                                return <span className={`px-2 py-1 rounded-md text-[9px] font-black uppercase ${ow.bg} ${ow.text}`}>{ow.emoji} {ow.label}</span>;
+                                            })()}
                                         </td>
                                         {showCalibration && (
                                             <td className="px-4 py-3">
