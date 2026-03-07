@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Search, Plus, Pencil, Trash2, Loader2, AlertTriangle, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { getWarehouseColor } from '@/lib/warehouse-config';
 import { toast } from 'sonner';
 import { formatText } from '@/lib/utils';
 
@@ -402,12 +403,15 @@ export function EquipmentTable({ refreshTrigger }: Props) {
                                                 <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-md text-[9px] font-black uppercase ${inField ? 'bg-red-500/10 text-red-600 border border-red-500/20' : 'bg-green-500/10 text-green-700 border border-green-500/20'}`}>
                                                     {inField ? '🚧 En Campo' : '🏭 En Almacén'}
                                                 </span>
-                                                {!inField && eq.warehouse?.name && (
-                                                    <span className="text-[9px] font-bold text-muted-foreground ml-1 truncate max-w-[120px] flex items-center gap-1">
-                                                        📍 {eq.warehouse.name}
-                                                        {eq.location && <span className="text-primary/70">({eq.location})</span>}
-                                                    </span>
-                                                )}
+                                                {!inField && eq.warehouse?.name && (() => {
+                                                    const whColor = getWarehouseColor(eq.warehouse.location);
+                                                    return (
+                                                        <span className={`text-[9px] font-black px-1.5 py-0.5 rounded uppercase tracking-tighter ml-1 truncate max-w-[120px] flex items-center gap-1 border ${whColor.bg} ${whColor.text} ${whColor.border}`}>
+                                                            📍 {eq.warehouse.name}
+                                                            {eq.location && <span className="opacity-70">({eq.location})</span>}
+                                                        </span>
+                                                    );
+                                                })()}
                                             </div>
                                         </td>
                                         <td className="px-4 py-3 font-black uppercase text-sm">{eq.name}</td>

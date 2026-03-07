@@ -9,6 +9,7 @@ import { EquipmentSearch } from './equipment-search';
 import { WorkerSelector } from './worker-selector';
 import { toast } from 'sonner';
 import { ArrowDownCircle, ArrowUpCircle, Loader2, AlertCircle } from 'lucide-react';
+import { getWarehouseColor } from '@/lib/warehouse-config';
 
 interface MovementFormProps {
     onSuccess: () => void;
@@ -24,6 +25,9 @@ export function EquipmentMovementForm({ onSuccess, activeTab = 'history' }: Move
     const [warehouses, setWarehouses] = useState<Warehouse[]>([]);
     const [selectedWarehouseId, setSelectedWarehouseId] = useState<string>('');
     const [loading, setLoading] = useState(false);
+
+    const selectedWH = warehouses.find(w => w.id === selectedWarehouseId);
+    const whColor = getWarehouseColor(selectedWH?.location);
 
     useEffect(() => {
         const fetchWarehouses = async () => {
@@ -159,23 +163,27 @@ export function EquipmentMovementForm({ onSuccess, activeTab = 'history' }: Move
                 <label className="text-[9px] md:text-[10px] uppercase font-black text-primary tracking-widest ml-1">
                     {movementType === 'ingreso' ? 'Almacén de Destino' : 'Almacén de Origen'}
                 </label>
-                <select
-                    className="w-full h-10 md:h-11 rounded-xl bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-800 font-bold text-xs md:text-sm px-3 focus:outline-none focus:border-primary/50"
-                    value={selectedWarehouseId}
-                    onChange={e => {
-                        const id = e.target.value;
-                        setSelectedWarehouseId(id);
-                        if (id) {
-                            const wh = warehouses.find(w => w.id === id);
-                            if (wh) setArea(wh.location || wh.name);
-                        }
-                    }}
-                >
-                    <option value="">Seleccionar Almacén...</option>
-                    {warehouses.map(w => (
-                        <option key={w.id} value={w.id}>{w.name}</option>
-                    ))}
-                </select>
+                <div className="relative">
+                    <select
+                        className={`w-full h-10 md:h-11 rounded-xl bg-white dark:bg-slate-900 border-2 font-bold text-xs md:text-sm px-3 focus:outline-none transition-all ${selectedWarehouseId ? `${whColor.bg} ${whColor.text} ${whColor.border}` : 'border-slate-200 dark:border-slate-800'}`}
+                        value={selectedWarehouseId}
+                        onChange={e => {
+                            const id = e.target.value;
+                            setSelectedWarehouseId(id);
+                            if (id) {
+                                const wh = warehouses.find(w => w.id === id);
+                                if (wh) setArea(wh.location || wh.name);
+                            }
+                        }}
+                    >
+                        <option value="">Seleccionar Almacén...</option>
+                        {warehouses.map(w => (
+                            <option key={w.id} value={w.id} className="font-bold uppercase tracking-tight">
+                                {w.name} (📍 {w.location})
+                            </option>
+                        ))}
+                    </select>
+                </div>
             </div>
 
             {/* Responsible */}

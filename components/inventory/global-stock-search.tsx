@@ -15,6 +15,7 @@ import { toast } from 'sonner';
 import { Download, Globe, Search as SearchIcon } from 'lucide-react';
 import { exportToExcel } from '@/lib/excel-export';
 import { Button } from '@/components/ui/button';
+import { getWarehouseColor } from '@/lib/warehouse-config';
 
 interface GlobalStockSearchProps {
     refreshTrigger?: number;
@@ -38,7 +39,7 @@ export function GlobalStockSearch({ refreshTrigger = 0 }: GlobalStockSearchProps
                     id,
                     quantity,
                     updated_at,
-                    warehouses (name),
+                    warehouses (name, location),
                     materials!inner (*)
                 `, { count: 'exact' })
                 .gt('quantity', 0)
@@ -198,44 +199,48 @@ export function GlobalStockSearch({ refreshTrigger = 0 }: GlobalStockSearchProps
                                         </TableCell>
                                     </TableRow>
                                 ) : (
-                                    results.map((item) => (
-                                        <TableRow key={item.id} className="group border-b border-border/30 hover:bg-primary/5 transition-colors">
-                                            <TableCell className="py-2 px-4">
-                                                <span className="text-[9px] font-black bg-primary/10 text-primary px-2 py-1 rounded uppercase tracking-tighter block text-center truncate">
-                                                    {item.warehouses?.name}
-                                                </span>
-                                            </TableCell>
-                                            <TableCell className="py-2 px-4">
-                                                <p className="font-black text-xs uppercase tracking-tight truncate max-w-[250px]">
-                                                    {item.materials.name}
-                                                </p>
-                                                {item.materials.is_used && (
-                                                    <p className="text-[10px] font-black text-amber-600 uppercase tracking-tighter">
-                                                        ⚠ MATERIAL USADO
+                                    results.map((item) => {
+                                        const whLocation = item.warehouses?.location || '';
+                                        const whColor = getWarehouseColor(whLocation);
+                                        return (
+                                            <TableRow key={item.id} className="group border-b border-border/30 hover:bg-primary/5 transition-colors">
+                                                <TableCell className="py-2 px-4">
+                                                    <span className={`text-[9px] font-black px-2 py-1 rounded uppercase tracking-tighter block text-center truncate border ${whColor.bg} ${whColor.text} ${whColor.border}`}>
+                                                        {item.warehouses?.name}
+                                                    </span>
+                                                </TableCell>
+                                                <TableCell className="py-2 px-4">
+                                                    <p className="font-black text-xs uppercase tracking-tight truncate max-w-[250px]">
+                                                        {item.materials.name}
                                                     </p>
-                                                )}
-                                                <p className="text-[9px] text-muted-foreground font-medium italic truncate max-w-[250px]">
-                                                    {item.materials.description || '-'}
-                                                </p>
-                                            </TableCell>
+                                                    {item.materials.is_used && (
+                                                        <p className="text-[10px] font-black text-amber-600 uppercase tracking-tighter">
+                                                            ⚠ MATERIAL USADO
+                                                        </p>
+                                                    )}
+                                                    <p className="text-[9px] text-muted-foreground font-medium italic truncate max-w-[250px]">
+                                                        {item.materials.description || '-'}
+                                                    </p>
+                                                </TableCell>
 
-                                            <TableCell className="py-2 px-4 text-right">
-                                                <span className={`text-sm font-black ${item.quantity <= 5 ? 'text-destructive' : 'text-primary'}`}>
-                                                    {item.quantity.toLocaleString('en-US', { minimumFractionDigits: 1 })}
-                                                </span>
-                                            </TableCell>
-                                            <TableCell className="py-2 px-4 text-right">
-                                                <span className="text-xs font-bold text-muted-foreground">
-                                                    S/. {(item.materials?.unit_price || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}
-                                                </span>
-                                            </TableCell>
-                                            <TableCell className="py-2 px-4 text-right">
-                                                <span className="text-sm font-black text-primary">
-                                                    S/. {(item.quantity * (item.materials?.unit_price || 0)).toLocaleString('en-US', { minimumFractionDigits: 2 })}
-                                                </span>
-                                            </TableCell>
-                                        </TableRow>
-                                    ))
+                                                <TableCell className="py-2 px-4 text-right">
+                                                    <span className={`text-sm font-black ${item.quantity <= 5 ? 'text-destructive' : 'text-primary'}`}>
+                                                        {item.quantity.toLocaleString('en-US', { minimumFractionDigits: 1 })}
+                                                    </span>
+                                                </TableCell>
+                                                <TableCell className="py-2 px-4 text-right">
+                                                    <span className="text-xs font-bold text-muted-foreground">
+                                                        S/. {(item.materials?.unit_price || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                                                    </span>
+                                                </TableCell>
+                                                <TableCell className="py-2 px-4 text-right">
+                                                    <span className="text-sm font-black text-primary">
+                                                        S/. {(item.quantity * (item.materials?.unit_price || 0)).toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                                                    </span>
+                                                </TableCell>
+                                            </TableRow>
+                                        );
+                                    })
                                 )}
                             </TableBody>
                         </Table>

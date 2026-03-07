@@ -11,6 +11,8 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 
+import { getWarehouseColor } from '@/lib/warehouse-config';
+
 interface WarehouseSelectorProps {
   value: string;
   onWarehouseChange: (warehouseId: string) => void;
@@ -19,6 +21,9 @@ interface WarehouseSelectorProps {
 export function WarehouseSelector({ value, onWarehouseChange }: WarehouseSelectorProps) {
   const [warehouses, setWarehouses] = useState<Warehouse[]>([]);
   const [loading, setLoading] = useState(true);
+
+  const selectedWarehouse = warehouses.find(w => w.id === value);
+  const selectedColor = getWarehouseColor(selectedWarehouse?.location || selectedWarehouse?.name);
 
   useEffect(() => {
     const fetchWarehouses = async () => {
@@ -43,18 +48,30 @@ export function WarehouseSelector({ value, onWarehouseChange }: WarehouseSelecto
   return (
     <div>
       <Select value={value} onValueChange={onWarehouseChange} disabled={loading}>
-        <SelectTrigger className="h-12 bg-white dark:bg-slate-900 border-border/50 rounded-xl font-bold transition-all hover:bg-white/90">
-          <SelectValue placeholder={loading ? 'Sincronizando...' : 'Selecciona un almacén'} />
+        <SelectTrigger className={`h-12 border-border/50 rounded-xl font-bold transition-all ${selectedColor.bg} ${selectedColor.text} ${selectedColor.border} border-2`}>
+          <div className="flex items-center gap-2 overflow-hidden">
+            {value && <div className={`w-2 h-2 rounded-full shrink-0 ${selectedColor.dot}`} />}
+            <SelectValue placeholder={loading ? 'Sincronizando...' : 'Selecciona un almacén'} />
+          </div>
         </SelectTrigger>
         <SelectContent
           className="bg-white dark:bg-slate-950 border-border shadow-2xl rounded-xl z-[100]"
           style={{ backgroundColor: 'white', opacity: 1, backdropFilter: 'none', WebkitBackdropFilter: 'none' }}
         >
-          {warehouses.map((warehouse) => (
-            <SelectItem key={warehouse.id} value={warehouse.id} className="font-semibold py-3 transition-colors">
-              <span className="uppercase">{warehouse.name}</span> <span className="text-[10px] text-muted-foreground uppercase ml-2 opacity-60">📍 {warehouse.location}</span>
-            </SelectItem>
-          ))}
+          {warehouses.map((warehouse) => {
+            const color = getWarehouseColor(warehouse.location || warehouse.name);
+            return (
+              <SelectItem key={warehouse.id} value={warehouse.id} className="font-semibold py-3 transition-colors">
+                <div className="flex items-center gap-2">
+                  <div className={`w-2 h-2 rounded-full shrink-0 ${color.dot}`} />
+                  <div className="flex flex-col">
+                    <span className="uppercase text-xs leading-none">{warehouse.name}</span>
+                    <span className={`text-[9px] uppercase mt-0.5 opacity-70 font-black tracking-widest ${color.text}`}>📍 {warehouse.location}</span>
+                  </div>
+                </div>
+              </SelectItem>
+            );
+          })}
         </SelectContent>
       </Select>
     </div>
