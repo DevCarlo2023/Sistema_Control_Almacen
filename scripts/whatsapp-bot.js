@@ -20,6 +20,13 @@ const CONFIG = {
 
 const app = express({ limit: '50mb' });
 app.use(express.json());
+
+// Verificación de Node.js (V24.1)
+if (typeof fetch === 'undefined') {
+    console.log("❌ ERROR: Tu versión de Node.js es antigua y no tiene 'fetch'.");
+    console.log("👉 Solución: Actualiza Node.js a la versión 18 o superior, o instala 'node-fetch'.");
+}
+
 const supabase = createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_SERVICE_KEY);
 const SESSIONS = {};
 
@@ -57,18 +64,31 @@ async function geminiChatMultimodal(prompt, media = null, systemMsg = null) {
 
 async function enviarWA(jid, mensaje) {
     if (!jid) return;
+    console.log(`📤 Enviando respuesta a ${jid}...`);
     try {
-        await fetch(`${CONFIG.EVOLUTION_URL}/message/sendText/${CONFIG.INSTANCE_NAME}`, {
+        const response = await fetch(`${CONFIG.EVOLUTION_URL}/message/sendText/${CONFIG.INSTANCE_NAME}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'apikey': CONFIG.EVOLUTION_API_KEY },
             body: JSON.stringify({ number: jid, text: mensaje })
         });
-    } catch (e) { console.error(`❌ Error WA: ${e.message}`); }
+        const result = await response.json();
+        console.log(`✅ Resultado WA:`, JSON.stringify(result));
+    } catch (e) {
+        console.error(`❌ ERROR CRÍTICO al enviar WA: ${e.message}`);
+    }
 }
 
 async function procesarRespuesta(jid, texto, media = null) {
-    if (!SESSIONS[jid]) SESSIONS[jid] = { history: [] };
-    const session = SESSIONS[jid];
+    if (!jid) return "Error JID";
+
+    // 1. Cargar sesión desde Supabase
+    let { data: sessionData, error: sessionFetchError } = await supabase
+        .from('bot_sessions')
+        .select('history')
+        .eq('jid', jid)
+        .maybeSingle();
+
+    let history = sessionData?.history || [];
     let resolvedText = texto || '';
 
     if (media && media.type === 'audio') {
@@ -78,9 +98,9 @@ async function procesarRespuesta(jid, texto, media = null) {
         resolvedText = `[Imagen enviada]`;
     }
 
-    session.history.push({ role: 'user', content: resolvedText });
-    if (session.history.length > 8) session.history.shift();
-    const historyText = session.history.map(h => `${h.role}: ${h.content}`).join('\n');
+    history.push({ role: 'user', content: resolvedText });
+    if (history.length > 8) history.shift();
+    const historyText = history.map(h => `${h.role}: ${h.content}`).join('\n');
 
     try {
         // 1. Extracción con Asociación Humana
@@ -108,8 +128,6 @@ async function procesarRespuesta(jid, texto, media = null) {
 
                 if (data) {
                     data.forEach(item => {
-                        // Usamos material.name + warehouse.name como llave única para stock
-                        // (Si hay stock en diferentes almacenes, se mantienen separados para que Gemini los vea)
                         const key = `${item.material.name}-${item.warehouse?.name || 'Gral'}`;
                         if (!resultsMap.has(key)) {
                             resultsMap.set(key, item);
@@ -132,25 +150,41 @@ async function procesarRespuesta(jid, texto, media = null) {
         Menciona siempre Seguridad Mina (⚠️).`;
 
         const respuesta = await geminiChatMultimodal(finalPrompt);
-        session.history.push({ role: 'bot', content: respuesta });
+        history.push({ role: 'bot', content: respuesta });
+
+        // 3. Guardar sesión actualizada en Supabase (Upsert)
+        await supabase.from('bot_sessions').upsert({
+            jid,
+            history,
+            updated_at: new Date().toISOString()
+        }, { onConflict: 'jid' });
+
         return respuesta;
 
-    } catch (e) { return `Error en V24.0. ¿Qué necesitas de almacén?`; }
+    } catch (e) {
+        console.error(`❌ Error en V24: ${e.message}`);
+        return `Error en V24.0. ¿Qué necesitas de almacén?`;
+    }
 }
 
 app.post('/webhook', async (req, res) => {
     res.sendStatus(200);
     const body = req.body;
+    console.log(`📩 Webhook recibido: ${body.event || 'Evento desconocido'}`);
+
     if (body.event?.toLowerCase() !== 'messages.upsert') return;
     const data = body.data?.messages?.[0] || body.data;
     if (!data || data.key?.fromMe) return;
 
     const jid = data.key?.remoteJid;
     let texto = data.message?.conversation || data.message?.extendedTextMessage?.text;
+    console.log(`💬 Mensaje de ${jid}: ${texto || '[Sin texto]'}`);
+
     let media = null;
     let base64Found = data.base64 || body.data?.base64 || body.base64;
 
     if (!base64Found && (data.message?.audioMessage || data.message?.imageMessage)) {
+        console.log(`📷/🎙️ Media detectado, intentando descargar...`);
         try {
             const resMedia = await fetch(`${CONFIG.EVOLUTION_URL}/chat/getBase64FromMediaMessage/${CONFIG.INSTANCE_NAME}`, {
                 method: 'POST',
@@ -159,7 +193,9 @@ app.post('/webhook', async (req, res) => {
             });
             const mediaData = await resMedia.json();
             base64Found = mediaData.base64;
-        } catch (err) { }
+        } catch (err) {
+            console.error(`❌ Error al descargar media: ${err.message}`);
+        }
     }
 
     if (data.message?.audioMessage) {
@@ -169,13 +205,34 @@ app.post('/webhook', async (req, res) => {
     }
 
     if (jid && (texto || media)) {
-        const respuesta = await procesarRespuesta(jid, texto, media);
-        await enviarWA(jid, respuesta);
+        try {
+            console.log(`🤖 Procesando respuesta para ${jid}...`);
+            const respuesta = await procesarRespuesta(jid, texto, media);
+            console.log(`✨ Respuesta generada: ${respuesta.substring(0, 50)}...`);
+            await enviarWA(jid, respuesta);
+        } catch (err) {
+            console.error(`❌ ERROR en el flujo del bot:`, err);
+        }
+    }
+});
+
+// Endpoint de prueba rápida
+app.get('/test-db', async (req, res) => {
+    try {
+        const { data, error } = await supabase.from('bot_sessions').select('count');
+        if (error) throw error;
+        res.send(`🟢 Conexión a Supabase OK. Registros: ${JSON.stringify(data)}`);
+    } catch (e) {
+        res.status(500).send(`🔴 Error Supabase: ${e.message}`);
     }
 });
 
 app.get('/health', (req, res) => res.send('🟢 Almacén Virtual V24.0 - Asociación Humana Active'));
 
 app.listen(CONFIG.PORT, () => {
-    console.log(`🚀 ALMACÉN VIRTUAL V24.0 - ASOCIACIÓN HUMANA - PUERTO ${CONFIG.PORT}`);
+    console.log(`\n🚀 BOT INICIADO CORRECTAMENTE`);
+    console.log(`📍 Puerto: ${CONFIG.PORT}`);
+    console.log(`🔗 URL Supabase: ${CONFIG.SUPABASE_URL}`);
+    console.log(`📱 Instancia WA: ${CONFIG.INSTANCE_NAME}`);
+    console.log(`-------------------------------------------\n`);
 });
