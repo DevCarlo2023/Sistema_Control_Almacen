@@ -10,6 +10,7 @@ import { WorkerSelector } from './worker-selector';
 import { toast } from 'sonner';
 import { ArrowDownCircle, ArrowUpCircle, Loader2, AlertCircle } from 'lucide-react';
 import { getWarehouseColor } from '@/lib/warehouse-config';
+import { formatText } from '@/lib/utils';
 
 interface MovementFormProps {
     onSuccess: () => void;
@@ -63,8 +64,8 @@ export function EquipmentMovementForm({ onSuccess, activeTab = 'history' }: Move
                 movement_type: movementType,
                 worker_id: movementType === 'egreso' ? selectedWorker?.id : null,
                 warehouse_id: selectedWarehouseId,
-                area: area.trim(),
-                observations: observations || null,
+                area: formatText(area),
+                observations: formatText(observations) || null,
                 user_id: user?.id,
             });
             if (movError) throw movError;

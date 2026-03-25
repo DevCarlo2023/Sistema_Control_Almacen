@@ -34,7 +34,8 @@ export function ExportButton({ warehouseId, warehouseName }: ExportButtonProps) 
           material_id,
           quantity,
           updated_at,
-          materials (*)
+          materials (*),
+          warehouses (name)
         `
         )
         .eq('warehouse_id', warehouseId);
@@ -46,7 +47,7 @@ export function ExportButton({ warehouseId, warehouseName }: ExportButtonProps) 
         return;
       }
 
-      await exportToExcel(data as any, warehouseName);
+      await exportToExcel(data as any, warehouseName, true);
     } catch (err) {
       console.error('Export error:', err);
       setError('Error al exportar. Intenta de nuevo.');

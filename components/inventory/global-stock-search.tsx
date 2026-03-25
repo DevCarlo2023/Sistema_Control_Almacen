@@ -16,6 +16,7 @@ import { Download, Globe, Search as SearchIcon } from 'lucide-react';
 import { exportToExcel } from '@/lib/excel-export';
 import { Button } from '@/components/ui/button';
 import { getWarehouseColor } from '@/lib/warehouse-config';
+import { getStockThreshold } from '@/lib/utils';
 
 interface GlobalStockSearchProps {
     refreshTrigger?: number;
@@ -224,7 +225,7 @@ export function GlobalStockSearch({ refreshTrigger = 0 }: GlobalStockSearchProps
                                                 </TableCell>
 
                                                 <TableCell className="py-2 px-4 text-right">
-                                                    <span className={`text-sm font-black ${item.quantity <= 5 ? 'text-destructive' : 'text-primary'}`}>
+                                                    <span className={`text-sm font-black ${item.quantity < getStockThreshold(`${item.materials.name} ${item.materials.description}`) ? 'text-destructive' : 'text-primary'}`}>
                                                         {item.quantity.toLocaleString('en-US', { minimumFractionDigits: 1 })}
                                                     </span>
                                                 </TableCell>

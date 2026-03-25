@@ -9,3 +9,7 @@ node_modules/
 .env*.local
 .DS_Store
 .vercel
+.env.production.pulled
+qr_whatsapp_latest.png
+qr_response_latest.json
+scripts/*.js

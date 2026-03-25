@@ -31,7 +31,7 @@ export async function proxy(request: NextRequest) {
   if (
     !user &&
     (request.nextUrl.pathname.startsWith('/inventory') ||
-      request.nextUrl.pathname.startsWith('/api'))
+      (request.nextUrl.pathname.startsWith('/api') && !request.nextUrl.pathname.startsWith('/api/bot')))
   ) {
     const loginUrl = request.nextUrl.clone()
     loginUrl.pathname = '/login'

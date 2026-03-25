@@ -87,7 +87,8 @@ export function MaterialManager() {
                     .update({
                         name: formatText(currentMaterial.name || ''),
                         description: formatText(currentMaterial.description || ''),
-                        unit_of_measure: currentMaterial.unit_of_measure,
+                        unit_of_measure: formatText(currentMaterial.unit_of_measure || 'Unidad'),
+                        location: formatText(currentMaterial.location || ''),
                         unit_price: parseFloat(currentMaterial.unit_price as any) || 0,
                         is_used: !!currentMaterial.is_used,
                     })
@@ -98,7 +99,8 @@ export function MaterialManager() {
                 const { error } = await supabase.from('materials').insert({
                     name: formatText(currentMaterial.name || ''),
                     description: formatText(currentMaterial.description || ''),
-                    unit_of_measure: (currentMaterial.unit_of_measure as string) || 'Unidad',
+                    unit_of_measure: formatText(currentMaterial.unit_of_measure || 'Unidad'),
+                    location: formatText(currentMaterial.location || ''),
                     unit_price: parseFloat(currentMaterial.unit_price as any) || 0,
                     is_used: !!currentMaterial.is_used,
                 });
@@ -201,6 +203,26 @@ export function MaterialManager() {
                                     value={currentMaterial.unit_price ?? ''}
                                     onChange={e => setCurrentMaterial({ ...currentMaterial, unit_price: e.target.value === '' ? undefined : parseFloat(e.target.value) })}
                                 />
+                            </div>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <label className="text-[10px] uppercase font-black text-muted-foreground tracking-widest ml-1">Unidad de Medida</label>
+                                    <Input
+                                        placeholder="Ej. UN, KG, GLOBAL"
+                                        className="h-12 rounded-xl bg-muted/30 font-bold uppercase"
+                                        value={currentMaterial.unit_of_measure || ''}
+                                        onChange={e => setCurrentMaterial({ ...currentMaterial, unit_of_measure: e.target.value })}
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-[10px] uppercase font-black text-muted-foreground tracking-widest ml-1">Ubicación (Maestro)</label>
+                                    <Input
+                                        placeholder="Ej. Pasillo A - Estante 2"
+                                        className="h-12 rounded-xl bg-muted/30 font-bold"
+                                        value={currentMaterial.location || ''}
+                                        onChange={e => setCurrentMaterial({ ...currentMaterial, location: e.target.value })}
+                                    />
+                                </div>
                             </div>
                             <div className="flex items-center gap-3 p-3 rounded-xl border-2 border-dashed border-border/50 bg-muted/10 hover:border-primary/30 transition-colors">
                                 <input

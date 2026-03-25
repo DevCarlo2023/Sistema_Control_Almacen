@@ -90,9 +90,10 @@ export async function POST(request: NextRequest) {
     const currentQuantity = inventory?.quantity || 0
     let newQuantity = currentQuantity
 
-    if (movement_type === 'ENTRADA') {
+    const type = movement_type.toUpperCase()
+    if (type === 'ENTRADA') {
       newQuantity += parseFloat(quantity)
-    } else if (movement_type === 'SALIDA') {
+    } else if (type === 'SALIDA') {
       newQuantity -= parseFloat(quantity)
       if (newQuantity < 0) {
         return NextResponse.json(

@@ -45,8 +45,8 @@ export function ImportWorkers({ onSuccess }: Props) {
                     const full_name = formatText(get('nombre_completo'));
                     if (!full_name) continue;
                     const { error } = await supabase.from('workers').insert({
-                        worker_number: get('numero_trabajador') || null,
-                        dni: get('dni') || null,
+                        worker_number: formatText(get('numero_trabajador')) || null,
+                        dni: formatText(get('dni')) || null,
                         full_name,
                         position: formatText(get('cargo')) || null,
                     });

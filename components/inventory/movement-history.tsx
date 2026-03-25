@@ -92,32 +92,16 @@ export function MovementHistory({ warehouseId, refreshTrigger }: MovementHistory
         setDeletingId(movement.id);
         setConfirmDeleteId(null);
         try {
-            // Reverse the stock effect: entrada → subtract, salida → add
-            const { data: invData } = await supabase
-                .from('inventory')
-                .select('id, quantity')
-                .eq('warehouse_id', warehouseId)
-                .eq('material_id', movement.material_id)
-                .maybeSingle();
+            const response = await fetch(`/api/inventory/movements/${movement.id}`, {
+                method: 'DELETE',
+            });
 
-            if (invData) {
-                const delta = movement.movement_type === 'entrada' ? -movement.quantity : movement.quantity;
-                const newQty = invData.quantity + delta;
-                if (newQty <= 0) {
-                    await supabase.from('inventory').delete().eq('id', invData.id);
-                } else {
-                    await supabase
-                        .from('inventory')
-                        .update({ quantity: newQty, updated_at: new Date().toISOString() })
-                        .eq('id', invData.id);
-                }
+            const result = await response.json();
+            if (!response.ok) {
+                throw new Error(result.error || 'Error al eliminar el movimiento');
             }
 
-            // Delete the movement record
-            const { error } = await supabase.from('inventory_movements').delete().eq('id', movement.id);
-            if (error) throw error;
-
-            toast.success('Movimiento eliminado y stock actualizado.');
+            toast.success(result.message || 'Movimiento eliminado y stock actualizado.');
             await fetchMovements();
         } catch (err: any) {
             console.error('Delete error:', err);
@@ -226,15 +210,15 @@ export function MovementHistory({ warehouseId, refreshTrigger }: MovementHistory
                                             <TableCell className="py-4 px-6">
                                                 <span className={`
                             inline-flex items-center px-2.5 py-1 rounded-md text-[9px] font-black tracking-widest uppercase
-                            ${m.movement_type === 'entrada'
+                            ${m.movement_type.toLowerCase() === 'entrada'
                                                         ? 'bg-green-500/10 text-green-500 shadow-[0_0_10px_rgba(34,197,94,0.1)] border border-green-500/20'
                                                         : 'bg-destructive/10 text-destructive shadow-[0_0_10px_rgba(239,68,68,0.1)] border border-destructive/20'
                                                     }
                           `}>
-                                                    {m.movement_type === 'entrada' ? '▲ Entrada' : '▼ Salida'}
+                                                    {m.movement_type.toLowerCase() === 'entrada' ? '▲ Entrada' : '▼ Salida'}
                                                 </span>
                                             </TableCell>
-                                            <TableCell className={`py-4 px-6 text-right font-black text-base tracking-tight ${m.movement_type === 'entrada' ? 'text-green-500' : 'text-destructive'}`}>
+                                            <TableCell className={`py-4 px-6 text-right font-black text-base tracking-tight ${m.movement_type.toLowerCase() === 'entrada' ? 'text-green-500' : 'text-destructive'}`}>
                                                 {m.quantity.toLocaleString('en-US', { minimumFractionDigits: 1 })}
                                             </TableCell>
                                             <TableCell className="py-4 px-6">
@@ -296,12 +280,12 @@ export function MovementHistory({ warehouseId, refreshTrigger }: MovementHistory
                                         </div>
                                         <span className={`
                                             inline-flex items-center px-2 py-0.5 rounded-full text-[8px] font-black tracking-widest uppercase
-                                            ${m.movement_type === 'entrada'
+                                            ${m.movement_type.toLowerCase() === 'entrada'
                                                 ? 'bg-green-500/10 text-green-500 border border-green-500/20'
                                                 : 'bg-destructive/10 text-destructive border border-destructive/20'
                                             }
                                         `}>
-                                            {m.movement_type === 'entrada' ? '▲ Entrada' : '▼ Salida'}
+                                            {m.movement_type.toLowerCase() === 'entrada' ? '▲ Entrada' : '▼ Salida'}
                                         </span>
                                     </div>
 
@@ -312,7 +296,7 @@ export function MovementHistory({ warehouseId, refreshTrigger }: MovementHistory
                                         </div>
                                         <div className="flex flex-col items-end">
                                             <span className="text-[9px] font-black uppercase text-muted-foreground/50 tracking-tighter">Cantidad</span>
-                                            <span className={`text-xl font-black ${m.movement_type === 'entrada' ? 'text-green-500' : 'text-destructive'}`}>
+                                            <span className={`text-xl font-black ${m.movement_type.toLowerCase() === 'entrada' ? 'text-green-500' : 'text-destructive'}`}>
                                                 {m.quantity.toLocaleString('en-US', { minimumFractionDigits: 1 })}
                                             </span>
                                         </div>

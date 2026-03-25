@@ -75,7 +75,7 @@ export function ImportEquipment({ onSuccess }: Props) {
 
                     const { error } = await supabase.from('equipment').insert({
                         name,
-                        serial_number: get('numero_serie') || null,
+                        serial_number: formatText(get('numero_serie')) || null,
                         brand: formatText(get('marca')) || null,
                         model: formatText(get('modelo')) || null,
                         status: get('estado') || 'operativo',

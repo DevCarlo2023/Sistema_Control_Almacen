@@ -15,6 +15,7 @@ import {
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Search } from 'lucide-react';
+import { getStockThreshold } from '@/lib/utils';
 
 interface StockTableProps {
   warehouseId: string;
@@ -25,6 +26,16 @@ export function StockTable({ warehouseId, refreshTrigger }: StockTableProps) {
   const [inventory, setInventory] = useState<InventoryItem[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(false);
+  const [warehouseInfo, setWarehouseInfo] = useState<any>(null);
+
+  useEffect(() => {
+    const fetchWarehouseInfo = async () => {
+      if (!warehouseId) return;
+      const { data } = await supabase.from('warehouses').select('name').eq('id', warehouseId).single();
+      if (data) setWarehouseInfo(data);
+    };
+    fetchWarehouseInfo();
+  }, [warehouseId]);
 
   useEffect(() => {
     const fetchInventory = async () => {
@@ -134,7 +145,12 @@ export function StockTable({ warehouseId, refreshTrigger }: StockTableProps) {
   return (
     <div className="w-full">
       <div className="p-6 border-b border-border/50 flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <h3 className="font-black text-xs uppercase tracking-[0.2em] text-primary">Stock Disponible</h3>
+        <div className="flex flex-col gap-1">
+          <h3 className="font-black text-xs uppercase tracking-[0.2em] text-primary">Stock Disponible</h3>
+          {warehouseInfo && (
+            <span className="text-[10px] font-bold text-muted-foreground uppercase">{warehouseInfo.name}</span>
+          )}
+        </div>
         <div className="relative w-full md:w-72">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input
@@ -167,8 +183,10 @@ export function StockTable({ warehouseId, refreshTrigger }: StockTableProps) {
             ) : (
               filteredInventory.map((item) => {
                 const qty = item.quantity;
-                const isVeryLow = qty <= 5;
-                const isLow = qty <= 10;
+                const mat = (item as any).materials;
+                const threshold = getStockThreshold(`${mat?.name || ''} ${mat?.description || ''}`);
+                const isVeryLow = qty < threshold;
+                const isLow = qty < threshold * 2;
 
                 return (
                   <TableRow

@@ -6,9 +6,11 @@ import { supabase } from '@/lib/supabase';
 import { WarehouseSelector } from '@/components/inventory/warehouse-selector';
 import { MaterialSearch } from '@/components/inventory/material-search';
 import { MovementForm } from '@/components/inventory/movement-form';
+import { TransferForm } from '@/components/inventory/transfer-form';
 import { StockTable } from '@/components/inventory/stock-table';
 import { GlobalStockSearch } from '@/components/inventory/global-stock-search';
 import { ExportButton } from '@/components/inventory/export-button';
+import { CriticalExportButton } from '@/components/inventory/critical-export-button';
 import { ImportButton } from '@/components/inventory/import-button';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -25,6 +27,7 @@ export default function InventoryPage() {
   const [warehouseLocation, setWarehouseLocation] = useState('');
   const [selectedMaterial, setSelectedMaterial] = useState<Material | null>(null);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
+  const [actionMode, setActionMode] = useState<'movement' | 'transfer'>('movement');
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -155,8 +158,9 @@ export default function InventoryPage() {
 
               <div className="mt-3 space-y-3 pt-2 border-t border-border/50">
                 <h3 className="text-[10px] uppercase font-bold text-muted-foreground ml-1">Gestión</h3>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-3">
+                <div className="grid grid-cols-1 gap-3">
                   <ExportButton warehouseId={warehouseId} warehouseName={warehouseName} />
+                  <CriticalExportButton warehouseId={warehouseId} warehouseName={warehouseName} />
                   <ImportButton warehouseId={warehouseId} onImportSuccess={handleMovementSuccess} />
                 </div>
               </div>
@@ -179,18 +183,45 @@ export default function InventoryPage() {
             {/* Quick Action Bar (Unified) */}
             <Card className="p-4 sm:p-6 glass-card rounded-2xl border-l-4 border-l-primary shadow-2xl overflow-visible relative print:hidden">
               <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full -mr-16 -mt-16 blur-3xl" />
-              <h2 className="text-base sm:text-lg font-bold mb-4 sm:mb-6 flex items-center gap-3">
-                <div className="bg-primary/20 p-2 rounded-lg">
-                  <span className="text-primary">⚡</span>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 relative z-10">
+                <h2 className="text-base sm:text-lg font-bold flex items-center gap-3">
+                  <div className="bg-primary/20 p-2 rounded-lg">
+                    <span className="text-primary">⚡</span>
+                  </div>
+                  {actionMode === 'movement' ? 'Registrar Movimiento Rápido' : 'Procesar Traslado entre Almacenes'}
+                </h2>
+
+                <div className="flex bg-muted/50 p-1 rounded-xl border border-border/50">
+                  <button
+                    onClick={() => setActionMode('movement')}
+                    className={`px-4 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${actionMode === 'movement' ? 'bg-primary text-primary-foreground shadow-lg' : 'text-muted-foreground hover:text-foreground'}`}
+                  >
+                    Ingreso/Salida
+                  </button>
+                  <button
+                    onClick={() => setActionMode('transfer')}
+                    className={`px-4 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${actionMode === 'transfer' ? 'bg-blue-600 text-white shadow-lg' : 'text-muted-foreground hover:text-foreground'}`}
+                  >
+                    Traslado
+                  </button>
                 </div>
-                Registrar Movimiento Rápido
-              </h2>
-              <MovementForm
-                warehouseId={warehouseId}
-                selectedMaterial={selectedMaterial}
-                onSelectMaterial={setSelectedMaterial}
-                onMovementSuccess={handleMovementSuccess}
-              />
+              </div>
+
+              {actionMode === 'movement' ? (
+                <MovementForm
+                  warehouseId={warehouseId}
+                  selectedMaterial={selectedMaterial}
+                  onSelectMaterial={setSelectedMaterial}
+                  onMovementSuccess={handleMovementSuccess}
+                />
+              ) : (
+                <TransferForm
+                  fromWarehouseId={warehouseId}
+                  selectedMaterial={selectedMaterial}
+                  onSelectMaterial={setSelectedMaterial}
+                  onTransferSuccess={handleMovementSuccess}
+                />
+              )}
             </Card>
 
             {/* Tabs for Table & History */}
