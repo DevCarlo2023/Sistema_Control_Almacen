@@ -1,5 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
-import { GoogleGenerativeAI } from '@google/generative-ai'
+import { GoogleGenerativeAI, SchemaType, Schema } from '@google/generative-ai'
 
 const CONFIG = {
     SUPABASE_URL: (process.env.NEXT_PUBLIC_SUPABASE_URL || '').trim(),
@@ -18,13 +18,10 @@ function normalizar(texto: string) {
 const MASTER_PROMPT = `Eres un asistente experto en gestión de inventario de EPP (Equipos de Protección Personal) para el sector minero e industrial de PROMET.
 
 ════════════════════════════════════════
-🧠 PASO 1 — CLASIFICAR LA INTENCIÓN
+🧠 PASO 1 — CLASIFICAR E IGNORAR ALUCINACIONES
 ════════════════════════════════════════
-Antes de responder, identifica QUÉ quiere el usuario usando la DATA de inventario provista:
-- Por nombre/jerga: Buscar por nombre en DATA.
-- Por cantidad/stock: Mostrar cantidad en DATA.
-- Múltiples productos: Procesar cada uno por separado en bloques.
-- Ambigua: Preguntar tipo antes de buscar.
+Identifica QUÉ quiere el usuario y compráralo con la "DATA" provista de la base de datos.
+⚠️ REGLA CRÍTICA: SI UN ELEMENTO EN LA DATA NO COINCIDE EXPLÍCITAMENTE CON LO QUE PIDIÓ EL USUARIO (ej: pide "Casco" y la data trae "Casaca"), DEBES IGNORARLO SILENCIOSAMENTE. No menciones elementos no solicitados.
 
 ════════════════════════════════════════
 💡 PASO 2 — SUGERENCIAS PROACTIVAS
@@ -40,7 +37,7 @@ Cuando el usuario consulte un EPP, revisa si hay complementarios y ofrécelos:
 📋 PASO 3 — FORMATO DE RESPUESTA
 ════════════════════════════════════════
 
-✅ PRODUCTO ENCONTRADO (Si está en la DATA extraída):
+✅ PRODUCTO ENCONTRADO (Sólo si coincide exactamente con la intención original):
 ──────────────────────────────
 🏷️ Producto : [Nombre oficial]
 📦 Stock    : [X unidades / pares]
@@ -49,21 +46,22 @@ Cuando el usuario consulte un EPP, revisa si hay complementarios y ofrécelos:
 ──────────────────────────────
 💡 Sugerencia: [complementario si aplica]
 
-❌ SIN STOCK o NO ENCONTRADO EN LA DATA:
+❌ SIN STOCK o NO ENCONTRADO EN LA DATA RELEVANTE:
 ──────────────────────────────
 ❌ Sin stock de [producto]
 💡 Alternativa disponible: [producto similar si aplica] — ¿Te sirve?
 
 ════════════════════════════════════════
-🚫 RESTRICCIONES
+🚫 RESTRICCIONES GLOBALES
 ════════════════════════════════════════
-- Nunca inventes stock, precios ni datos. Usa SOLO la "DATA" provista en el prompt actual.
+- Nunca inventes stock, precios ni datos. Usa SOLO la "DATA" provista.
+- Ignora cualquier item de la DATA que sea un falso positivo de la base de datos.
 - Responde siempre directo y con los formatos de iconos y viñetas indicados.`;
 
 /**
  * Robust Chat 
  */
-export async function geminiChatMultimodal(prompt: string, media: any = null, systemMsg: string | null = null) {
+export async function geminiChatMultimodal(prompt: string, media: any = null, systemMsg: string | null = null, jsonSchema: Schema | null = null) {
     const rawKey = (process.env.GOOGLE_GEMINI_KEY || '').trim();
     const key = rawKey.replace(/^y[\r\n\s]+/, '').replace(/^y/, '').trim();
 
@@ -82,10 +80,19 @@ export async function geminiChatMultimodal(prompt: string, media: any = null, sy
     let lastError = '';
     for (const modelName of fallbackModels) {
         try {
-            const model = genAI.getGenerativeModel({
+            const modelConfig: any = {
                 model: modelName,
                 systemInstruction: systemMsg || MASTER_PROMPT
-            });
+            };
+
+            if (jsonSchema) {
+                modelConfig.generationConfig = {
+                    responseMimeType: "application/json",
+                    responseSchema: jsonSchema
+                };
+            }
+
+            const model = genAI.getGenerativeModel(modelConfig);
 
             const parts: any[] = [{ text: prompt }];
             if (media && media.base64 && media.mimeType) {
@@ -150,13 +157,25 @@ export async function procesarRespuesta(jid: string, texto: string, media: any =
         - Guante de hilo / guantes de hilo → Guante Algodon
         - Guante negro / guantes negros / guante látex → Guante Nitrilo
         - Arnes / arneses / soga / sogas / línea de vida → Arnes
-        - Tallas: CH/chico/chica → S | M/mediano → M | G/grande → L | XG/extragrande → XL | XXL → XXL
-        
-        REGLAS CRÍTICAS:
-        1. Responde SOLO con una lista de palabras clave NORMALIZADAS, separadas por comas. Cero explicaciones.`;
+        - Tallas: CH/chico/chica → S | M/mediano → M | G/grande → L | XG/extragrande → XL | XXL → XXL`;
 
-        let kwStr = await geminiChatMultimodal(extractionPrompt, null, "Analista de inventario.");
-        let keywords = kwStr.split(',').map(k => normalizar(k)).filter(k => k.length >= 3);
+        const extractionSchema: Schema = {
+            type: SchemaType.ARRAY,
+            description: "Lista de EPPs extraídos y normalizados al término raíz.",
+            items: {
+                type: SchemaType.STRING
+            }
+        };
+
+        let kwStr = await geminiChatMultimodal(extractionPrompt, null, "Analista de inventario experto en normalización.", extractionSchema);
+        let keywords: string[] = [];
+        try {
+            keywords = JSON.parse(kwStr);
+        } catch (e) {
+            console.warn("JSON error parsing keywords", kwStr);
+        }
+
+        keywords = keywords.map(k => normalizar(k)).filter(k => k.length >= 3);
 
         let stockContext = '';
         if (keywords.length > 0) {
@@ -176,29 +195,12 @@ export async function procesarRespuesta(jid: string, texto: string, media: any =
                 }
             }
             const allCandidates = Array.from(candidatesMap.values());
-
-            // 🛡️ AI PRE-FILTERING: Verificamos qué candidatos son realmente lo que el usuario pidió
             if (allCandidates.length > 0) {
-                const filterPrompt = `El usuario preguntó: "${resolvedText}"\n\nLista de la Base de Datos:\n${JSON.stringify(allCandidates)}\n\nTarea: Filtra esta lista y quédate SOLO con los productos que el usuario REALMENTE está pidiendo. Elimina coincidencias parciales irrelevantes (ej: si pide casco, elimina casacas). Responde SOLO el JSON de los objetos filtrados.`;
-                const filteredJson = await geminiChatMultimodal(filterPrompt, null, "Filtro de precisión de inventario.");
-
-                try {
-                    // Intentamos parsear el JSON filtrado
-                    const match = filteredJson.match(/\[[\s\S]*\]/);
-                    if (match) {
-                        const validatedResults = JSON.parse(match[0]);
-                        stockContext = `INVENTARIO REAL VALIDADO: ${JSON.stringify(validatedResults)}`;
-                    } else {
-                        // Fallback si no hay JSON
-                        stockContext = `INVENTARIO REAL: ${JSON.stringify(allCandidates.slice(0, 5))}`;
-                    }
-                } catch (e) {
-                    stockContext = `INVENTARIO REAL: ${JSON.stringify(allCandidates.slice(0, 5))}`;
-                }
+                stockContext = `INVENTARIO (Puede contener falsos positivos por busqueda DB, ígnoralos): ${JSON.stringify(allCandidates)}`;
             }
         }
 
-        const respuesta = await geminiChatMultimodal(`Mensaje del operario:\n${historyText}\n\n=== EPP ENCONTRADOS EN DB ===\n${stockContext}\n\nUsa EL MASTER PROMPT.`, null, MASTER_PROMPT);
+        const respuesta = await geminiChatMultimodal(`Mensaje del operario:\n${historyText}\n\n=== RESULTADOS DE BASE DE DATOS ===\n${stockContext}\n\nUsa LA ESTRUCTURA DEL MASTER PROMPT. No menciones que eres un sistema automatizado.`, null, MASTER_PROMPT);
         await enviarWA(jid, respuesta);
         history.push({ role: 'bot', content: respuesta, ref_id: msgId });
         await supabase.from('bot_sessions').upsert({ jid, history, updated_at: new Date().toISOString() }, { onConflict: 'jid' });
