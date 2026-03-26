@@ -8,7 +8,7 @@ const CONFIG = {
     EVOLUTION_API_KEY: (process.env.EVOLUTION_API_KEY || '').trim(),
     INSTANCE_NAME: (process.env.INSTANCE_NAME || 'carlo_bot_v2').trim(),
     GEMINI_API_KEY: (process.env.GEMINI_API_KEY || '').trim(),
-    GEMINI_MODEL: 'gemini-1.5-flash-latest' // Changed from gemini-1.5-flash to resolve 404
+    GEMINI_MODEL: 'gemini-2.0-flash' // Standard model name for current generation
 }
 
 const supabase = createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_SERVICE_KEY)
@@ -20,58 +20,60 @@ Tu misión es gestionar el inventario y resolver dudas de materiales de MINA.
 
 # REGLAS DE RESPUESTA
 1. **Precisión**: Usa la DATA REAL DB para confirmar existencias.
-2. **Jerga**: Traduce términos (tabas->botines, gafas->lentes, poncho->casaca) automáticamente.
-3. **Seguridad**: Si el usuario va a una tarea peligrosa (soldadura, altura, excavación), sugiere el EPP obligatorio.
-4. **Estilo**: Usa emojis (📦, ⚠️, ✅) y negritas. Sé conciso (máx 5 líneas).
-5. **Fuera de Ámbito**: Si te preguntan algo ajeno a minería o materiales, amablemente redirige la conversación al almacén.`;
+2. **Jerga**: Traduce términos (tabas->botines, gafas->lentes) automáticamente.
+3. **Seguridad**: Si alguien va a una tarea peligrosa, sugiere EPP.
+4. **Estilo**: Usa emojis (📦, ⚠️, ✅) y negritas. Sé conciso.
+5. **Fuera de Ámbito**: Redirige preguntas ajenas al almacén.`;
 
 function normalizar(texto: string) {
     return texto.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
 }
 
+/**
+ * Robust Chat with multiple model fallbacks to avoid 404 errors
+ */
 export async function geminiChatMultimodal(prompt: string, media: any = null, systemMsg: string | null = null) {
-    try {
-        const model = genAI.getGenerativeModel({
-            model: CONFIG.GEMINI_MODEL,
-            systemInstruction: systemMsg || SYSTEM_PROMPT
-        });
+    const fallbackModels = [
+        'gemini-2.0-flash',         // Next Gen
+        'gemini-1.5-flash-latest',  // Standard Flash Latest
+        'gemini-1.5-flash',         // Standard Flash
+        'gemini-1.5-pro',           // Pro version
+        'gemini-pro'                // Legacy 1.0 (Most compatible)
+    ];
 
-        const parts: any[] = [{ text: prompt }];
+    let lastError = '';
 
-        if (media && media.base64 && media.mimeType) {
-            parts.push({
-                inlineData: {
-                    mimeType: media.mimeType,
-                    data: media.base64
-                }
+    for (const modelName of fallbackModels) {
+        try {
+            console.log(`🤖 Intentando con IA: ${modelName}...`);
+            const model = genAI.getGenerativeModel({
+                model: modelName,
+                systemInstruction: systemMsg || SYSTEM_PROMPT
             });
-        }
 
-        const result = await model.generateContent({
-            contents: [{ role: 'user', parts }]
-        });
-
-        const response = await result.response;
-        return response.text().trim();
-    } catch (e: any) {
-        console.error(`Error IA (${CONFIG.GEMINI_MODEL}):`, e.message);
-        // Fallback to 1.5-flash if -latest fails
-        if (CONFIG.GEMINI_MODEL.includes('latest')) {
-            try {
-                const fallbackModel = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
-                const result = await fallbackModel.generateContent(prompt);
-                return result.response.text().trim();
-            } catch (e2) {
-                return `Error IA Persistente: ${e.message}`;
+            const parts: any[] = [{ text: prompt }];
+            if (media && media.base64 && media.mimeType) {
+                parts.push({
+                    inlineData: { mimeType: media.mimeType, data: media.base64 }
+                });
             }
+
+            const result = await model.generateContent({ contents: [{ role: 'user', parts }] });
+            const response = await result.response;
+            return response.text().trim();
+        } catch (e: any) {
+            console.warn(`⚠️ Falló ${modelName}: ${e.message}`);
+            lastError = e.message;
+            if (e.message.includes('401') || e.message.includes('API key')) break; // Stop if it's an auth error
+            continue;
         }
-        return `Error IA: ${e.message}`;
     }
+
+    return `Error IA Persistente: ${lastError}. Por favor verifica tu API Key.`;
 }
 
 export async function enviarWA(jid: string, mensaje: string) {
     if (!jid) return;
-
     const isGroup = jid.includes('@g.us');
     const isLid = jid.includes('@lid');
     const target = (isGroup || isLid) ? jid : jid.split('@')[0];
@@ -99,13 +101,9 @@ export async function procesarRespuesta(jid: string, texto: string, media: any =
         .maybeSingle();
 
     let history = sessionData?.history || [];
-
-    if (msgId && history.some((h: any) => h.ref_id === msgId)) {
-        return "Mensaje ya procesado";
-    }
+    if (msgId && history.some((h: any) => h.ref_id === msgId)) return "Mensaje ya procesado";
 
     let resolvedText = texto || '';
-
     if (media && media.type === 'audio') {
         resolvedText = await geminiChatMultimodal("Escribe SOLO el texto de lo que oigas.", media, "Transcriptor fiel de campo.");
     } else if (media && media.type === 'image') {
@@ -118,10 +116,8 @@ export async function procesarRespuesta(jid: string, texto: string, media: any =
 
     try {
         const extractionPrompt = `HISTORIAL:\n${historyText}\n\n
-    TAREA: Extrae los materiales o equipos mencionados. 
-    1. Si usan jerga, busca su equivalente técnico (ej: "tabas" -> botin, calzado; "poncho" -> casaca, impermeable).
-    2. Identifica tallas o medidas (ej: 42, XL, L, 3/4).
-    3. Responde SOLO con una lista de palabras clave (técnicas y jerga) separadas por comas, sin tildes.`;
+    TAREA: Extrae materiales/equipos (traduce jerga como tabas->botin). 
+    Responde SOLO una lista de palabras clave (técnicas y jerga) separadas por comas.`;
 
         let kwStr = await geminiChatMultimodal(extractionPrompt, (media?.type === 'image' ? media : null), "Intérprete experto en suministros de mina.");
         let keywords = kwStr.split(',').map((k: string) => normalizar(k)).filter((k: string) => k.length >= 2);
@@ -138,48 +134,30 @@ export async function procesarRespuesta(jid: string, texto: string, media: any =
 
                 if (data) {
                     data.forEach((item: any) => {
-                        const mat = item.material;
-                        const wh = item.warehouse;
-                        const key = `${mat?.name}-${wh?.name}`;
+                        const key = `${item.material?.name}-${item.warehouse?.name}`;
                         if (!resultsMap.has(key)) resultsMap.set(key, item);
                     });
                 }
             }
             const results = Array.from(resultsMap.values());
-            if (results.length > 0) {
-                stockContext = `DATA REAL DEL INVENTARIO: ${JSON.stringify(results)}`;
-            } else {
-                stockContext = "No se encontraron coincidencias en la DB.";
-            }
+            if (results.length > 0) stockContext = `DATA REAL DEL INVENTARIO: ${JSON.stringify(results)}`;
         }
 
         const finalPrompt = `HISTORIAL:\n${historyText}\n\nCONTEXTO:\n${stockContext}\n
     TAREA: Responde al operario de MINA de forma profesional y clara.
-    - Si hay stock: Confirma el material, cantidad y almacén.
+    - Si hay stock: Confirma material, cantidad y almacén.
     - Si NO hay stock: Indica amablemente y sugiere reemplazo.
-    - PRIORIZA tallas encontradas en historial.
     - Estilo: Máx 5 líneas. Usa negritas. Termina con consejo de seguridad ⚠️.`;
 
         const respuesta = await geminiChatMultimodal(finalPrompt);
         const waResult = await enviarWA(jid, respuesta);
 
-        history.push({
-            role: 'bot',
-            content: respuesta,
-            ref_id: msgId,
-            wa_status: waResult?.status || waResult?.error || 'OK'
-        });
-
-        await supabase.from('bot_sessions').upsert({
-            jid,
-            history,
-            updated_at: new Date().toISOString()
-        }, { onConflict: 'jid' });
+        history.push({ role: 'bot', content: respuesta, ref_id: msgId });
+        await supabase.from('bot_sessions').upsert({ jid, history, updated_at: new Date().toISOString() }, { onConflict: 'jid' });
 
         return respuesta;
-
     } catch (e: any) {
         console.error(`❌ Error Bot: ${e.message}`);
-        return `Error en V24.1. Intentaremos reconectar.`;
+        return `Lo siento, el almacén virtual está en mantenimiento. Intenta de nuevo en un momento.`;
     }
 }
