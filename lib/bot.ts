@@ -1,5 +1,4 @@
 import { createClient } from '@supabase/supabase-js'
-import { GoogleGenerativeAI } from '@google/generative-ai'
 
 const CONFIG = {
     SUPABASE_URL: (process.env.NEXT_PUBLIC_SUPABASE_URL || '').trim(),
@@ -7,69 +6,83 @@ const CONFIG = {
     EVOLUTION_URL: (process.env.EVOLUTION_URL || '').trim(),
     EVOLUTION_API_KEY: (process.env.EVOLUTION_API_KEY || '').trim(),
     INSTANCE_NAME: (process.env.INSTANCE_NAME || 'carlo_bot_v2').trim(),
-    GEMINI_API_KEY: (process.env.GEMINI_API_KEY || '').trim(),
-    GEMINI_MODEL: 'gemini-2.0-flash' // Standard model name for current generation
+    GEMINI_API_KEY: (process.env.GEMINI_API_KEY || '').trim()
 }
 
 const supabase = createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_SERVICE_KEY)
-const genAI = new GoogleGenerativeAI(CONFIG.GEMINI_API_KEY)
 
-const SYSTEM_PROMPT = `# ROL Y ENTORNO
-Eres **Almacén Virtual**, el asistente inteligente de **INDUSTRIAS PROMET**. 
-Tu misión es gestionar el inventario y resolver dudas de materiales de MINA.
-
-# REGLAS DE RESPUESTA
-1. **Precisión**: Usa la DATA REAL DB para confirmar existencias.
-2. **Jerga**: Traduce términos (tabas->botines, gafas->lentes) automáticamente.
-3. **Seguridad**: Si alguien va a una tarea peligrosa, sugiere EPP.
-4. **Estilo**: Usa emojis (📦, ⚠️, ✅) y negritas. Sé conciso.
-5. **Fuera de Ámbito**: Redirige preguntas ajenas al almacén.`;
+const SYSTEM_PROMPT = `Eres Almacén Virtual de INDUSTRIAS PROMET. Tu misión es gestionar el inventario de MINA.
+- Traduce jerga (tabas->botines).
+- Responde con stock real de la DB.
+- Sé conciso y usa emojis.`;
 
 function normalizar(texto: string) {
+    if (!texto) return '';
     return texto.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
 }
 
 /**
- * Robust Chat with multiple model fallbacks to avoid 404 errors
+ * Brute force attempt to find a working Gemini endpoint and model
  */
 export async function geminiChatMultimodal(prompt: string, media: any = null, systemMsg: string | null = null) {
-    const fallbackModels = [
-        'gemini-2.0-flash',         // Next Gen
-        'gemini-1.5-flash-latest',  // Standard Flash Latest
-        'gemini-1.5-flash',         // Standard Flash
-        'gemini-1.5-pro',           // Pro version
-        'gemini-pro'                // Legacy 1.0 (Most compatible)
+    const key = CONFIG.GEMINI_API_KEY;
+    if (!key) return "Error: No hay API Key configurada.";
+
+    // Combinations to try: [Model, Version]
+    const attempts = [
+        ['gemini-1.5-flash', 'v1'],
+        ['gemini-1.5-flash-latest', 'v1beta'],
+        ['gemini-2.0-flash', 'v1beta'],
+        ['gemini-1.5-flash', 'v1beta'],
+        ['gemini-pro', 'v1']
     ];
 
     let lastError = '';
 
-    for (const modelName of fallbackModels) {
+    for (const [model, version] of attempts) {
         try {
-            console.log(`🤖 Intentando con IA: ${modelName}...`);
-            const model = genAI.getGenerativeModel({
-                model: modelName,
-                systemInstruction: systemMsg || SYSTEM_PROMPT
-            });
+            console.log(`🔍 Intentando ${model} en ${version}...`);
+            const url = `https://generativelanguage.googleapis.com/${version}/models/${model}:generateContent?key=${key}`;
 
-            const parts: any[] = [{ text: prompt }];
+            const payload = {
+                contents: [{
+                    parts: [
+                        { text: (systemMsg || SYSTEM_PROMPT) + "\n\nMENSAJE USUARIO: " + prompt }
+                    ]
+                }]
+            };
+
             if (media && media.base64 && media.mimeType) {
-                parts.push({
+                payload.contents[0].parts.push({
                     inlineData: { mimeType: media.mimeType, data: media.base64 }
-                });
+                } as any);
             }
 
-            const result = await model.generateContent({ contents: [{ role: 'user', parts }] });
-            const response = await result.response;
-            return response.text().trim();
+            const r = await fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            const data = await r.json();
+
+            if (data.candidates && data.candidates[0]?.content?.parts[0]?.text) {
+                console.log(`✅ Éxito con ${model} (${version})`);
+                return data.candidates[0].content.parts[0].text.trim();
+            }
+
+            if (data.error) {
+                console.warn(`⚠️ Fallo ${model} (${version}): ${data.error.message}`);
+                lastError = data.error.message;
+            } else {
+                console.warn(`⚠️ Respuesta inesperada de ${model}: ${JSON.stringify(data)}`);
+            }
         } catch (e: any) {
-            console.warn(`⚠️ Falló ${modelName}: ${e.message}`);
             lastError = e.message;
-            if (e.message.includes('401') || e.message.includes('API key')) break; // Stop if it's an auth error
-            continue;
         }
     }
 
-    return `Error IA Persistente: ${lastError}. Por favor verifica tu API Key.`;
+    return `Error IA Persistente. El sistema no encuentra modelos disponibles para tu cuenta. (E: ${lastError})`;
 }
 
 export async function enviarWA(jid: string, mensaje: string) {
@@ -86,7 +99,6 @@ export async function enviarWA(jid: string, mensaje: string) {
         });
         return await response.json();
     } catch (e: any) {
-        console.error(`❌ ERROR WA: ${e.message}`);
         return { error: true, details: e.message };
     }
 }
@@ -105,9 +117,7 @@ export async function procesarRespuesta(jid: string, texto: string, media: any =
 
     let resolvedText = texto || '';
     if (media && media.type === 'audio') {
-        resolvedText = await geminiChatMultimodal("Escribe SOLO el texto de lo que oigas.", media, "Transcriptor fiel de campo.");
-    } else if (media && media.type === 'image') {
-        resolvedText = `[Imagen enviada]`;
+        resolvedText = await geminiChatMultimodal("Escribe SOLO el texto de lo que oigas.", media, "Transcriptor fiel.");
     }
 
     history.push({ role: 'user', content: resolvedText, msg_id: msgId });
@@ -115,11 +125,8 @@ export async function procesarRespuesta(jid: string, texto: string, media: any =
     const historyText = history.map((h: any) => `${h.role}: ${h.content}`).join('\n');
 
     try {
-        const extractionPrompt = `HISTORIAL:\n${historyText}\n\n
-    TAREA: Extrae materiales/equipos (traduce jerga como tabas->botin). 
-    Responde SOLO una lista de palabras clave (técnicas y jerga) separadas por comas.`;
-
-        let kwStr = await geminiChatMultimodal(extractionPrompt, (media?.type === 'image' ? media : null), "Intérprete experto en suministros de mina.");
+        const extractionPrompt = `Extrae materiales/keywords del historial:\n${historyText}\nResponde SOLO palabras separadas por comas.`;
+        let kwStr = await geminiChatMultimodal(extractionPrompt, (media?.type === 'image' ? media : null), "Experto en almacén.");
         let keywords = kwStr.split(',').map((k: string) => normalizar(k)).filter((k: string) => k.length >= 2);
 
         let stockContext = '';
@@ -140,24 +147,19 @@ export async function procesarRespuesta(jid: string, texto: string, media: any =
                 }
             }
             const results = Array.from(resultsMap.values());
-            if (results.length > 0) stockContext = `DATA REAL DEL INVENTARIO: ${JSON.stringify(results)}`;
+            if (results.length > 0) stockContext = `INVENTARIO REAL: ${JSON.stringify(results)}`;
         }
 
-        const finalPrompt = `HISTORIAL:\n${historyText}\n\nCONTEXTO:\n${stockContext}\n
-    TAREA: Responde al operario de MINA de forma profesional y clara.
-    - Si hay stock: Confirma material, cantidad y almacén.
-    - Si NO hay stock: Indica amablemente y sugiere reemplazo.
-    - Estilo: Máx 5 líneas. Usa negritas. Termina con consejo de seguridad ⚠️.`;
-
+        const finalPrompt = `Responde al operario:\n${historyText}\n\nCONTEXTO:\n${stockContext}\nUsa emojis y negritas. Indica almacén. Máx 5 líneas.`;
         const respuesta = await geminiChatMultimodal(finalPrompt);
-        const waResult = await enviarWA(jid, respuesta);
 
+        await enviarWA(jid, respuesta);
         history.push({ role: 'bot', content: respuesta, ref_id: msgId });
         await supabase.from('bot_sessions').upsert({ jid, history, updated_at: new Date().toISOString() }, { onConflict: 'jid' });
 
         return respuesta;
     } catch (e: any) {
         console.error(`❌ Error Bot: ${e.message}`);
-        return `Lo siento, el almacén virtual está en mantenimiento. Intenta de nuevo en un momento.`;
+        return `Error de conexión. Intenta de nuevo.`;
     }
 }
