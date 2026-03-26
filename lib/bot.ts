@@ -6,36 +6,39 @@ const CONFIG = {
     SUPABASE_SERVICE_KEY: (process.env.SUPABASE_SERVICE_ROLE_KEY || '').trim(),
     EVOLUTION_URL: (process.env.EVOLUTION_URL || '').trim(),
     EVOLUTION_API_KEY: (process.env.EVOLUTION_API_KEY || '').trim(),
-    INSTANCE_NAME: (process.env.INSTANCE_NAME || 'carlo_bot_v2').trim(),
-    GEMINI_API_KEY: (process.env.GEMINI_API_KEY || '').trim()
+    INSTANCE_NAME: (process.env.INSTANCE_NAME || 'carlo_bot_v2').trim()
 }
 
 const supabase = createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_SERVICE_KEY)
-const genAI = new GoogleGenerativeAI(CONFIG.GEMINI_API_KEY)
 
-const SYSTEM_PROMPT = `# ROL
-Eres **Almacén Virtual**, el experto en inventario de **INDUSTRIAS PROMET**. 
-Gestionas materiales de MINA con precisión y seguridad.
+const SYSTEM_PROMPT = `# ROL Y ENTORNO
+Eres **Almacén Virtual**, el asistente inteligente de **INDUSTRIAS PROMET**. 
+Gestionas el inventario de materiales de MINA.
 
 # REGLAS
-1. **DATA REAL**: Usa siempre los datos de stock encontrados en la DB.
-2. **JERGA**: Traduce automáticamente (tabas->botines, gafas->lentes).
-3. **SEGURIDAD**: Cada respuesta debe incluir un consejo de seguridad ⚠️ relacionado con el material.
-4. **ESTILO**: Emojis, negritas y respuestas directas (máx 5 líneas).`;
+1. **PRECISIÓN**: Usa los datos de stock reales de la DB.
+2. **JERGA**: Traduce automáticamente (tabas, ponchos, gafas).
+3. **SEGURIDAD**: Agrega siempre un consejo de seguridad ⚠️.
+4. **ESTILO**: Emojis, negritas, máx 5 líneas.`;
 
 function normalizar(texto: string) {
     return texto.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
 }
 
 /**
- * Verified Model Fallback Chain for this account
+ * Robust Chat with Dynamic Initialization for Serverless
  */
 export async function geminiChatMultimodal(prompt: string, media: any = null, systemMsg: string | null = null) {
+    const key = (process.env.GEMINI_API_KEY || '').trim();
+    if (!key) return "❌ Error: La API KEY no está configurada en el servidor.";
+
+    // Initialize INSIDE the function to ensure the latest env key is used
+    const genAI = new GoogleGenerativeAI(key);
+
     const fallbackModels = [
-        'gemini-flash-latest',      // Verified Working
-        'gemini-pro-latest',       // Verified Working Fallback
-        'gemini-2.0-flash-lite',   // Next-gen Lite
-        'gemini-pro'               // Legacy
+        'gemini-flash-latest',     // Primary
+        'gemini-pro-latest',      // Fallback
+        'gemini-pro'              // Legacy
     ];
 
     let lastError = '';
@@ -63,7 +66,7 @@ export async function geminiChatMultimodal(prompt: string, media: any = null, sy
             continue;
         }
     }
-    return `Lo siento, hay una pequeña interrupción en el sistema de IA. ¿Qué necesitas consultar de Almacén? (Ref: ${lastError})`;
+    return `Lo siento, hay un inconveniente temporal con la IA. ¿Qué necesitas de Almacén? (Error: ${lastError})`;
 }
 
 export async function enviarWA(jid: string, mensaje: string) {
@@ -83,6 +86,7 @@ export async function enviarWA(jid: string, mensaje: string) {
 
 export async function procesarRespuesta(jid: string, texto: string, media: any = null, msgId: string | null = null) {
     if (!jid) return "Error JID";
+
     let { data: sessionData } = await supabase.from('bot_sessions').select('history').eq('jid', jid).maybeSingle();
     let history = sessionData?.history || [];
     if (msgId && history.some((h: any) => h.ref_id === msgId)) return "Mensaje ya procesado";
@@ -99,7 +103,7 @@ export async function procesarRespuesta(jid: string, texto: string, media: any =
     const historyText = history.map((h: any) => `${h.role}: ${h.content}`).join('\n');
 
     try {
-        let kwStr = await geminiChatMultimodal(`Extrae materiales clave de:\n${historyText}\nResponde solo palabras separadas por comas. Traduce jerga como tabas->botin.`, null, "Analista de suministros.");
+        let kwStr = await geminiChatMultimodal(`Extrae materiales clave de:\n${historyText}\nResponde solo palabras separadas por comas. Traduce jerga como tabas->botin.`, null, "Analista logístico.");
         let keywords = kwStr.split(',').map(k => normalizar(k)).filter(k => k.length >= 2);
 
         let stockContext = '';
@@ -118,7 +122,9 @@ export async function procesarRespuesta(jid: string, texto: string, media: any =
             if (results.length > 0) stockContext = `INVENTARIO REAL: ${JSON.stringify(results)}`;
         }
 
-        const respuesta = await geminiChatMultimodal(`Responde al operario:\n${historyText}\n\nDATA:\n${stockContext}`, null, "Asistente Almacén Virtual.");
+        const finalPrompt = `Responde al operario de MINA:\n${historyText}\n\nDATA:\n${stockContext}\nUsa emojis y negritas. Máx 5 líneas.⚠️ Seguridad`;
+        const respuesta = await geminiChatMultimodal(finalPrompt);
+
         await enviarWA(jid, respuesta);
         history.push({ role: 'bot', content: respuesta, ref_id: msgId });
         await supabase.from('bot_sessions').upsert({ jid, history, updated_at: new Date().toISOString() }, { onConflict: 'jid' });
