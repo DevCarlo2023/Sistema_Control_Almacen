@@ -20,11 +20,11 @@ function normalizar(texto: string) {
  */
 export async function geminiChatMultimodal(prompt: string, media: any = null, systemMsg: string | null = null) {
     // 🛡️ SECURITY: Only use Vercel Environment variables. Never hardcode keys in the repository.
-    const rawKey = (process.env.GEMINI_API_KEY || '').trim();
+    const rawKey = (process.env.GOOGLE_GEMINI_KEY || '').trim();
     const key = rawKey.replace(/^y[\r\n\s]+/, '').replace(/^y/, '').trim();
 
     if (!key || key.length < 10) {
-        return "❌ Error: La API KEY no está configurada correctamente en Vercel.";
+        return "❌ Error: La API KEY no está configurada correctamente en Vercel. Asegúrate de llamarla GOOGLE_GEMINI_KEY";
     }
 
     const genAI = new GoogleGenerativeAI(key);
