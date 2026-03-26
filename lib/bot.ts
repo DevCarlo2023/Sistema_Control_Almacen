@@ -140,16 +140,16 @@ export async function procesarRespuesta(jid: string, texto: string, media: any =
         DICCIONARIO DE NORMALIZACIÓN (Usa estrictamente las conversiones del lado derecho):
         - Tivex / Tibek / Tybek / Tyveks / Tyvexs → Tyvek
         - Overall / overol / overoles / mameluco / mamelucos → Mameluco
-        - Chaleco / chalecos / pechera / pecheras → Chaleco Reflectivo
-        - Taba / tabas / zapato / zapatos / bota / botas / botines → Botín de Seguridad
-        - Casco / cascos / yep / yepo / yeps → Casco de Seguridad
-        - Lente / lentes / google / googles / goggle / goggles / lunar / lunares → Lentes de Seguridad
-        - Careta / caretas → Careta Facial
+        - Chaleco / chalecos / pechera / pecheras → Chaleco
+        - Taba / tabas / zapato / zapatos / bota / botas / botines → Botin
+        - Casco / cascos / yep / yepo / yeps → Casco
+        - Lente / lentes / google / googles / goggle / goggles / lunar / lunares → Lente
+        - Careta / caretas → Careta
         - Mascarilla / mascarillas / nariguera / narigueras / respiradores → Respirador
-        - Filtro / filtros → Filtro para Respirador
-        - Guante de hilo / guantes de hilo → Guante de Algodón
-        - Guante negro / guantes negros / guante látex → Guante de Nitrilo
-        - Arnes / arneses / soga / sogas / línea de vida → Arnés de Seguridad
+        - Filtro / filtros → Filtro
+        - Guante de hilo / guantes de hilo → Guante Algodon
+        - Guante negro / guantes negros / guante látex → Guante Nitrilo
+        - Arnes / arneses / soga / sogas / línea de vida → Arnes
         - Tallas: CH/chico/chica → S | M/mediano → M | G/grande → L | XG/extragrande → XL | XXL → XXL
         
         REGLAS CRÍTICAS:
