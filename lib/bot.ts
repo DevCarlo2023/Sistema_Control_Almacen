@@ -8,7 +8,7 @@ const CONFIG = {
     EVOLUTION_API_KEY: (process.env.EVOLUTION_API_KEY || '').trim(),
     INSTANCE_NAME: (process.env.INSTANCE_NAME || 'carlo_bot_v2').trim(),
     GEMINI_API_KEY: (process.env.GEMINI_API_KEY || '').trim(),
-    GEMINI_MODEL: 'gemini-1.5-flash'
+    GEMINI_MODEL: 'gemini-1.5-flash-latest' // Changed from gemini-1.5-flash to resolve 404
 }
 
 const supabase = createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_SERVICE_KEY)
@@ -20,8 +20,8 @@ Tu misión es gestionar el inventario y resolver dudas de materiales de MINA.
 
 # REGLAS DE RESPUESTA
 1. **Precisión**: Usa la DATA REAL DB para confirmar existencias.
-2. **Jerga**: Traduce términos (tabas->botines, gafas->lentes) automáticamente.
-3. **Seguridad**: Si el usuario va a una tarea peligrosa, sugiere EPP.
+2. **Jerga**: Traduce términos (tabas->botines, gafas->lentes, poncho->casaca) automáticamente.
+3. **Seguridad**: Si el usuario va a una tarea peligrosa (soldadura, altura, excavación), sugiere el EPP obligatorio.
 4. **Estilo**: Usa emojis (📦, ⚠️, ✅) y negritas. Sé conciso (máx 5 líneas).
 5. **Fuera de Ámbito**: Si te preguntan algo ajeno a minería o materiales, amablemente redirige la conversación al almacén.`;
 
@@ -36,7 +36,6 @@ export async function geminiChatMultimodal(prompt: string, media: any = null, sy
             systemInstruction: systemMsg || SYSTEM_PROMPT
         });
 
-        const contents: any[] = [];
         const parts: any[] = [{ text: prompt }];
 
         if (media && media.base64 && media.mimeType) {
@@ -53,11 +52,19 @@ export async function geminiChatMultimodal(prompt: string, media: any = null, sy
         });
 
         const response = await result.response;
-        const text = response.text();
-
-        return text.replace(/<thought>[\s\S]*?<\/thought>/gi, '').replace(/thought:[\s\S]*?(\n|$)/gi, '').trim();
+        return response.text().trim();
     } catch (e: any) {
-        console.error('Error IA SDK:', e.message);
+        console.error(`Error IA (${CONFIG.GEMINI_MODEL}):`, e.message);
+        // Fallback to 1.5-flash if -latest fails
+        if (CONFIG.GEMINI_MODEL.includes('latest')) {
+            try {
+                const fallbackModel = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+                const result = await fallbackModel.generateContent(prompt);
+                return result.response.text().trim();
+            } catch (e2) {
+                return `Error IA Persistente: ${e.message}`;
+            }
+        }
         return `Error IA: ${e.message}`;
     }
 }
@@ -69,7 +76,6 @@ export async function enviarWA(jid: string, mensaje: string) {
     const isLid = jid.includes('@lid');
     const target = (isGroup || isLid) ? jid : jid.split('@')[0];
 
-    console.log(`📤 Enviando respuesta a ${target}...`);
     try {
         const response = await fetch(`${CONFIG.EVOLUTION_URL}/message/sendText/${CONFIG.INSTANCE_NAME}`, {
             method: 'POST',
@@ -118,9 +124,7 @@ export async function procesarRespuesta(jid: string, texto: string, media: any =
     3. Responde SOLO con una lista de palabras clave (técnicas y jerga) separadas por comas, sin tildes.`;
 
         let kwStr = await geminiChatMultimodal(extractionPrompt, (media?.type === 'image' ? media : null), "Intérprete experto en suministros de mina.");
-        let keywords = kwStr.split(',').map((k: string) => normalizar(k)).filter((k: string) => k.length >= 2 && k !== 'charla');
-
-        console.log(`🎯 Keywords: [${keywords.join(', ')}]`);
+        let keywords = kwStr.split(',').map((k: string) => normalizar(k)).filter((k: string) => k.length >= 2);
 
         let stockContext = '';
         if (keywords.length > 0) {
@@ -176,6 +180,6 @@ export async function procesarRespuesta(jid: string, texto: string, media: any =
 
     } catch (e: any) {
         console.error(`❌ Error Bot: ${e.message}`);
-        return `Error en V24.1. ¿Qué necesitas de almacén?`;
+        return `Error en V24.1. Intentaremos reconectar.`;
     }
 }
