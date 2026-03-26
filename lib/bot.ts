@@ -7,26 +7,22 @@ const CONFIG = {
     EVOLUTION_API_KEY: (process.env.EVOLUTION_API_KEY || '').trim(),
     INSTANCE_NAME: (process.env.INSTANCE_NAME || 'carlo_bot_v2').trim(),
     GEMINI_API_KEY: (process.env.GEMINI_API_KEY || '').trim(),
-    GEMINI_MODEL: 'gemini-2.5-flash'
+    GEMINI_MODEL: 'gemini-1.5-flash'
 }
 
 const supabase = createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_SERVICE_KEY)
 
 const SYSTEM_PROMPT = `# ROL Y ENTORNO
 Eres **Almacén Virtual**, el asistente inteligente de **INDUSTRIAS PROMET**. 
-Tu misión es facilitar el acceso a materiales de **MINA** con eficiencia y calidez.
+Tu misión es gestionar el inventario y resolver dudas de materiales de MINA.
 
-# REGLAS DE DISEÑO (AESTHETICS)
-- **Estructura**: Usa viñetas (•) y negritas para resaltar lo importante.
-- **Iconos**: Usa emojis para categorizar información (📦 Stock, 🛠️ Tarea, ⚠️ Seguridad).
-- **Tono**: Profesional, experto y muy servicial.
-- **Concisión**: Máximo 5-6 líneas bien organizadas.
+# REGLAS DE RESPUESTA
+1. **Precisión**: Usa la DATA REAL DB para confirmar existencias.
+2. **Jerga**: Traduce términos (tabas->botines, gafas->lentes) automáticamente.
+3. **Seguridad**: Si el usuario va a una tarea peligrosa, sugiere EPP.
+4. **Estilo**: Usa emojis (📦, ⚠️, ✅) y negritas. Sé conciso (máx 5 líneas).
+5. **Fuera de Ámbito**: Si te preguntan algo ajeno a minería o materiales, amablemente redirige la conversación al almacén.`;
 
-# REGLAS DE LOGÍSTICA
-- **Interpretación**: Traduce jerga ("tabas" -> botín, "poncho" -> casaca) sin corregir al usuario, solo confirmando con el término correcto.
-- **Anticipación**: Si mencionan una tarea, sugiere el kit de seguridad relacionado.
-
-# PRIORIDAD: Seguridad Mina ⚠️ (Cero Accidentes).`;
 
 
 function normalizar(texto: string) {
@@ -124,18 +120,17 @@ export async function procesarRespuesta(jid: string, texto: string, media: any =
     const historyText = history.map((h: any) => `${h.role}: ${h.content}`).join('\n');
 
     try {
-        // 1. Extracción con Asociación Humana
+        // 1. Extracción de Keywords y asociación técnica
         const extractionPrompt = `HISTORIAL:\n${historyText}\n\n
-    TAREA: Actúa como un experto de almacén que entiende la jerga del trabajador.
-    - Si el trabajador usa palabras informales, tradúcelas a términos de inventario (ej: tabas -> botin, gafas -> lentes, trapo -> huaipe).
-    - Si menciona una tarea (ej: "voy a pintar"), incluye los materiales lógicos para esa tarea.
-    - Extrae tallas o números (40, 38, etc).
-    - Responde SOLO una lista de palabras clave sin tildes separadas por comas.`;
+    TAREA: Extrae los materiales o equipos mencionados. 
+    1. Si usan jerga, busca su equivalente técnico (ej: "tabas" -> botin, calzado; "poncho" -> casaca, impermeable).
+    2. Identifica tallas o medidas (ej: 42, XL, L, 3/4).
+    3. Responde SOLO con una lista de palabras clave (técnicas y jerga) separadas por comas, sin tildes.`;
 
-        let kwStr = await geminiChatMultimodal(extractionPrompt, (media?.type === 'image' ? media : null), "Intérprete de jerga minera y logística.");
+        let kwStr = await geminiChatMultimodal(extractionPrompt, (media?.type === 'image' ? media : null), "Intérprete experto en suministros de mina.");
         let keywords = kwStr.split(',').map((k: string) => normalizar(k)).filter((k: string) => k.length >= 2 && k !== 'charla');
 
-        console.log(`🎯 Keywords Asociativas (V24): [${keywords.join(', ')}]`);
+        console.log(`🎯 Keywords para Búsqueda (V24.1): [${keywords.join(', ')}]`);
 
         let stockContext = '';
         if (keywords.length > 0) {
@@ -145,13 +140,13 @@ export async function procesarRespuesta(jid: string, texto: string, media: any =
                     .from('inventory')
                     .select('quantity, material:materials!inner(name, description, unit_of_measure), warehouse:warehouses(name)')
                     .or(`name.ilike.%${kw}%,description.ilike.%${kw}%`, { foreignTable: "materials" })
-                    .limit(10);
+                    .limit(5);
 
                 if (data) {
                     data.forEach((item: any) => {
-                        const mat = Array.isArray(item.material) ? item.material[0] : item.material;
-                        const wh = Array.isArray(item.warehouse) ? item.warehouse[0] : item.warehouse;
-                        const key = `${mat?.name || 'Inom'}-${wh?.name || 'Gral'}`;
+                        const mat = item.material;
+                        const wh = item.warehouse;
+                        const key = `${mat?.name}-${wh?.name}`;
                         if (!resultsMap.has(key)) {
                             resultsMap.set(key, item);
                         }
@@ -160,19 +155,20 @@ export async function procesarRespuesta(jid: string, texto: string, media: any =
             }
             const results = Array.from(resultsMap.values());
             if (results.length > 0) {
-                stockContext = `DATA REAL DB: ${JSON.stringify(results)}`;
+                stockContext = `DATA REAL DEL INVENTARIO (Usa esta info): ${JSON.stringify(results)}`;
+            } else {
+                stockContext = "IMPORTANTE: No se encontraron coincidencias exactas en la base de datos de inventario para estas palabras clave.";
             }
         }
 
-        // 2. Respuesta Final
-        const finalPrompt = `HISTORIAL:\n${historyText}\n\n${stockContext}\n
-    TAREA: Genera una respuesta VISUALMENTE ATRACTIVA y ORDENADA.
-    1. Confirma el pedido/jerga con un emoji amable.
-    2. Si hay stock, lístalo usando: • *Material* | Qty: X | [Almacén]
-    3. Si NO hay stock, ofrece una alternativa o un mensaje de apoyo.
-    4. Cierra con una frase de Seguridad Mina corta y potente con el icono ⚠️.
-    
-    REGLA: Usa negritas para los nombres de materiales. Máximo 6 líneas.`;
+        // 2. Respuesta Final al Usuario
+        const finalPrompt = `HISTORIAL:\n${historyText}\n\nCONTEXTO:\n${stockContext}\n
+    TAREA: Responde al operario de MINA de forma profesional y clara.
+    - Si hay stock: Confirma el material, cantidad y en qué almacén está.
+    - Si NO hay stock: Indícalo amablemente y sugiere que consulte por un reemplazo o espere reabastecimiento.
+    - REGLA DE ORO: Si encuentras tallas en el historial (ej: 42), prioriza mostrar materiales que coincidan con esa talla.
+    - Estilo: Máximo 5 líneas. Usa negritas para nombres. Termina con un consejo de seguridad ⚠️.`;
+
 
         const respuesta = await geminiChatMultimodal(finalPrompt);
 
