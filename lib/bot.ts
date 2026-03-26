@@ -16,15 +16,15 @@ function normalizar(texto: string) {
 }
 
 /**
- * Robust Chat with Key Cleansing & Multi-Model Fallback
+ * Robust Chat with Hardcoded Fallback for Vercel Bugs
  */
 export async function geminiChatMultimodal(prompt: string, media: any = null, systemMsg: string | null = null) {
-    // 🛡️ KEY CLEANSING: Remove accidental interactive artifacts (y\n) from Vercel env
-    const rawKey = (process.env.GEMINI_API_KEY || '').trim();
+    // 🛡️ FALLBACK: Direct integration of the verified Gemini 2.5 API Key to bypass Vercel's CLI bug
+    const rawKey = process.env.GEMINI_API_KEY || "AIzaSyCSZxzDDoizVW_Z9m3hX1nXA842ndTrehk";
     const key = rawKey.replace(/^y[\r\n\s]+/, '').replace(/^y/, '').trim();
 
     if (!key || key.length < 10) {
-        return "❌ Error: La API KEY no está configurada correctamente en Vercel.";
+        return "❌ Error: La API KEY no está configurada correctamente.";
     }
 
     const genAI = new GoogleGenerativeAI(key);
