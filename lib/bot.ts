@@ -136,17 +136,24 @@ export async function procesarRespuesta(jid: string, texto: string, media: any =
     const historyText = history.map((h: any) => `${h.role}: ${h.content}`).join('\n');
 
     try {
-        const extractionPrompt = `Extrae materiales clave mencionados en el historial:\n${historyText}\n
-        DICCIONARIO:
-        - Tivex / Tibek / Tyvek
-        - Taba / tabas / botines
-        - Casco / Casco de Seguridad
-        - Lentes / Lentes de Seguridad
+        const extractionPrompt = `Extrae los materiales o equipos mencionados en el historial:\n${historyText}\n
+        DICCIONARIO DE NORMALIZACIÓN (Usa estrictamente las conversiones del lado derecho):
+        - Tivex / Tibek / Tybek / Tyveks / Tyvexs → Tyvek
+        - Overall / overol / overoles / mameluco / mamelucos → Mameluco
+        - Chaleco / chalecos / pechera / pecheras → Chaleco Reflectivo
+        - Taba / tabas / zapato / zapatos / bota / botas / botines → Botín de Seguridad
+        - Casco / cascos / yep / yepo / yeps → Casco de Seguridad
+        - Lente / lentes / google / googles / goggle / goggles / lunar / lunares → Lentes de Seguridad
+        - Careta / caretas → Careta Facial
+        - Mascarilla / mascarillas / nariguera / narigueras / respiradores → Respirador
+        - Filtro / filtros → Filtro para Respirador
+        - Guante de hilo / guantes de hilo → Guante de Algodón
+        - Guante negro / guantes negros / guante látex → Guante de Nitrilo
+        - Arnes / arneses / soga / sogas / línea de vida → Arnés de Seguridad
+        - Tallas: CH/chico/chica → S | M/mediano → M | G/grande → L | XG/extragrande → XL | XXL → XXL
         
-        REGLAS:
-        1. Responde SOLO con una lista de palabras clave NORMALIZADAS (mínimo 3 letras), separadas por comas. 
-        2. Ej: "tyvek, lentes, casco".
-        3. No inventes palabras.`;
+        REGLAS CRÍTICAS:
+        1. Responde SOLO con una lista de palabras clave NORMALIZADAS, separadas por comas. Cero explicaciones.`;
 
         let kwStr = await geminiChatMultimodal(extractionPrompt, null, "Analista de inventario.");
         let keywords = kwStr.split(',').map(k => normalizar(k)).filter(k => k.length >= 3);
@@ -177,7 +184,7 @@ export async function procesarRespuesta(jid: string, texto: string, media: any =
 
                 try {
                     // Intentamos parsear el JSON filtrado
-                    const match = filteredJson.match(/\[.*\]/s);
+                    const match = filteredJson.match(/\[[\s\S]*\]/);
                     if (match) {
                         const validatedResults = JSON.parse(match[0]);
                         stockContext = `INVENTARIO REAL VALIDADO: ${JSON.stringify(validatedResults)}`;
