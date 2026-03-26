@@ -161,7 +161,7 @@ export async function procesarRespuesta(jid: string, texto: string, media: any =
 
         const extractionSchema: Schema = {
             type: SchemaType.ARRAY,
-            description: "Lista de EPPs extraídos y normalizados al término raíz.",
+            description: "Lista de EPPs extraídos y normalizados. CRÍTICO: Todas las palabras deben estar estrictamente en su forma SINGULAR (ej: 'pernos' -> 'perno', 'cascos' -> 'casco', 'lentes' -> 'lente').",
             items: {
                 type: SchemaType.STRING
             }
