@@ -161,7 +161,7 @@ export async function procesarRespuesta(jid: string, texto: string, media: any =
 
         const extractionSchema: Schema = {
             type: SchemaType.ARRAY,
-            description: "Lista de EPPs extraídos y normalizados. CRÍTICO: Todas las palabras deben estar estrictamente en su forma SINGULAR (ej: 'pernos' -> 'perno', 'cascos' -> 'casco', 'lentes' -> 'lente').",
+            description: "Lista de EPPs extraídos. CRÍTICO: Fragmenta frases compuestas en palabras individuales en SINGULAR. Ignora artículos ('de', 'la', 'el'). Ejemplo: si el usuario pide 'tubería conduit de 1', debes devolver ['tuberia', 'conduit', '1']. NO agrupes palabras.",
             items: {
                 type: SchemaType.STRING
             }
