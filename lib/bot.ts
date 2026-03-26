@@ -64,7 +64,6 @@ Cuando el usuario consulte un EPP, revisa si hay complementarios y ofrécelos:
  * Robust Chat 
  */
 export async function geminiChatMultimodal(prompt: string, media: any = null, systemMsg: string | null = null) {
-    // 🛡️ SECURITY: Only use Vercel Environment variables. Never hardcode keys in the repository.
     const rawKey = (process.env.GOOGLE_GEMINI_KEY || '').trim();
     const key = rawKey.replace(/^y[\r\n\s]+/, '').replace(/^y/, '').trim();
 
@@ -137,50 +136,62 @@ export async function procesarRespuesta(jid: string, texto: string, media: any =
     const historyText = history.map((h: any) => `${h.role}: ${h.content}`).join('\n');
 
     try {
-        const extractionPrompt = `Extrae los materiales o equipos mencionados en el historial:\n${historyText}\n
-        DICCIONARIO DE NORMALIZACIÓN (Usa estrictamente las conversiones del lado derecho):
-        - Tivex / Tibek / Tybek / Tyveks / Tyvexs → Tyvek
-        - Overall / overol / overoles / mameluco / mamelucos → Mameluco
-        - Chaleco / chalecos / pechera / pecheras → Chaleco Reflectivo
-        - Taba / tabas / zapato / zapatos / bota / botas / botines → Botín de Seguridad
-        - Casco / cascos / yep / yepo / yeps → Casco de Seguridad
-        - Lente / lentes / google / googles / goggle / goggles / lunar / lunares → Lentes de Seguridad
-        - Careta / caretas → Careta Facial
-        - Mascarilla / mascarillas / nariguera / narigueras / respiradores → Respirador
-        - Filtro / filtros → Filtro para Respirador
-        - Guante de hilo / guantes de hilo → Guante de Algodón
-        - Guante negro / guantes negros / guante látex → Guante de Nitrilo
-        - Arnes / arneses / soga / sogas / línea de vida → Arnés de Seguridad
-        - Tallas: CH/chico/chica → S | M/mediano → M | G/grande → L | XG/extragrande → XL | XXL → XXL
+        const extractionPrompt = `Extrae materiales clave mencionados en el historial:\n${historyText}\n
+        DICCIONARIO:
+        - Tivex / Tibek / Tyvek
+        - Taba / tabas / botines
+        - Casco / Casco de Seguridad
+        - Lentes / Lentes de Seguridad
         
-        REGLAS CRÍTICAS:
-        1. Responde SOLO con una lista de palabras clave NORMALIZADAS, separadas por comas. Cero explicaciones.`;
+        REGLAS:
+        1. Responde SOLO con una lista de palabras clave NORMALIZADAS (mínimo 3 letras), separadas por comas. 
+        2. Ej: "tyvek, lentes, casco".
+        3. No inventes palabras.`;
 
-        let kwStr = await geminiChatMultimodal(extractionPrompt, null, "Experto analista de inventario industrial.");
-        let keywords = kwStr.split(',').map(k => normalizar(k)).filter(k => k.length >= 2);
+        let kwStr = await geminiChatMultimodal(extractionPrompt, null, "Analista de inventario.");
+        let keywords = kwStr.split(',').map(k => normalizar(k)).filter(k => k.length >= 3);
 
         let stockContext = '';
         if (keywords.length > 0) {
-            let resultsMap = new Map();
+            let candidatesMap = new Map();
             for (const kw of keywords) {
                 const { data } = await supabase
                     .from('inventory')
                     .select('quantity, material:materials!inner(name), warehouse:warehouses(name)')
                     .or(`name.ilike.%${kw}%,description.ilike.%${kw}%`, { foreignTable: "materials" })
-                    .limit(10);
+                    .limit(15);
 
                 if (data) {
                     data.forEach((item: any) => {
                         const key = `${item.material?.name}-${item.warehouse?.name}`;
-                        if (!resultsMap.has(key)) resultsMap.set(key, item);
+                        if (!candidatesMap.has(key)) candidatesMap.set(key, item);
                     });
                 }
             }
-            const results = Array.from(resultsMap.values());
-            if (results.length > 0) stockContext = `INVENTARIO REAL (Stock actual en DB): ${JSON.stringify(results)}`;
+            const allCandidates = Array.from(candidatesMap.values());
+
+            // 🛡️ AI PRE-FILTERING: Verificamos qué candidatos son realmente lo que el usuario pidió
+            if (allCandidates.length > 0) {
+                const filterPrompt = `El usuario preguntó: "${resolvedText}"\n\nLista de la Base de Datos:\n${JSON.stringify(allCandidates)}\n\nTarea: Filtra esta lista y quédate SOLO con los productos que el usuario REALMENTE está pidiendo. Elimina coincidencias parciales irrelevantes (ej: si pide casco, elimina casacas). Responde SOLO el JSON de los objetos filtrados.`;
+                const filteredJson = await geminiChatMultimodal(filterPrompt, null, "Filtro de precisión de inventario.");
+
+                try {
+                    // Intentamos parsear el JSON filtrado
+                    const match = filteredJson.match(/\[.*\]/s);
+                    if (match) {
+                        const validatedResults = JSON.parse(match[0]);
+                        stockContext = `INVENTARIO REAL VALIDADO: ${JSON.stringify(validatedResults)}`;
+                    } else {
+                        // Fallback si no hay JSON
+                        stockContext = `INVENTARIO REAL: ${JSON.stringify(allCandidates.slice(0, 5))}`;
+                    }
+                } catch (e) {
+                    stockContext = `INVENTARIO REAL: ${JSON.stringify(allCandidates.slice(0, 5))}`;
+                }
+            }
         }
 
-        const respuesta = await geminiChatMultimodal(`Mensaje del operario:\n${historyText}\n\n=== EPP ENCONTRADOS EN DB ===\n${stockContext}\n\nUsa LA ESTRUCTURA DEL MASTER PROMPT. No menciones que es un sistema automatizado.`, null, MASTER_PROMPT);
+        const respuesta = await geminiChatMultimodal(`Mensaje del operario:\n${historyText}\n\n=== EPP ENCONTRADOS EN DB ===\n${stockContext}\n\nUsa EL MASTER PROMPT.`, null, MASTER_PROMPT);
         await enviarWA(jid, respuesta);
         history.push({ role: 'bot', content: respuesta, ref_id: msgId });
         await supabase.from('bot_sessions').upsert({ jid, history, updated_at: new Date().toISOString() }, { onConflict: 'jid' });
