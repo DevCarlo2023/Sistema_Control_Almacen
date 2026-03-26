@@ -39,7 +39,7 @@ Cuando el usuario consulte un EPP, revisa si hay complementarios y ofrécelos:
 
 ✅ PRODUCTO ENCONTRADO (Sólo si coincide exactamente con la intención original):
 ──────────────────────────────
-🏷️ Producto : [Nombre oficial]
+🏷️ Producto : [Nombre oficial o Descripción si el nombre es solo un código] (Cód: [code])
 📦 Stock    : [X unidades / pares]
 📍 Almacén  : [Nombre del Almacén]
 [⚠️ Stock bajo — considera reabastecer] ← solo si cantidad ≤ 5
@@ -183,7 +183,7 @@ export async function procesarRespuesta(jid: string, texto: string, media: any =
             for (const kw of keywords) {
                 const { data } = await supabase
                     .from('inventory')
-                    .select('quantity, material:materials!inner(name), warehouse:warehouses(name)')
+                    .select('quantity, material:materials!inner(name, description, code), warehouse:warehouses(name)')
                     .or(`name.ilike.%${kw}%,description.ilike.%${kw}%`, { foreignTable: "materials" })
                     .limit(15);
 
