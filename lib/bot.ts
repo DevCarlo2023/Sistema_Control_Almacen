@@ -157,6 +157,7 @@ export async function procesarRespuesta(jid: string, texto: string, media: any =
         - Guante de hilo / guantes de hilo → Guante Algodon
         - Guante negro / guantes negros / guante látex → Guante Nitrilo
         - Arnes / arneses / soga / sogas / línea de vida → Arnes
+        - Tubo / tubos / cañeria → Tuberia
         - Tallas: CH/chico/chica → S | M/mediano → M | G/grande → L | XG/extragrande → XL | XXL → XXL`;
 
         const extractionSchema: Schema = {
@@ -184,7 +185,7 @@ export async function procesarRespuesta(jid: string, texto: string, media: any =
                 const { data } = await supabase
                     .from('inventory')
                     .select('quantity, material:materials!inner(name, description, code), warehouse:warehouses(name)')
-                    .or(`name.ilike.%${kw}%,description.ilike.%${kw}%`, { foreignTable: "materials" })
+                    .or(`name.ilike.%${kw}%,description.ilike.%${kw}%,code.ilike.%${kw}%`, { foreignTable: "materials" })
                     .limit(15);
 
                 if (data) {
