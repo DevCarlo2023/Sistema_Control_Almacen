@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
+import { GoogleGenerativeAI } from '@google/generative-ai'
 
 const CONFIG = {
     SUPABASE_URL: (process.env.NEXT_PUBLIC_SUPABASE_URL || '').trim(),
@@ -11,6 +12,7 @@ const CONFIG = {
 }
 
 const supabase = createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_SERVICE_KEY)
+const genAI = new GoogleGenerativeAI(CONFIG.GEMINI_API_KEY)
 
 const SYSTEM_PROMPT = `# ROL Y ENTORNO
 Eres **Almacén Virtual**, el asistente inteligente de **INDUSTRIAS PROMET**. 
@@ -23,43 +25,39 @@ Tu misión es gestionar el inventario y resolver dudas de materiales de MINA.
 4. **Estilo**: Usa emojis (📦, ⚠️, ✅) y negritas. Sé conciso (máx 5 líneas).
 5. **Fuera de Ámbito**: Si te preguntan algo ajeno a minería o materiales, amablemente redirige la conversación al almacén.`;
 
-
-
 function normalizar(texto: string) {
     return texto.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
 }
 
 export async function geminiChatMultimodal(prompt: string, media: any = null, systemMsg: string | null = null) {
     try {
-        const url = `https://generativelanguage.googleapis.com/v1beta/models/${CONFIG.GEMINI_MODEL}:generateContent?key=${CONFIG.GEMINI_API_KEY}`;
-        let contents: any[] = [{ role: 'user', parts: [{ text: prompt }] }];
+        const model = genAI.getGenerativeModel({
+            model: CONFIG.GEMINI_MODEL,
+            systemInstruction: systemMsg || SYSTEM_PROMPT
+        });
+
+        const contents: any[] = [];
+        const parts: any[] = [{ text: prompt }];
 
         if (media && media.base64 && media.mimeType) {
-            contents[0].parts.push({
-                inline_data: { mime_type: media.mimeType, data: media.base64 }
+            parts.push({
+                inlineData: {
+                    mimeType: media.mimeType,
+                    data: media.base64
+                }
             });
         }
 
-        const body = {
-            system_instruction: { parts: [{ text: systemMsg || SYSTEM_PROMPT }] },
-            contents: contents
-        };
-
-        const r = await fetch(url, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(body)
+        const result = await model.generateContent({
+            contents: [{ role: 'user', parts }]
         });
 
-        const data = await r.json();
-        if (data.error) {
-            console.error('Gemini API Error:', data.error.message);
-            return `Error Gemini: ${data.error.message}`;
-        }
-        const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+        const response = await result.response;
+        const text = response.text();
+
         return text.replace(/<thought>[\s\S]*?<\/thought>/gi, '').replace(/thought:[\s\S]*?(\n|$)/gi, '').trim();
     } catch (e: any) {
-        console.error('Error IA:', e.message);
+        console.error('Error IA SDK:', e.message);
         return `Error IA: ${e.message}`;
     }
 }
@@ -67,23 +65,20 @@ export async function geminiChatMultimodal(prompt: string, media: any = null, sy
 export async function enviarWA(jid: string, mensaje: string) {
     if (!jid) return;
 
-    // Keep full JID for groups and LIDs; strip suffix only for regular @s.whatsapp.net numbers
     const isGroup = jid.includes('@g.us');
     const isLid = jid.includes('@lid');
     const target = (isGroup || isLid) ? jid : jid.split('@')[0];
 
-    console.log(`📤 Enviando respuesta a ${target} (Original: ${jid})...`);
+    console.log(`📤 Enviando respuesta a ${target}...`);
     try {
         const response = await fetch(`${CONFIG.EVOLUTION_URL}/message/sendText/${CONFIG.INSTANCE_NAME}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'apikey': CONFIG.EVOLUTION_API_KEY },
             body: JSON.stringify({ number: target, text: mensaje })
         });
-        const result = await response.json();
-        console.log(`✅ Resultado WA:`, JSON.stringify(result));
-        return result;
+        return await response.json();
     } catch (e: any) {
-        console.error(`❌ ERROR CRÍTICO al enviar WA: ${e.message}`);
+        console.error(`❌ ERROR WA: ${e.message}`);
         return { error: true, details: e.message };
     }
 }
@@ -91,7 +86,6 @@ export async function enviarWA(jid: string, mensaje: string) {
 export async function procesarRespuesta(jid: string, texto: string, media: any = null, msgId: string | null = null) {
     if (!jid) return "Error JID";
 
-    // 1. Cargar sesión desde Supabase
     let { data: sessionData } = await supabase
         .from('bot_sessions')
         .select('history')
@@ -100,9 +94,7 @@ export async function procesarRespuesta(jid: string, texto: string, media: any =
 
     let history = sessionData?.history || [];
 
-    // Deduplication check: Has this message already been replied to?
     if (msgId && history.some((h: any) => h.ref_id === msgId)) {
-        console.log(`♻️ Ignorando mensaje ya procesado (Supabase Dedup): ${msgId}`);
         return "Mensaje ya procesado";
     }
 
@@ -110,7 +102,6 @@ export async function procesarRespuesta(jid: string, texto: string, media: any =
 
     if (media && media.type === 'audio') {
         resolvedText = await geminiChatMultimodal("Escribe SOLO el texto de lo que oigas.", media, "Transcriptor fiel de campo.");
-        console.log(`🎙️ Campo: "${resolvedText}"`);
     } else if (media && media.type === 'image') {
         resolvedText = `[Imagen enviada]`;
     }
@@ -120,7 +111,6 @@ export async function procesarRespuesta(jid: string, texto: string, media: any =
     const historyText = history.map((h: any) => `${h.role}: ${h.content}`).join('\n');
 
     try {
-        // 1. Extracción de Keywords y asociación técnica
         const extractionPrompt = `HISTORIAL:\n${historyText}\n\n
     TAREA: Extrae los materiales o equipos mencionados. 
     1. Si usan jerga, busca su equivalente técnico (ej: "tabas" -> botin, calzado; "poncho" -> casaca, impermeable).
@@ -130,7 +120,7 @@ export async function procesarRespuesta(jid: string, texto: string, media: any =
         let kwStr = await geminiChatMultimodal(extractionPrompt, (media?.type === 'image' ? media : null), "Intérprete experto en suministros de mina.");
         let keywords = kwStr.split(',').map((k: string) => normalizar(k)).filter((k: string) => k.length >= 2 && k !== 'charla');
 
-        console.log(`🎯 Keywords para Búsqueda (V24.1): [${keywords.join(', ')}]`);
+        console.log(`🎯 Keywords: [${keywords.join(', ')}]`);
 
         let stockContext = '';
         if (keywords.length > 0) {
@@ -147,35 +137,28 @@ export async function procesarRespuesta(jid: string, texto: string, media: any =
                         const mat = item.material;
                         const wh = item.warehouse;
                         const key = `${mat?.name}-${wh?.name}`;
-                        if (!resultsMap.has(key)) {
-                            resultsMap.set(key, item);
-                        }
+                        if (!resultsMap.has(key)) resultsMap.set(key, item);
                     });
                 }
             }
             const results = Array.from(resultsMap.values());
             if (results.length > 0) {
-                stockContext = `DATA REAL DEL INVENTARIO (Usa esta info): ${JSON.stringify(results)}`;
+                stockContext = `DATA REAL DEL INVENTARIO: ${JSON.stringify(results)}`;
             } else {
-                stockContext = "IMPORTANTE: No se encontraron coincidencias exactas en la base de datos de inventario para estas palabras clave.";
+                stockContext = "No se encontraron coincidencias en la DB.";
             }
         }
 
-        // 2. Respuesta Final al Usuario
         const finalPrompt = `HISTORIAL:\n${historyText}\n\nCONTEXTO:\n${stockContext}\n
     TAREA: Responde al operario de MINA de forma profesional y clara.
-    - Si hay stock: Confirma el material, cantidad y en qué almacén está.
-    - Si NO hay stock: Indícalo amablemente y sugiere que consulte por un reemplazo o espere reabastecimiento.
-    - REGLA DE ORO: Si encuentras tallas en el historial (ej: 42), prioriza mostrar materiales que coincidan con esa talla.
-    - Estilo: Máximo 5 líneas. Usa negritas para nombres. Termina con un consejo de seguridad ⚠️.`;
-
+    - Si hay stock: Confirma el material, cantidad y almacén.
+    - Si NO hay stock: Indica amablemente y sugiere reemplazo.
+    - PRIORIZA tallas encontradas en historial.
+    - Estilo: Máx 5 líneas. Usa negritas. Termina con consejo de seguridad ⚠️.`;
 
         const respuesta = await geminiChatMultimodal(finalPrompt);
-
-        // Log WA sending status in development/debug
         const waResult = await enviarWA(jid, respuesta);
 
-        // Save bot response with ref_id for deduplication
         history.push({
             role: 'bot',
             content: respuesta,
@@ -183,7 +166,6 @@ export async function procesarRespuesta(jid: string, texto: string, media: any =
             wa_status: waResult?.status || waResult?.error || 'OK'
         });
 
-        // 3. Guardar sesión actualizada en Supabase (Upsert)
         await supabase.from('bot_sessions').upsert({
             jid,
             history,
@@ -192,9 +174,8 @@ export async function procesarRespuesta(jid: string, texto: string, media: any =
 
         return respuesta;
 
-
     } catch (e: any) {
-        console.error(`❌ Error en V24: ${e.message}`);
-        return `Error en V24.0. ¿Qué necesitas de almacén?`;
+        console.error(`❌ Error Bot: ${e.message}`);
+        return `Error en V24.1. ¿Qué necesitas de almacén?`;
     }
 }
