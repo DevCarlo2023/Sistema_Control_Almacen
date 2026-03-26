@@ -15,6 +15,51 @@ function normalizar(texto: string) {
     return texto.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
 }
 
+const MASTER_PROMPT = `Eres un asistente experto en gestión de inventario de EPP (Equipos de Protección Personal) para el sector minero e industrial de PROMET.
+
+════════════════════════════════════════
+🧠 PASO 1 — CLASIFICAR LA INTENCIÓN
+════════════════════════════════════════
+Antes de responder, identifica QUÉ quiere el usuario usando la DATA de inventario provista:
+- Por nombre/jerga: Buscar por nombre en DATA.
+- Por cantidad/stock: Mostrar cantidad en DATA.
+- Múltiples productos: Procesar cada uno por separado en bloques.
+- Ambigua: Preguntar tipo antes de buscar.
+
+════════════════════════════════════════
+💡 PASO 2 — SUGERENCIAS PROACTIVAS
+════════════════════════════════════════
+Cuando el usuario consulte un EPP, revisa si hay complementarios y ofrécelos:
+- Tyvek → sugerir Respirador + Guante de Nitrilo + Botas (kit completo)
+- Arnés → sugerir Línea de Vida + Casco
+- Respirador → preguntar si necesita filtros de repuesto
+- Casco → ofrecer barbiquejo o adaptador de audífono
+- Botín → ofrecer plantillas de repuesto
+
+════════════════════════════════════════
+📋 PASO 3 — FORMATO DE RESPUESTA
+════════════════════════════════════════
+
+✅ PRODUCTO ENCONTRADO (Si está en la DATA extraída):
+──────────────────────────────
+🏷️ Producto : [Nombre oficial]
+📦 Stock    : [X unidades / pares]
+📍 Almacén  : [Nombre del Almacén]
+[⚠️ Stock bajo — considera reabastecer] ← solo si cantidad ≤ 5
+──────────────────────────────
+💡 Sugerencia: [complementario si aplica]
+
+❌ SIN STOCK o NO ENCONTRADO EN LA DATA:
+──────────────────────────────
+❌ Sin stock de [producto]
+💡 Alternativa disponible: [producto similar si aplica] — ¿Te sirve?
+
+════════════════════════════════════════
+🚫 RESTRICCIONES
+════════════════════════════════════════
+- Nunca inventes stock, precios ni datos. Usa SOLO la "DATA" provista en el prompt actual.
+- Responde siempre directo y con los formatos de iconos y viñetas indicados.`;
+
 /**
  * Robust Chat 
  */
@@ -40,7 +85,7 @@ export async function geminiChatMultimodal(prompt: string, media: any = null, sy
         try {
             const model = genAI.getGenerativeModel({
                 model: modelName,
-                systemInstruction: systemMsg || "Asistente de almacén PROMET."
+                systemInstruction: systemMsg || MASTER_PROMPT
             });
 
             const parts: any[] = [{ text: prompt }];
@@ -93,11 +138,23 @@ export async function procesarRespuesta(jid: string, texto: string, media: any =
 
     try {
         const extractionPrompt = `Extrae los materiales o equipos mencionados en el historial:\n${historyText}\n
+        DICCIONARIO DE NORMALIZACIÓN (Usa estrictamente las conversiones del lado derecho):
+        - Tivex / Tibek / Tybek / Tyveks / Tyvexs → Tyvek
+        - Overall / overol / overoles / mameluco / mamelucos → Mameluco
+        - Chaleco / chalecos / pechera / pecheras → Chaleco Reflectivo
+        - Taba / tabas / zapato / zapatos / bota / botas / botines → Botín de Seguridad
+        - Casco / cascos / yep / yepo / yeps → Casco de Seguridad
+        - Lente / lentes / google / googles / goggle / goggles / lunar / lunares → Lentes de Seguridad
+        - Careta / caretas → Careta Facial
+        - Mascarilla / mascarillas / nariguera / narigueras / respiradores → Respirador
+        - Filtro / filtros → Filtro para Respirador
+        - Guante de hilo / guantes de hilo → Guante de Algodón
+        - Guante negro / guantes negros / guante látex → Guante de Nitrilo
+        - Arnes / arneses / soga / sogas / línea de vida → Arnés de Seguridad
+        - Tallas: CH/chico/chica → S | M/mediano → M | G/grande → L | XG/extragrande → XL | XXL → XXL
+        
         REGLAS CRÍTICAS:
-        1. Corrige errores ortográficos comunes en EPP (ej: "tivex" o "tibek" -> "tyvek").
-        2. Traduce jerga minera (ej: "tabas" -> "botin").
-        3. Identifica tallas (L, XL, 40, etc).
-        4. Responde SOLO con una lista de palabras clave corregidas, separadas por comas. Cero explicaciones.`;
+        1. Responde SOLO con una lista de palabras clave NORMALIZADAS, separadas por comas. Cero explicaciones.`;
 
         let kwStr = await geminiChatMultimodal(extractionPrompt, null, "Experto analista de inventario industrial.");
         let keywords = kwStr.split(',').map(k => normalizar(k)).filter(k => k.length >= 2);
@@ -123,7 +180,7 @@ export async function procesarRespuesta(jid: string, texto: string, media: any =
             if (results.length > 0) stockContext = `INVENTARIO REAL (Stock actual en DB): ${JSON.stringify(results)}`;
         }
 
-        const respuesta = await geminiChatMultimodal(`Responde al operario:\n${historyText}\n\nDATA:\n${stockContext}\nMáx 5 líneas. Emojis.⚠️ Seguridad.`, null, "Asistente Almacén Virtual.");
+        const respuesta = await geminiChatMultimodal(`Mensaje del operario:\n${historyText}\n\n=== EPP ENCONTRADOS EN DB ===\n${stockContext}\n\nUsa LA ESTRUCTURA DEL MASTER PROMPT. No menciones que es un sistema automatizado.`, null, MASTER_PROMPT);
         await enviarWA(jid, respuesta);
         history.push({ role: 'bot', content: respuesta, ref_id: msgId });
         await supabase.from('bot_sessions').upsert({ jid, history, updated_at: new Date().toISOString() }, { onConflict: 'jid' });
