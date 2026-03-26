@@ -92,13 +92,35 @@ export async function procesarRespuesta(jid: string, texto: string, media: any =
     const historyText = history.map((h: any) => `${h.role}: ${h.content}`).join('\n');
 
     try {
-        let kwStr = await geminiChatMultimodal(`Extrae palabras clave de:\n${historyText}\nResponde solo palabras separadas por comas.`, null, "Analista logística.");
+        const extractionPrompt = `Extrae los materiales o equipos mencionados en el historial:\n${historyText}\n
+        REGLAS CRÍTICAS:
+        1. Corrige errores ortográficos comunes en EPP (ej: "tivex" o "tibek" -> "tyvek").
+        2. Traduce jerga minera (ej: "tabas" -> "botin").
+        3. Identifica tallas (L, XL, 40, etc).
+        4. Responde SOLO con una lista de palabras clave corregidas, separadas por comas. Cero explicaciones.`;
+
+        let kwStr = await geminiChatMultimodal(extractionPrompt, null, "Experto analista de inventario industrial.");
         let keywords = kwStr.split(',').map(k => normalizar(k)).filter(k => k.length >= 2);
 
         let stockContext = '';
         if (keywords.length > 0) {
-            const { data } = await supabase.from('inventory').select('quantity, material:materials!inner(name), warehouse:warehouses(name)').or(`name.ilike.%${keywords[0]}%`, { foreignTable: "materials" }).limit(5);
-            if (data) stockContext = `INVENTARIO REAL: ${JSON.stringify(data)}`;
+            let resultsMap = new Map();
+            for (const kw of keywords) {
+                const { data } = await supabase
+                    .from('inventory')
+                    .select('quantity, material:materials!inner(name), warehouse:warehouses(name)')
+                    .or(`name.ilike.%${kw}%,description.ilike.%${kw}%`, { foreignTable: "materials" })
+                    .limit(10);
+
+                if (data) {
+                    data.forEach((item: any) => {
+                        const key = `${item.material?.name}-${item.warehouse?.name}`;
+                        if (!resultsMap.has(key)) resultsMap.set(key, item);
+                    });
+                }
+            }
+            const results = Array.from(resultsMap.values());
+            if (results.length > 0) stockContext = `INVENTARIO REAL (Stock actual en DB): ${JSON.stringify(results)}`;
         }
 
         const respuesta = await geminiChatMultimodal(`Responde al operario:\n${historyText}\n\nDATA:\n${stockContext}\nMáx 5 líneas. Emojis.⚠️ Seguridad.`, null, "Asistente Almacén Virtual.");
