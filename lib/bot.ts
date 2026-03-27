@@ -33,6 +33,7 @@ Si no hay:
 REGLAS:
 - Saluda con una frase corta amable (Ej: "¡Hola! Aquí tienes:" / "¡Listo!").
 - Si buscas EPPs de un kit, lista los que SÍ encontró y marca con ❌ los que no hay.
+- Si el usuario usó un nombre incorrecto (ej: dijo "cartucho" pero el nombre correcto es "Filtro"), corrígelo gentilmente al final: "💡 Nota: el nombre correcto en almacén es *Filtro X*, no Cartucho X".
 - No des párrafos largos de explicación. Solo datos limpios con iconos.`;
 
 /**
@@ -133,7 +134,7 @@ DICCIONARIO DE NORMALIZACIÓN:
 - Lente / lentes / google / goggle / lunar → Lente
 - Careta → Careta
 - Mascarilla / nariguera / respiradores → Respirador
-- Filtro → Filtro
+- Filtro / cartucho / filtros / cartuchos → Filtro (NOTA: el nombre correcto es "Filtro", no "Cartucho". Cuando el usuario escriba "cartucho", mapea igualmente a Filtro y anota que debes corregirle gentilmente.)
 - Guante / guantes → Guante
 - Arnes / arneses / soga → Arnes
 - Tubo / tubos / cañeria → Tuberia
@@ -149,6 +150,7 @@ DICCIONARIO EPP POR LABOR (si piden EPP para un tipo de trabajo, expande CADA it
 REGLAS:
 - Si el usuario pide EPP para un trabajo, devuelve CADA item del kit EPP como elemento separado en el array.
 - Si es un producto normal, extráelo como un concepto único en SINGULAR.
+- Si el usuario escribe "cartucho" en lugar de "filtro", igualmente busca como "Filtro" + el número (ej: "cartucho 2097" → "filtro 2097").
 - SIEMPRE en SINGULAR.`;
 
         const extractionSchema: Schema = {
