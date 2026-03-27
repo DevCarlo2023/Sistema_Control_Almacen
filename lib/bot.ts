@@ -199,13 +199,25 @@ REGLAS DE EXTRACCIÓN:
                     const filteredEq = equips.filter((e: any) => tokens.every(tk => normalizar(`${e.name} ${e.model} ${e.serial_number} ${e.brand}`).includes(tk)));
                     for (const eq of filteredEq) {
                         // Obtener últimos movimientos para historial de responsables
-                        const { data: movs } = await supabase.from('equipment_movements').select('movement_type, created_at, worker:workers(full_name)').eq('equipment_id', eq.id).order('created_at', { ascending: false }).limit(2);
+                        const { data: movs } = await supabase.from('equipment_movements').select('movement_type, created_at, worker:workers(full_name)').eq('equipment_id', eq.id).order('created_at', { ascending: false }).limit(5);
 
-                        let last_worker = 'N/A';
+                        let last_worker = 'Desconocido';
                         let last_action = 'Ninguna';
+
                         if (movs && movs.length > 0) {
-                            last_worker = (movs[0].worker as any)?.full_name || 'Desconocido';
-                            last_action = `${movs[0].movement_type === 'egreso' ? 'Retirado' : 'Devuelto'} el ${new Date(movs[0].created_at).toLocaleDateString()}`;
+                            // La última acción es siempre el primer registro
+                            const lastMov = movs[0];
+                            const dateStr = new Date(lastMov.created_at).toLocaleDateString('es-PE', { day: '2-digit', month: '2-digit', year: 'numeric' });
+                            last_action = `${lastMov.movement_type === 'egreso' ? 'Retirado' : 'Devuelto'} el ${dateStr}`;
+
+                            // Para el responsable, buscaremos el egreso más reciente (quién lo sacó)
+                            const lastEgreso = movs.find((m: any) => m.movement_type === 'egreso');
+                            if (lastEgreso && (lastEgreso.worker as any)?.full_name) {
+                                last_worker = (lastEgreso.worker as any).full_name;
+                            } else if ((lastMov.worker as any)?.full_name) {
+                                // Si no hay egreso en los últimos 5 pero el último mov tiene worker
+                                last_worker = (lastMov.worker as any).full_name;
+                            }
                         }
 
                         const calStatus = eq.calibration_end ? (new Date(eq.calibration_end) > new Date() ? 'VIGENTE' : 'VENCIDA') : 'No requiere';
