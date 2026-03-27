@@ -33,7 +33,6 @@ Si no hay:
 REGLAS:
 - Saluda con una frase corta amable (Ej: "¡Hola! Aquí tienes:" / "¡Listo!").
 - Si buscas EPPs de un kit, lista los que SÍ encontró y marca con ❌ los que no hay.
-- Si el usuario usó un nombre incorrecto (ej: dijo "cartucho" pero el nombre correcto es "Filtro"), corrígelo gentilmente al final: "💡 Nota: el nombre correcto en almacén es *Filtro X*, no Cartucho X".
 - No des párrafos largos de explicación. Solo datos limpios con iconos.`;
 
 /**
@@ -122,36 +121,35 @@ export async function procesarRespuesta(jid: string, texto: string, media: any =
 
     try {
         const extractionPrompt = `Eres el motor de extracción del Asistente Virtual de Almacén de PROMET.
-Analiza la ÚLTIMA consulta del historial y extrae los conceptos a buscar en inventario:
+Analiza la ÚLTIMA consulta e identifica los productos a buscar en inventario:
 ${historyText}
 
-DICCIONARIO DE NORMALIZACIÓN:
-- Tivex / Tibek / Tyveks → Tyvek
-- Overall / overol / mameluco → Mameluco
-- Chaleco / chalecos / pechera → Chaleco
-- Taba / zapato / bota / botines → Botin
-- Casco / cascos / yep → Casco
-- Lente / lentes / google / goggle / lunar → Lente
-- Careta → Careta
-- Mascarilla / nariguera / respiradores → Respirador
-- Filtro / cartucho / filtros / cartuchos → Filtro (NOTA: el nombre correcto es "Filtro", no "Cartucho". Cuando el usuario escriba "cartucho", mapea igualmente a Filtro y anota que debes corregirle gentilmente.)
-- Guante / guantes → Guante
-- Arnes / arneses / soga → Arnes
-- Tubo / tubos / cañeria → Tuberia
+SINÓNIMOS Y ASOCIACIONES (mismo producto, distintos nombres):
+- tapon auditivo / tapon oido / protector auditivo / ear plug → extraer como: ["tapon oido", "tapon auditivo", "protector auditivo"]
+- filtro / cartucho → son sinónimos. Si mencionan uno, busca ambos. Ej: "filtro 6003" → ["filtro 6003", "cartucho 6003"]
+- mascarilla / respirador / nariguera → extraer como: ["respirador", "mascarilla"]
+- botin / zapato / bota / taba → extraer como ["botin"]
+- casco / yep → extraer como ["casco"]
+- chaleco / pechera → extraer como ["chaleco"]
+- lente / luna / google / goggle → extraer como ["lente"]
+- tyvek / traje descartable / overol desechable → extraer como ["tyvek", "traje descartable"]
+- arnes / arneses / soga de seguridad → extraer como ["arnes"]
+- tubo / tuberia / cañeria → extraer como ["tuberia"]
 
-DICCIONARIO EPP POR LABOR (si piden EPP para un tipo de trabajo, expande CADA item como concepto separado):
+DICCIONARIO EPP POR LABOR:
 - soldadura / soldador → ["casaca cuero", "pantalon cuero", "escarpin soldador", "guante soldador", "respirador media cara", "filtro 2097", "careta soldadura", "mandil cuero"]
-- altura / trabajos en altura / izaje → ["arnes", "linea de vida", "casco", "guante"]
-- quimica / quimicos / acidos → ["guante nitrilo", "lente", "respirador", "tyvek"]
-- electrico / electricidad → ["guante dielectrico", "casco", "lente"]
-- excavacion / minero / zanja → ["casco", "botin punta acero", "lente", "respirador", "overol"]
+- altura / izaje → ["arnes", "linea de vida", "casco", "guante"]
+- quimica / acidos → ["guante nitrilo", "lente", "respirador", "tyvek"]
+- electrico → ["guante dielectrico", "casco", "lente"]
+- excavacion / minero → ["casco", "botin punta acero", "lente", "respirador"]
 - pintura → ["tyvek", "guante nitrilo", "respirador", "lente"]
 
-REGLAS:
-- Si el usuario pide EPP para un trabajo, devuelve CADA item del kit EPP como elemento separado en el array.
-- Si es un producto normal, extráelo como un concepto único en SINGULAR.
-- Si el usuario escribe "cartucho" en lugar de "filtro", igualmente busca como "Filtro" + el número (ej: "cartucho 2097" → "filtro 2097").
-- SIEMPRE en SINGULAR.`;
+REGLAS DE EXTRACCIÓN:
+1. Si hay sinónimos conocidos (filtro/cartucho, tapones), devuelve TODOS los términos posibles en el array.
+2. Si el usuario pide EPP para un tipo de trabajo, devuelve cada item del kit por separado.
+3. Para productos normales, extráelos en SINGULAR.
+4. Mantén siempre los números de modelo (6003, 2097, etc.) junto a la palabra clave.
+5. SIEMPRE en SINGULAR.`;
 
         const extractionSchema: Schema = {
             type: SchemaType.ARRAY,
