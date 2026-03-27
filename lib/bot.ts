@@ -33,10 +33,10 @@ Si no hay stock de lo solicitado:
 ❌ Sin stock de [producto solicitado]
 
 REGLAS GLOBALES:
-- Cero intros largas (No digas "¡Buenos días! Soy tu asistente..."). Responde directamente a la consulta.
+- Inicia con un saludo súper corto y amable (Ej: "¡Hola! Claro, aquí tienes:" o "¡Listo! Esto encontré:").
 - No des sugerencias proactivas a menos que el usuario lo pida.
 - No des alternativas si no están estrechamente relacionadas.
-- Ve al grano. Menos palabras, más datos.`;
+- Mantén el tono servicial pero directo al grano.`;
 
 /**
  * Robust Chat 
@@ -134,17 +134,16 @@ export async function procesarRespuesta(jid: string, texto: string, media: any =
         - Careta / caretas → Careta
         - Mascarilla / mascarillas / nariguera / narigueras / respiradores → Respirador
         - Filtro / filtros → Filtro
-        - Guante de hilo / guantes de hilo → Guante Algodon
-        - Guante negro / guantes negros / guante látex → Guante Nitrilo
+        - Guante / guantes / guante de hilo / guantes de hilo → Guante
         - Arnes / arneses / soga / sogas / línea de vida → Arnes
         - Tubo / tubos / cañeria / tuberias → Tuberia
         
         Extrae cada concepto de búsqueda como un solo elemento de la lista. Ej: si piden "tubo conduit de 1 pulgada" y "alambre 8", extrae ["tuberia conduit 1 pulgada", "alambre 8"].
-        Usa tu normalización lógica pero mantén cada concepto agrupado. Ponlo en SINGULAR.`;
+        Usa tu normalización lógica pero mantén cada concepto agrupado. Ponlo OBLIGATORIAMENTE en SINGULAR.`;
 
         const extractionSchema: Schema = {
             type: SchemaType.ARRAY,
-            description: "Conceptos de búsqueda agrupados en SINGULAR. Ej: ['tubería conduit de 1', 'alambre negro 8'].",
+            description: "Conceptos de búsqueda en SINGULAR. CRÍTICO: Todas las palabras deben estar estrictamente en su forma singular (ej: 'pernos' -> 'perno', 'cascos' -> 'casco').",
             items: {
                 type: SchemaType.STRING
             }
