@@ -29,13 +29,14 @@ FORMATO MATERIALES:
 FORMATO EQUIPOS/HERRAMIENTAS:
 🔧 [Equipo] (S/N: [serial])
 📌 Estado: [status] | Ubicación: [Almacen o Campo]
-👤 Responsable: [Nombre del trabajador si está en campo]
+👤 Responsable: [Nombre (Actual o Último)]
 🗓️ Calibración: [VIGENTE / VENCIDA / No requiere]
+⏱️ Última actividad: [Acción + Fecha]
 
 REGLAS:
 - Saluda siempre identificándote (Ej: "¡Hola! Soy tu *Asistente Virtual de Almacén*.").
 - Si buscas EPPs de un kit, lista los que SÍ encontraste y marca con ❌ los que falten.
-- Para herramientas, indica siempre la ubicación y quién lo tiene si no está en almacén.
+- Para equipos, indica siempre quién fue la última persona en tenerlo si está en almacén.
 - No des párrafos largos. Solo datos limpios con iconos.`;
 
 /**
@@ -179,39 +180,47 @@ REGLAS DE EXTRACCIÓN:
                 const primaryToken = tokens[0];
 
                 // --- BUSQUEDA MATERIALES ---
-                const { data: mats } = await supabase.from('materials').select('id, name, description').or(`name.ilike.%${primaryToken}%,description.ilike.%${primaryToken}%`).limit(40);
+                const { data: mats } = await supabase.from('materials').select('id, name, description').or(`name.ilike.%${primaryToken}%,description.ilike.%${primaryToken}%`).limit(20);
                 if (mats && mats.length > 0) {
                     const filteredMats = mats.filter((m: any) => tokens.every(tk => normalizar(`${m.name} ${m.description}`).includes(tk)));
                     if (filteredMats.length > 0) {
-                        const { data: stocks } = await supabase.from('inventory').select('quantity, material:materials(name), warehouse:warehouses(name)').in('material_id', filteredMats.map((m: any) => m.id)).gt('quantity', 0);
-                        stocks?.forEach((s: any) => invMap.set(`${s.material?.name}-${s.warehouse?.name}`, s));
+                        const mid = filteredMats.map((m: any) => m.id);
+                        const [{ data: stocks }, { data: lastMovs }] = await Promise.all([
+                            supabase.from('inventory').select('quantity, material:materials(name), warehouse:warehouses(name)').in('material_id', mid).gt('quantity', 0),
+                            supabase.from('inventory_movements').select('movement_type, quantity, notes, created_at, material:materials(name)').in('material_id', mid).order('created_at', { ascending: false }).limit(3)
+                        ]);
+                        stocks?.forEach((s: any) => invMap.set(`${s.material?.name}-${s.warehouse?.name}`, { ...s, last_movements: lastMovs }));
                     }
                 }
 
                 // --- BUSQUEDA EQUIPOS ---
-                const { data: equips } = await supabase.from('equipment').select('*, warehouse:warehouses(name)').or(`name.ilike.%${primaryToken}%,model.ilike.%${primaryToken}%,serial_number.ilike.%${primaryToken}%,brand.ilike.%${primaryToken}%`).limit(40);
+                const { data: equips } = await supabase.from('equipment').select('*, warehouse:warehouses(name)').or(`name.ilike.%${primaryToken}%,model.ilike.%${primaryToken}%,serial_number.ilike.%${primaryToken}%,brand.ilike.%${primaryToken}%`).limit(20);
                 if (equips && equips.length > 0) {
                     const filteredEq = equips.filter((e: any) => tokens.every(tk => normalizar(`${e.name} ${e.model} ${e.serial_number} ${e.brand}`).includes(tk)));
                     for (const eq of filteredEq) {
-                        let responsable = 'N/A';
-                        if (eq.current_location === 'campo') {
-                            const { data: mov } = await supabase.from('equipment_movements').select('worker:workers(full_name)').eq('equipment_id', eq.id).eq('movement_type', 'egreso').order('created_at', { ascending: false }).limit(1).maybeSingle();
-                            if (mov?.worker) responsable = (mov.worker as any).full_name;
+                        // Obtener últimos movimientos para historial de responsables
+                        const { data: movs } = await supabase.from('equipment_movements').select('movement_type, created_at, worker:workers(full_name)').eq('equipment_id', eq.id).order('created_at', { ascending: false }).limit(2);
+
+                        let last_worker = 'N/A';
+                        let last_action = 'Ninguna';
+                        if (movs && movs.length > 0) {
+                            last_worker = (movs[0].worker as any)?.full_name || 'Desconocido';
+                            last_action = `${movs[0].movement_type === 'egreso' ? 'Retirado' : 'Devuelto'} el ${new Date(movs[0].created_at).toLocaleDateString()}`;
                         }
 
                         const calStatus = eq.calibration_end ? (new Date(eq.calibration_end) > new Date() ? 'VIGENTE' : 'VENCIDA') : 'No requiere';
-                        eqMap.set(eq.id, { ...eq, responsable, calStatus });
+                        eqMap.set(eq.id, { ...eq, last_worker, last_action, calStatus });
                     }
                 }
             }
 
             const invList = Array.from(invMap.values());
             const eqList = Array.from(eqMap.values());
-            if (invList.length > 0) inventoryContext = `MATERIALES: ${JSON.stringify(invList)}`;
-            if (eqList.length > 0) equipmentContext = `EQUIPOS: ${JSON.stringify(eqList)}`;
+            if (invList.length > 0) inventoryContext = `MATERIALES/STOCK: ${JSON.stringify(invList)}`;
+            if (eqList.length > 0) equipmentContext = `EQUIPOS/HISTORIAL: ${JSON.stringify(eqList)}`;
         }
 
-        const respuesta = await geminiChatMultimodal(`Última pregunta:\n${resolvedText}\n\n=== DATA ===\n${inventoryContext}\n${equipmentContext}\n\nUsa LA ESTRUCTURA DEL MASTER PROMPT.`, null, MASTER_PROMPT);
+        const respuesta = await geminiChatMultimodal(`Consulta: ${resolvedText}\n\n=== DATA ===\n${inventoryContext}\n${equipmentContext}\n\nUsa el formato del MASTER PROMPT. Si el equipo está en almacén, indica quién lo tuvo por última vez basándote en el historial.`, null, MASTER_PROMPT);
         await enviarWA(jid, respuesta);
         history.push({ role: 'bot', content: respuesta, ref_id: msgId });
         await supabase.from('bot_sessions').upsert({ jid, history, updated_at: new Date().toISOString() }, { onConflict: 'jid' });
