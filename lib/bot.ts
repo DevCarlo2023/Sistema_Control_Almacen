@@ -19,21 +19,24 @@ const MASTER_PROMPT = `Eres el *Asistente Virtual de Almacén* de PROMET. 🏗�
 Solo responde lo que se pregunta. Sé amable, preciso y breve.
 
 REGLA DE FILTRADO:
-✅ ACEPTA variaciones del producto pedido (Ej: "chaleco" → cualquier tipo de chaleco).
-❌ IGNORA silenciosamente si el item claramente no es lo que pidieron.
+✅ ACEPTA variaciones y modelos similares.
+❌ IGNORA si el item no tiene relación.
 
-FORMATO:
-Si hay stock:
-✅ [Nombre del producto] (Cód: [code])
+FORMATO MATERIALES:
+✅ [Producto] (Cód: [code])
 📦 Stock: [X] | 📍 [Almacén]
 
-Si no hay:
-❌ Sin stock de [producto]
+FORMATO EQUIPOS/HERRAMIENTAS:
+🔧 [Equipo] (S/N: [serial])
+📌 Estado: [status] | Ubicación: [Almacen o Campo]
+👤 Responsable: [Nombre del trabajador si está en campo]
+🗓️ Calibración: [VIGENTE / VENCIDA / No requiere]
 
 REGLAS:
-- Saluda siempre identificándote (Ej: "¡Hola! Soy tu *Asistente Virtual de Almacén*. Aquí tienes:").
-- Si buscas EPPs de un kit, lista los que SÍ encontró y marca con ❌ los que no hay.
-- No des párrafos largos de explicación. Solo datos limpios con iconos.`;
+- Saluda siempre identificándote (Ej: "¡Hola! Soy tu *Asistente Virtual de Almacén*.").
+- Si buscas EPPs de un kit, lista los que SÍ encontraste y marca con ❌ los que falten.
+- Para herramientas, indica siempre la ubicación y quién lo tiene si no está en almacén.
+- No des párrafos largos. Solo datos limpios con iconos.`;
 
 /**
  * Robust Chat 
@@ -135,6 +138,7 @@ SINÓNIMOS Y ASOCIACIONES (mismo producto, distintos nombres):
 - tyvek / traje descartable / overol desechable → extraer como ["tyvek", "traje descartable"]
 - arnes / arneses / soga de seguridad → extraer como ["arnes"]
 - tubo / tuberia / cañeria → extraer como ["tuberia"]
+- atornillador / taladro / amoladora / torquimetro / herramienta / impacto → extraer como ["atornillador", "impacto", "taladro", "amoladora", "torquimetro"]
 
 DICCIONARIO EPP POR LABOR:
 - soldadura / soldador → ["casaca cuero", "pantalon cuero", "escarpin soldador", "guante soldador", "respirador media cara", "filtro 2097", "careta soldadura", "mandil cuero"]
@@ -145,11 +149,10 @@ DICCIONARIO EPP POR LABOR:
 - pintura → ["tyvek", "guante nitrilo", "respirador", "lente"]
 
 REGLAS DE EXTRACCIÓN:
-1. Si hay sinónimos conocidos (filtro/cartucho, tapones), devuelve TODOS los términos posibles en el array.
-2. Si el usuario pide EPP para un tipo de trabajo, devuelve cada item del kit por separado.
-3. Para productos normales, extráelos en SINGULAR.
-4. Mantén siempre los números de modelo (6003, 2097, etc.) junto a la palabra clave.
-5. SIEMPRE en SINGULAR.`;
+1. Si hay sinónimos conocidos, devuelve TODOS los términos posibles.
+2. Si piden EPP para un trabajo, devuelve cada item del kit por separado.
+3. Para herramientas, extrae marca, modelo o serie si se mencionan.
+4. Siempre en SINGULAR.`;
 
         const extractionSchema: Schema = {
             type: SchemaType.ARRAY,
@@ -163,57 +166,52 @@ REGLAS DE EXTRACCIÓN:
         let keywords: string[] = [];
         try { keywords = JSON.parse(kwStr); } catch (e) { }
 
-        let stockContext = '';
+        let inventoryContext = '';
+        let equipmentContext = '';
+
         if (keywords.length > 0) {
-            let candidatesMap = new Map();
+            let invMap = new Map();
+            let eqMap = new Map();
+
             for (const concepto of keywords) {
                 const tokens = normalizar(concepto).split(' ').filter(t => t.length >= 2 && !['de', 'la', 'el', 'los', 'las', 'para', 'con', 'y', 'un', 'una'].includes(t));
                 if (tokens.length === 0) continue;
-
                 const primaryToken = tokens[0];
 
-                // Paso 1: buscar materiales directamente por nombre o descripción
-                const { data: matchingMaterials, error: matErr } = await supabase
-                    .from('materials')
-                    .select('id, name, description')
-                    .or(`name.ilike.%${primaryToken}%,description.ilike.%${primaryToken}%`)
-                    .limit(80);
+                // --- BUSQUEDA MATERIALES ---
+                const { data: mats } = await supabase.from('materials').select('id, name, description').or(`name.ilike.%${primaryToken}%,description.ilike.%${primaryToken}%`).limit(40);
+                if (mats && mats.length > 0) {
+                    const filteredMats = mats.filter((m: any) => tokens.every(tk => normalizar(`${m.name} ${m.description}`).includes(tk)));
+                    if (filteredMats.length > 0) {
+                        const { data: stocks } = await supabase.from('inventory').select('quantity, material:materials(name), warehouse:warehouses(name)').in('material_id', filteredMats.map((m: any) => m.id)).gt('quantity', 0);
+                        stocks?.forEach((s: any) => invMap.set(`${s.material?.name}-${s.warehouse?.name}`, s));
+                    }
+                }
 
-                if (matErr) console.error(`[BOT] matErr for "${primaryToken}":`, matErr.message);
-                if (!matchingMaterials || matchingMaterials.length === 0) continue;
+                // --- BUSQUEDA EQUIPOS ---
+                const { data: equips } = await supabase.from('equipment').select('*, warehouse:warehouses(name)').or(`name.ilike.%${primaryToken}%,model.ilike.%${primaryToken}%,serial_number.ilike.%${primaryToken}%,brand.ilike.%${primaryToken}%`).limit(40);
+                if (equips && equips.length > 0) {
+                    const filteredEq = equips.filter((e: any) => tokens.every(tk => normalizar(`${e.name} ${e.model} ${e.serial_number} ${e.brand}`).includes(tk)));
+                    for (const eq of filteredEq) {
+                        let responsable = 'N/A';
+                        if (eq.current_location === 'campo') {
+                            const { data: mov } = await supabase.from('equipment_movements').select('worker:workers(full_name)').eq('equipment_id', eq.id).eq('movement_type', 'egreso').order('created_at', { ascending: false }).limit(1).maybeSingle();
+                            if (mov?.worker) responsable = (mov.worker as any).full_name;
+                        }
 
-                // Paso 2: filtrar por tokens adicionales en RAM
-                const filteredMaterials = matchingMaterials.filter((mat: any) => {
-                    const textBlox = normalizar(`${mat.name || ''} ${mat.description || ''}`);
-                    return tokens.every(tk => textBlox.includes(tk));
-                });
-
-                if (filteredMaterials.length === 0) continue;
-
-                // Paso 3: buscar stock en inventory por material IDs
-                const materialIds = filteredMaterials.map((m: any) => m.id);
-                const { data: invData, error: invErr } = await supabase
-                    .from('inventory')
-                    .select('quantity, material_id, material:materials(name, description), warehouse:warehouses(name)')
-                    .in('material_id', materialIds)
-                    .gt('quantity', 0)
-                    .limit(20);
-
-                if (invErr) console.error(`[BOT] invErr:`, invErr.message);
-                if (invData) {
-                    invData.forEach((item: any) => {
-                        const key = `${item.material?.name}-${item.warehouse?.name}`;
-                        if (!candidatesMap.has(key)) candidatesMap.set(key, item);
-                    });
+                        const calStatus = eq.calibration_end ? (new Date(eq.calibration_end) > new Date() ? 'VIGENTE' : 'VENCIDA') : 'No requiere';
+                        eqMap.set(eq.id, { ...eq, responsable, calStatus });
+                    }
                 }
             }
-            const allCandidates = Array.from(candidatesMap.values());
-            if (allCandidates.length > 0) {
-                stockContext = `INVENTARIO:\n${JSON.stringify(allCandidates)}`;
-            }
+
+            const invList = Array.from(invMap.values());
+            const eqList = Array.from(eqMap.values());
+            if (invList.length > 0) inventoryContext = `MATERIALES: ${JSON.stringify(invList)}`;
+            if (eqList.length > 0) equipmentContext = `EQUIPOS: ${JSON.stringify(eqList)}`;
         }
 
-        const respuesta = await geminiChatMultimodal(`Última pregunta del operario:\n${resolvedText}\n\n=== RESULTADOS ===\n${stockContext}\n\nUsa LA ESTRUCTURA DEL MASTER PROMPT. NO DES EXPLICACIONES.`, null, MASTER_PROMPT);
+        const respuesta = await geminiChatMultimodal(`Última pregunta:\n${resolvedText}\n\n=== DATA ===\n${inventoryContext}\n${equipmentContext}\n\nUsa LA ESTRUCTURA DEL MASTER PROMPT.`, null, MASTER_PROMPT);
         await enviarWA(jid, respuesta);
         history.push({ role: 'bot', content: respuesta, ref_id: msgId });
         await supabase.from('bot_sessions').upsert({ jid, history, updated_at: new Date().toISOString() }, { onConflict: 'jid' });
