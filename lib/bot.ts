@@ -162,35 +162,34 @@ export async function procesarRespuesta(jid: string, texto: string, media: any =
 
                 const primaryToken = tokens[0];
 
-                // Paso 1: Buscar en la tabla materials directamente (sin joins confusos)
+                // Paso 1: buscar materiales directamente por nombre o descripción
                 const { data: matchingMaterials, error: matErr } = await supabase
                     .from('materials')
-                    .select('id, name, description, code')
-                    .or(`name.ilike.%${primaryToken}%,description.ilike.%${primaryToken}%,code.ilike.%${primaryToken}%`)
+                    .select('id, name, description')
+                    .or(`name.ilike.%${primaryToken}%,description.ilike.%${primaryToken}%`)
                     .limit(80);
 
-                console.log(`[BOT] Materials search "${primaryToken}" → ${matchingMaterials?.length} results, err: ${matErr?.message}`);
-
+                if (matErr) console.error(`[BOT] matErr for "${primaryToken}":`, matErr.message);
                 if (!matchingMaterials || matchingMaterials.length === 0) continue;
 
-                // Paso 2: Filtrar por tokens adicionales en RAM (Javascript)
+                // Paso 2: filtrar por tokens adicionales en RAM
                 const filteredMaterials = matchingMaterials.filter((mat: any) => {
-                    const textBlox = normalizar(`${mat.name || ''} ${mat.description || ''} ${mat.code || ''}`);
+                    const textBlox = normalizar(`${mat.name || ''} ${mat.description || ''}`);
                     return tokens.every(tk => textBlox.includes(tk));
                 });
 
                 if (filteredMaterials.length === 0) continue;
 
-                // Paso 3: Buscar stock en inventory para esos material IDs
+                // Paso 3: buscar stock en inventory por material IDs
                 const materialIds = filteredMaterials.map((m: any) => m.id);
                 const { data: invData, error: invErr } = await supabase
                     .from('inventory')
-                    .select('quantity, material_id, material:materials(name, description, code), warehouse:warehouses(name)')
+                    .select('quantity, material_id, material:materials(name, description), warehouse:warehouses(name)')
                     .in('material_id', materialIds)
+                    .gt('quantity', 0)
                     .limit(20);
 
-                console.log(`[BOT] Inventory for IDs ${materialIds} → ${invData?.length} results, err: ${invErr?.message}`);
-
+                if (invErr) console.error(`[BOT] invErr:`, invErr.message);
                 if (invData) {
                     invData.forEach((item: any) => {
                         const key = `${item.material?.name}-${item.warehouse?.name}`;
@@ -200,7 +199,7 @@ export async function procesarRespuesta(jid: string, texto: string, media: any =
             }
             const allCandidates = Array.from(candidatesMap.values());
             if (allCandidates.length > 0) {
-                stockContext = `INVENTARIO ENCONTRADO:\n${JSON.stringify(allCandidates)}`;
+                stockContext = `INVENTARIO:\n${JSON.stringify(allCandidates)}`;
             }
         }
 
