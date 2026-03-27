@@ -162,16 +162,22 @@ export async function procesarRespuesta(jid: string, texto: string, media: any =
                 const tokens = normalizar(concepto).split(' ').filter(t => t.length >= 1 && !['de', 'la', 'el', 'para', 'con', 'y', 'un', 'una'].includes(t));
                 if (tokens.length === 0) continue;
 
-                let query = supabase.from('inventory').select('quantity, material:materials!inner(name, description, code), warehouse:warehouses(name)');
+                // Paso 1: SQL amplio con el primer token clave
+                const primaryToken = tokens[0];
+                const { data } = await supabase
+                    .from('inventory')
+                    .select('quantity, material:materials!inner(name, description, code), warehouse:warehouses(name)')
+                    .or(`name.ilike.%${primaryToken}%,description.ilike.%${primaryToken}%,code.ilike.%${primaryToken}%`, { foreignTable: "materials" })
+                    .limit(80);
 
-                // Chain .or blocks para simular coincidencia perfecta de multi-token posicional
-                for (const token of tokens) {
-                    query = query.or(`name.ilike.%${token}%,description.ilike.%${token}%,code.ilike.%${token}%`, { foreignTable: "materials" });
-                }
-
-                const { data } = await query.limit(10);
                 if (data) {
-                    data.forEach((item: any) => {
+                    // Paso 2: Intersección puramente textual y perfecta en rama (Javascript)
+                    const filteredData = data.filter((item: any) => {
+                        const textBlox = normalizar(`${item.material?.name || ''} ${item.material?.description || ''} ${item.material?.code || ''}`);
+                        return tokens.every(tk => textBlox.includes(tk));
+                    });
+
+                    filteredData.slice(0, 15).forEach((item: any) => {
                         const key = `${item.material?.name}-${item.warehouse?.name}`;
                         if (!candidatesMap.has(key)) candidatesMap.set(key, item);
                     });
@@ -179,7 +185,7 @@ export async function procesarRespuesta(jid: string, texto: string, media: any =
             }
             const allCandidates = Array.from(candidatesMap.values());
             if (allCandidates.length > 0) {
-                stockContext = `INVENTARIO (solo coinciden si te parece razonable): ${JSON.stringify(allCandidates)}`;
+                stockContext = `INVENTARIO (solo coinciden si te parece exacto y lógico): ${JSON.stringify(allCandidates)}`;
             }
         }
 
