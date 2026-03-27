@@ -15,48 +15,24 @@ function normalizar(texto: string) {
     return texto.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
 }
 
-const MASTER_PROMPT = `Eres un asistente experto en gestión de inventario de EPP (Equipos de Protección Personal) para el sector minero e industrial de PROMET.
+const MASTER_PROMPT = `Eres el asistente de inventario de PROMET.
+Tu obligación es dar respuestas ultra cortas, directas y sin rodeos. SOLO RESPONDE LO QUE SE PREGUNTA.
+Si un elemento de la DATA provista NO corresponde a lo que el usuario pide, IGNÓRALO SIEMPRE.
 
-════════════════════════════════════════
-🧠 PASO 1 — CLASIFICAR E IGNORAR ALUCINACIONES
-════════════════════════════════════════
-Identifica QUÉ quiere el usuario y compráralo con la "DATA" provista de la base de datos.
-⚠️ REGLA CRÍTICA: SI UN ELEMENTO EN LA DATA NO COINCIDE EXPLÍCITAMENTE CON LO QUE PIDIÓ EL USUARIO (ej: pide "Casco" y la data trae "Casaca"), DEBES IGNORARLO SILENCIOSAMENTE. No menciones elementos no solicitados.
+FORMATO ESTRICTO:
 
-════════════════════════════════════════
-💡 PASO 2 — SUGERENCIAS PROACTIVAS
-════════════════════════════════════════
-Cuando el usuario consulte un EPP, revisa si hay complementarios y ofrécelos:
-- Tyvek → sugerir Respirador + Guante de Nitrilo + Botas (kit completo)
-- Arnés → sugerir Línea de Vida + Casco
-- Respirador → preguntar si necesita filtros de repuesto
-- Casco → ofrecer barbiquejo o adaptador de audífono
-- Botín → ofrecer plantillas de repuesto
+Si hay stock:
+✅ [Nombre Oficial o Descripción] (Cód: [code])
+📦 Stock: [X] | 📍 [Almacén]
 
-════════════════════════════════════════
-📋 PASO 3 — FORMATO DE RESPUESTA
-════════════════════════════════════════
+Si no hay stock de lo solicitado:
+❌ Sin stock de [producto solicitado]
 
-✅ PRODUCTO ENCONTRADO (Sólo si coincide exactamente con la intención original):
-──────────────────────────────
-🏷️ Producto : [Nombre oficial o Descripción si el nombre es solo un código] (Cód: [code])
-📦 Stock    : [X unidades / pares]
-📍 Almacén  : [Nombre del Almacén]
-[⚠️ Stock bajo — considera reabastecer] ← solo si cantidad ≤ 5
-──────────────────────────────
-💡 Sugerencia: [complementario si aplica]
-
-❌ SIN STOCK o NO ENCONTRADO EN LA DATA RELEVANTE:
-──────────────────────────────
-❌ Sin stock de [producto]
-💡 Alternativa disponible: [producto similar si aplica] — ¿Te sirve?
-
-════════════════════════════════════════
-🚫 RESTRICCIONES GLOBALES
-════════════════════════════════════════
-- Nunca inventes stock, precios ni datos. Usa SOLO la "DATA" provista.
-- Ignora cualquier item de la DATA que sea un falso positivo de la base de datos.
-- Responde siempre directo y con los formatos de iconos y viñetas indicados.`;
+REGLAS GLOBALES:
+- Cero intros largas (No digas "¡Buenos días! Soy tu asistente..."). Responde directamente a la consulta.
+- No des sugerencias proactivas a menos que el usuario lo pida.
+- No des alternativas si no están estrechamente relacionadas.
+- Ve al grano. Menos palabras, más datos.`;
 
 /**
  * Robust Chat 
@@ -143,8 +119,8 @@ export async function procesarRespuesta(jid: string, texto: string, media: any =
     const historyText = history.map((h: any) => `${h.role}: ${h.content}`).join('\n');
 
     try {
-        const extractionPrompt = `Extrae los materiales o equipos mencionados en el historial:\n${historyText}\n
-        DICCIONARIO DE NORMALIZACIÓN (Usa estrictamente las conversiones del lado derecho):
+        const extractionPrompt = `Extrae los materiales o equipos mencionados en la última solicitud del historial:\n${historyText}\n
+        DICCIONARIO DE NORMALIZACIÓN MÁGICA:
         - Tivex / Tibek / Tybek / Tyveks / Tyvexs → Tyvek
         - Overall / overol / overoles / mameluco / mamelucos → Mameluco
         - Chaleco / chalecos / pechera / pecheras → Chaleco
@@ -157,37 +133,39 @@ export async function procesarRespuesta(jid: string, texto: string, media: any =
         - Guante de hilo / guantes de hilo → Guante Algodon
         - Guante negro / guantes negros / guante látex → Guante Nitrilo
         - Arnes / arneses / soga / sogas / línea de vida → Arnes
-        - Tubo / tubos / cañeria → Tuberia
-        - Tallas: CH/chico/chica → S | M/mediano → M | G/grande → L | XG/extragrande → XL | XXL → XXL`;
+        - Tubo / tubos / cañeria / tuberias → Tuberia
+        
+        Extrae cada concepto de búsqueda como un solo elemento de la lista. Ej: si piden "tubo conduit de 1 pulgada" y "alambre 8", extrae ["tuberia conduit 1 pulgada", "alambre 8"].
+        Usa tu normalización lógica pero mantén cada concepto agrupado. Ponlo en SINGULAR.`;
 
         const extractionSchema: Schema = {
             type: SchemaType.ARRAY,
-            description: "Lista de EPPs extraídos. CRÍTICO: Fragmenta frases compuestas en palabras individuales en SINGULAR. Ignora artículos ('de', 'la', 'el'). Ejemplo: si el usuario pide 'tubería conduit de 1', debes devolver ['tuberia', 'conduit', '1']. NO agrupes palabras.",
+            description: "Conceptos de búsqueda agrupados en SINGULAR. Ej: ['tubería conduit de 1', 'alambre negro 8'].",
             items: {
                 type: SchemaType.STRING
             }
         };
 
-        let kwStr = await geminiChatMultimodal(extractionPrompt, null, "Analista de inventario experto en normalización.", extractionSchema);
+        let kwStr = await geminiChatMultimodal(extractionPrompt, null, "Analista experto, estricto con el JSON array.", extractionSchema);
         let keywords: string[] = [];
-        try {
-            keywords = JSON.parse(kwStr);
-        } catch (e) {
-            console.warn("JSON error parsing keywords", kwStr);
-        }
-
-        keywords = keywords.map(k => normalizar(k)).filter(k => k.length >= 3);
+        try { keywords = JSON.parse(kwStr); } catch (e) { }
 
         let stockContext = '';
         if (keywords.length > 0) {
             let candidatesMap = new Map();
-            for (const kw of keywords) {
-                const { data } = await supabase
-                    .from('inventory')
-                    .select('quantity, material:materials!inner(name, description, code), warehouse:warehouses(name)')
-                    .or(`name.ilike.%${kw}%,description.ilike.%${kw}%,code.ilike.%${kw}%`, { foreignTable: "materials" })
-                    .limit(15);
+            for (const concepto of keywords) {
+                // Fragmentar el concepto en palabras
+                const tokens = normalizar(concepto).split(' ').filter(t => t.length >= 1 && !['de', 'la', 'el', 'para', 'con', 'y', 'un', 'una'].includes(t));
+                if (tokens.length === 0) continue;
 
+                let query = supabase.from('inventory').select('quantity, material:materials!inner(name, description, code), warehouse:warehouses(name)');
+
+                // Chain .or blocks para simular coincidencia perfecta de multi-token posicional
+                for (const token of tokens) {
+                    query = query.or(`name.ilike.%${token}%,description.ilike.%${token}%,code.ilike.%${token}%`, { foreignTable: "materials" });
+                }
+
+                const { data } = await query.limit(10);
                 if (data) {
                     data.forEach((item: any) => {
                         const key = `${item.material?.name}-${item.warehouse?.name}`;
@@ -197,11 +175,11 @@ export async function procesarRespuesta(jid: string, texto: string, media: any =
             }
             const allCandidates = Array.from(candidatesMap.values());
             if (allCandidates.length > 0) {
-                stockContext = `INVENTARIO (Puede contener falsos positivos por busqueda DB, ígnoralos): ${JSON.stringify(allCandidates)}`;
+                stockContext = `INVENTARIO (solo coinciden si te parece razonable): ${JSON.stringify(allCandidates)}`;
             }
         }
 
-        const respuesta = await geminiChatMultimodal(`Mensaje del operario:\n${historyText}\n\n=== RESULTADOS DE BASE DE DATOS ===\n${stockContext}\n\nUsa LA ESTRUCTURA DEL MASTER PROMPT. No menciones que eres un sistema automatizado.`, null, MASTER_PROMPT);
+        const respuesta = await geminiChatMultimodal(`Última pregunta del operario:\n${resolvedText}\n\n=== RESULTADOS ===\n${stockContext}\n\nUsa LA ESTRUCTURA DEL MASTER PROMPT. NO DES EXPLICACIONES.`, null, MASTER_PROMPT);
         await enviarWA(jid, respuesta);
         history.push({ role: 'bot', content: respuesta, ref_id: msgId });
         await supabase.from('bot_sessions').upsert({ jid, history, updated_at: new Date().toISOString() }, { onConflict: 'jid' });
