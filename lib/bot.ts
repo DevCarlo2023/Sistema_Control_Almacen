@@ -157,26 +157,42 @@ export async function procesarRespuesta(jid: string, texto: string, media: any =
         if (keywords.length > 0) {
             let candidatesMap = new Map();
             for (const concepto of keywords) {
-                // Fragmentar el concepto en palabras
-                const tokens = normalizar(concepto).split(' ').filter(t => t.length >= 1 && !['de', 'la', 'el', 'para', 'con', 'y', 'un', 'una'].includes(t));
+                const tokens = normalizar(concepto).split(' ').filter(t => t.length >= 2 && !['de', 'la', 'el', 'los', 'las', 'para', 'con', 'y', 'un', 'una'].includes(t));
                 if (tokens.length === 0) continue;
 
-                // Paso 1: SQL amplio con el primer token clave
                 const primaryToken = tokens[0];
-                const { data } = await supabase
-                    .from('inventory')
-                    .select('quantity, material:materials!inner(name, description, code), warehouse:warehouses(name)')
-                    .or(`name.ilike.%${primaryToken}%,description.ilike.%${primaryToken}%,code.ilike.%${primaryToken}%`, { foreignTable: "materials" })
+
+                // Paso 1: Buscar en la tabla materials directamente (sin joins confusos)
+                const { data: matchingMaterials, error: matErr } = await supabase
+                    .from('materials')
+                    .select('id, name, description, code')
+                    .or(`name.ilike.%${primaryToken}%,description.ilike.%${primaryToken}%,code.ilike.%${primaryToken}%`)
                     .limit(80);
 
-                if (data) {
-                    // Paso 2: Intersección puramente textual y perfecta en rama (Javascript)
-                    const filteredData = data.filter((item: any) => {
-                        const textBlox = normalizar(`${item.material?.name || ''} ${item.material?.description || ''} ${item.material?.code || ''}`);
-                        return tokens.every(tk => textBlox.includes(tk));
-                    });
+                console.log(`[BOT] Materials search "${primaryToken}" → ${matchingMaterials?.length} results, err: ${matErr?.message}`);
 
-                    filteredData.slice(0, 15).forEach((item: any) => {
+                if (!matchingMaterials || matchingMaterials.length === 0) continue;
+
+                // Paso 2: Filtrar por tokens adicionales en RAM (Javascript)
+                const filteredMaterials = matchingMaterials.filter((mat: any) => {
+                    const textBlox = normalizar(`${mat.name || ''} ${mat.description || ''} ${mat.code || ''}`);
+                    return tokens.every(tk => textBlox.includes(tk));
+                });
+
+                if (filteredMaterials.length === 0) continue;
+
+                // Paso 3: Buscar stock en inventory para esos material IDs
+                const materialIds = filteredMaterials.map((m: any) => m.id);
+                const { data: invData, error: invErr } = await supabase
+                    .from('inventory')
+                    .select('quantity, material_id, material:materials(name, description, code), warehouse:warehouses(name)')
+                    .in('material_id', materialIds)
+                    .limit(20);
+
+                console.log(`[BOT] Inventory for IDs ${materialIds} → ${invData?.length} results, err: ${invErr?.message}`);
+
+                if (invData) {
+                    invData.forEach((item: any) => {
                         const key = `${item.material?.name}-${item.warehouse?.name}`;
                         if (!candidatesMap.has(key)) candidatesMap.set(key, item);
                     });
@@ -184,7 +200,7 @@ export async function procesarRespuesta(jid: string, texto: string, media: any =
             }
             const allCandidates = Array.from(candidatesMap.values());
             if (allCandidates.length > 0) {
-                stockContext = `INVENTARIO (solo coinciden si te parece exacto y lógico): ${JSON.stringify(allCandidates)}`;
+                stockContext = `INVENTARIO ENCONTRADO:\n${JSON.stringify(allCandidates)}`;
             }
         }
 
