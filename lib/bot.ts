@@ -15,28 +15,25 @@ function normalizar(texto: string) {
     return texto.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
 }
 
-const MASTER_PROMPT = `Eres el asistente de inventario de PROMET.
-Tu obligación es dar respuestas ultra cortas, directas y sin rodeos. SOLO RESPONDE LO QUE SE PREGUNTA.
+const MASTER_PROMPT = `Eres el *Asistente Virtual de Almacén* de PROMET. 🏗️
+Solo responde lo que se pregunta. Sé amable, preciso y breve.
 
-REGLA DE FILTRADO (CRÍTICO):
-La DATA provista puede traer variaciones o ítems que tengan palabras similares.
-✅ ACEPTA elementos de la DATA que sean variaciones, tipos, o modelos de lo que pidió el usuario (Ej: Si pide "alambre", ACEPTA "Alambre Negro # 8". Si pide "tubo conduit", ACEPTA "Tubería Conduit 1 pulgada").
-❌ IGNORA SILENCIOSAMENTE elementos que no tengan relación real (Ej: Si pide "casco", IGNORA "casaca").
+REGLA DE FILTRADO:
+✅ ACEPTA variaciones del producto pedido (Ej: "chaleco" → cualquier tipo de chaleco).
+❌ IGNORA silenciosamente si el item claramente no es lo que pidieron.
 
-FORMATO ESTRICTO:
-
+FORMATO:
 Si hay stock:
-✅ [Nombre Oficial o Descripción] (Cód: [code])
+✅ [Nombre del producto] (Cód: [code])
 📦 Stock: [X] | 📍 [Almacén]
 
-Si no hay stock de lo solicitado:
-❌ Sin stock de [producto solicitado]
+Si no hay:
+❌ Sin stock de [producto]
 
-REGLAS GLOBALES:
-- Inicia con un saludo súper corto y amable (Ej: "¡Hola! Claro, aquí tienes:" o "¡Listo! Esto encontré:").
-- No des sugerencias proactivas a menos que el usuario lo pida.
-- No des alternativas si no están estrechamente relacionadas.
-- Mantén el tono servicial pero directo al grano.`;
+REGLAS:
+- Saluda con una frase corta amable (Ej: "¡Hola! Aquí tienes:" / "¡Listo!").
+- Si buscas EPPs de un kit, lista los que SÍ encontró y marca con ❌ los que no hay.
+- No des párrafos largos de explicación. Solo datos limpios con iconos.`;
 
 /**
  * Robust Chat 
@@ -123,23 +120,36 @@ export async function procesarRespuesta(jid: string, texto: string, media: any =
     const historyText = history.map((h: any) => `${h.role}: ${h.content}`).join('\n');
 
     try {
-        const extractionPrompt = `Extrae los materiales o equipos mencionados en la última solicitud del historial:\n${historyText}\n
-        DICCIONARIO DE NORMALIZACIÓN MÁGICA:
-        - Tivex / Tibek / Tybek / Tyveks / Tyvexs → Tyvek
-        - Overall / overol / overoles / mameluco / mamelucos → Mameluco
-        - Chaleco / chalecos / pechera / pecheras → Chaleco
-        - Taba / tabas / zapato / zapatos / bota / botas / botines → Botin
-        - Casco / cascos / yep / yepo / yeps → Casco
-        - Lente / lentes / google / googles / goggle / goggles / lunar / lunares → Lente
-        - Careta / caretas → Careta
-        - Mascarilla / mascarillas / nariguera / narigueras / respiradores → Respirador
-        - Filtro / filtros → Filtro
-        - Guante / guantes / guante de hilo / guantes de hilo → Guante
-        - Arnes / arneses / soga / sogas / línea de vida → Arnes
-        - Tubo / tubos / cañeria / tuberias → Tuberia
-        
-        Extrae cada concepto de búsqueda como un solo elemento de la lista. Ej: si piden "tubo conduit de 1 pulgada" y "alambre 8", extrae ["tuberia conduit 1 pulgada", "alambre 8"].
-        Usa tu normalización lógica pero mantén cada concepto agrupado. Ponlo OBLIGATORIAMENTE en SINGULAR.`;
+        const extractionPrompt = `Eres el motor de extracción del Asistente Virtual de Almacén de PROMET.
+Analiza la ÚLTIMA consulta del historial y extrae los conceptos a buscar en inventario:
+${historyText}
+
+DICCIONARIO DE NORMALIZACIÓN:
+- Tivex / Tibek / Tyveks → Tyvek
+- Overall / overol / mameluco → Mameluco
+- Chaleco / chalecos / pechera → Chaleco
+- Taba / zapato / bota / botines → Botin
+- Casco / cascos / yep → Casco
+- Lente / lentes / google / goggle / lunar → Lente
+- Careta → Careta
+- Mascarilla / nariguera / respiradores → Respirador
+- Filtro → Filtro
+- Guante / guantes → Guante
+- Arnes / arneses / soga → Arnes
+- Tubo / tubos / cañeria → Tuberia
+
+DICCIONARIO EPP POR LABOR (si piden EPP para un tipo de trabajo, expande CADA item como concepto separado):
+- soldadura / soldador → ["casaca cuero", "pantalon cuero", "escarpin soldador", "guante soldador", "respirador media cara", "filtro 2097", "careta soldadura", "mandil cuero"]
+- altura / trabajos en altura / izaje → ["arnes", "linea de vida", "casco", "guante"]
+- quimica / quimicos / acidos → ["guante nitrilo", "lente", "respirador", "tyvek"]
+- electrico / electricidad → ["guante dielectrico", "casco", "lente"]
+- excavacion / minero / zanja → ["casco", "botin punta acero", "lente", "respirador", "overol"]
+- pintura → ["tyvek", "guante nitrilo", "respirador", "lente"]
+
+REGLAS:
+- Si el usuario pide EPP para un trabajo, devuelve CADA item del kit EPP como elemento separado en el array.
+- Si es un producto normal, extráelo como un concepto único en SINGULAR.
+- SIEMPRE en SINGULAR.`;
 
         const extractionSchema: Schema = {
             type: SchemaType.ARRAY,
