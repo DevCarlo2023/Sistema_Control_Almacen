@@ -21,6 +21,7 @@ Solo responde lo que se pregunta. Sé amable, preciso y breve.
 REGLA DE FILTRADO:
 ✅ ACEPTA variaciones y modelos similares.
 ❌ IGNORA si el item no tiene relación.
+⚠️ PROHIBIDO INVENTAR DATOS: Si el bloque === DATA === es insuficiente o está vacío, responde educadamente que no se encontraron registros en el sistema. Jamás inventes productos, stocks o ubicaciones.
 
 FORMATO MATERIALES:
 ✅ [Nombre] - [Descripción] (Cód: [code])
@@ -236,7 +237,8 @@ REGLAS DE EXTRACCIÓN:
             if (eqList.length > 0) equipmentContext = `EQUIPOS/HISTORIAL: ${JSON.stringify(eqList)}`;
         }
 
-        const respuesta = await geminiChatMultimodal(`Consulta: ${resolvedText}\n\n=== DATA ===\n${inventoryContext}\n${equipmentContext}\n\nUsa el formato del MASTER PROMPT. Si el equipo está en almacén, indica quién lo tuvo por última vez basándote en el historial.`, null, MASTER_PROMPT);
+        const prompt = `Consulta del usuario: ${resolvedText}\n\n=== DATA / UNICA FUENTE DE VERDAD ===\n${inventoryContext || 'NO HAY MATERIALES EN STOCK'}\n${equipmentContext || 'NO HAY EQUIPOS REGISTRADOS'}\n\nREGLA: Solo responde sobre los items que aparecen en DATA. Si el usuario pide algo que NO está en DATA, di que "No se encontró stock de [item] en el sistema". No inventes nada.`;
+        const respuesta = await geminiChatMultimodal(prompt, null, MASTER_PROMPT);
         await enviarWA(jid, respuesta);
         history.push({ role: 'bot', content: respuesta, ref_id: msgId });
         await supabase.from('bot_sessions').upsert({ jid, history, updated_at: new Date().toISOString() }, { onConflict: 'jid' });
