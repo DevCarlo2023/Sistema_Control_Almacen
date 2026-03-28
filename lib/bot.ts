@@ -23,7 +23,7 @@ REGLA DE FILTRADO:
 ❌ IGNORA si el item no tiene relación.
 
 FORMATO MATERIALES:
-✅ [Producto] (Cód: [code])
+✅ [Nombre] - [Descripción] (Cód: [code])
 📦 Stock: [X] | 📍 [Almacén]
 
 FORMATO EQUIPOS/HERRAMIENTAS:
@@ -34,7 +34,8 @@ FORMATO EQUIPOS/HERRAMIENTAS:
 ⏱️ Última actividad: [Acción + Fecha]
 
 REGLAS:
-- Saluda siempre identificándote (Ej: "¡Hola! Soy tu *Asistente Virtual de Almacén*.").
+- Solo saluda e identifícate como "Asistente Virtual de Almacén" si es el INICIO de la conversación. En respuestas subsiguientes, ve directo al grano.
+- Para materiales, es CRÍTICO mostrar [Nombre] - [Descripción]. Nunca omitas la descripción (donde suelen estar las tallas o medidas).
 - Si buscas EPPs de un kit, lista los que SÍ encontraste y marca con ❌ los que falten.
 - Para equipos, indica siempre quién fue la última persona en tenerlo si está en almacén.
 - No des párrafos largos. Solo datos limpios con iconos.`;
@@ -186,10 +187,13 @@ REGLAS DE EXTRACCIÓN:
                     if (filteredMats.length > 0) {
                         const mid = filteredMats.map((m: any) => m.id);
                         const [{ data: stocks }, { data: lastMovs }] = await Promise.all([
-                            supabase.from('inventory').select('quantity, material:materials(name), warehouse:warehouses(name)').in('material_id', mid).gt('quantity', 0),
-                            supabase.from('inventory_movements').select('movement_type, quantity, notes, created_at, material:materials(name)').in('material_id', mid).order('created_at', { ascending: false }).limit(3)
+                            supabase.from('inventory').select('quantity, material:materials(id, name, description), warehouse:warehouses(name)').in('material_id', mid).gt('quantity', 0),
+                            supabase.from('inventory_movements').select('movement_type, quantity, notes, created_at, material:materials(name, description)').in('material_id', mid).order('created_at', { ascending: false }).limit(3)
                         ]);
-                        stocks?.forEach((s: any) => invMap.set(`${s.material?.name}-${s.warehouse?.name}`, { ...s, last_movements: lastMovs }));
+                        stocks?.forEach((s: any) => {
+                            const desc = s.material?.description ? ` - ${s.material.description}` : '';
+                            invMap.set(`${s.material?.name}${desc}-${s.warehouse?.name}`, { ...s, last_movements: lastMovs });
+                        });
                     }
                 }
 
