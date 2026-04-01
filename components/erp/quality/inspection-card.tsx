@@ -21,23 +21,23 @@ const STATUS_CONFIG = {
   pass: {
     label: 'CONFORME',
     icon: CheckCircle2,
-    badgeClass: 'bg-green-500/10 text-green-400 border-green-500/25',
-    glowClass: 'bg-green-500',
-    borderClass: 'border-l-green-500/50',
+    badgeClass: 'bg-green-100 text-green-700 border-green-200',
+    iconClass: 'text-green-600',
+    borderClass: 'border-l-green-500',
   },
   fail: {
     label: 'RECHAZADO',
     icon: XCircle,
-    badgeClass: 'bg-red-500/10 text-red-400 border-red-500/25',
-    glowClass: 'bg-red-500',
-    borderClass: 'border-l-red-500/50',
+    badgeClass: 'bg-red-100 text-red-700 border-red-200',
+    iconClass: 'text-red-600',
+    borderClass: 'border-l-red-500',
   },
   pending: {
     label: 'PENDIENTE',
     icon: Clock,
-    badgeClass: 'bg-yellow-500/10 text-yellow-400 border-yellow-500/25',
-    glowClass: 'bg-yellow-500',
-    borderClass: 'border-l-yellow-500/50',
+    badgeClass: 'bg-amber-100 text-amber-700 border-amber-200',
+    iconClass: 'text-amber-600',
+    borderClass: 'border-l-amber-500',
   },
 };
 
@@ -62,75 +62,70 @@ export function InspectionCard({ inspection, className }: InspectionCardProps) {
     <Card
       className={cn(
         'relative overflow-hidden group transition-all duration-300',
-        'border border-white/[0.06] bg-white/[0.03] hover:bg-white/[0.05]',
-        'hover:border-white/10 hover:shadow-xl hover:shadow-black/30',
-        'border-l-2',
+        'border border-slate-100 bg-white hover:bg-slate-50/50',
+        'hover:shadow-xl hover:shadow-slate-200/60',
+        'border-l-4 rounded-3xl',
         config.borderClass,
         className
       )}
     >
-      {/* Ambient glow */}
-      <div
-        className={cn(
-          'absolute top-0 right-0 w-20 h-20 rounded-full blur-3xl opacity-10 transition-opacity duration-300 group-hover:opacity-20',
-          config.glowClass
-        )}
-      />
-
-      <CardContent className="p-5 space-y-4">
+      <CardContent className="p-6 space-y-5">
         {/* Header */}
         <div className="flex items-start justify-between gap-3">
           <Badge
+            variant="outline"
             className={cn(
-              'rounded-full px-3 h-7 flex items-center gap-1.5 font-bold text-[10px] tracking-widest uppercase border',
+              'rounded-xl px-3 h-7 flex items-center gap-2 font-black text-[9px] tracking-widest uppercase border',
               config.badgeClass
             )}
           >
-            <StatusIcon className="w-3.5 h-3.5" />
+            <StatusIcon className={cn("w-3.5 h-3.5", config.iconClass)} />
             {config.label}
           </Badge>
-          <span className="text-[9px] font-mono text-gray-600 pt-1">
+          <span className="text-[9px] font-black text-slate-300 pt-1 tracking-tighter">
             #{inspection.id.slice(0, 8).toUpperCase()}
           </span>
         </div>
 
         {/* Material name */}
-        <div className="flex items-center gap-2.5">
-          <Package className="w-4 h-4 text-blue-400 shrink-0" />
-          <span className="font-bold text-white text-sm leading-tight">{inspection.material_name}</span>
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-2xl bg-blue-50 flex items-center justify-center text-blue-600 shrink-0">
+            <Package className="w-5 h-5" />
+          </div>
+          <span className="font-black text-slate-900 text-base leading-tight uppercase tracking-tight">{inspection.material_name}</span>
         </div>
 
         {/* Metadata grid */}
-        <div className="grid grid-cols-2 gap-3 pt-1">
+        <div className="grid grid-cols-2 gap-4 pt-1">
           {inspection.batch_number && (
-            <div className="space-y-0.5">
-              <p className="text-[9px] uppercase text-gray-600 font-bold tracking-wider flex items-center gap-1">
+            <div className="space-y-1">
+              <p className="text-[8px] uppercase text-slate-400 font-black tracking-[0.2em] flex items-center gap-1.5">
                 <Hash className="w-3 h-3" /> Lote
               </p>
-              <p className="text-xs font-mono text-gray-300">{inspection.batch_number}</p>
+              <p className="text-[10px] font-black text-slate-700 tracking-wider">L-{inspection.batch_number}</p>
             </div>
           )}
-          <div className="space-y-0.5">
-            <p className="text-[9px] uppercase text-gray-600 font-bold tracking-wider flex items-center gap-1">
+          <div className="space-y-1">
+            <p className="text-[8px] uppercase text-slate-400 font-black tracking-[0.2em] flex items-center gap-1.5">
               <Calendar className="w-3 h-3" /> Fecha
             </p>
-            <p className="text-xs text-gray-300">{formattedDate}</p>
+            <p className="text-[10px] font-black text-slate-700 uppercase tracking-tight">{formattedDate}</p>
           </div>
-          <div className="space-y-0.5 col-span-2">
-            <p className="text-[9px] uppercase text-gray-600 font-bold tracking-wider flex items-center gap-1">
-              <User className="w-3 h-3" /> Inspector
+          <div className="space-y-1 col-span-2">
+            <p className="text-[8px] uppercase text-slate-400 font-black tracking-[0.2em] flex items-center gap-1.5">
+              <User className="w-3 h-3" /> Auditor Técnico
             </p>
-            <p className="text-xs font-semibold text-gray-200">{inspection.inspector_name}</p>
+            <p className="text-[10px] font-black text-blue-600 uppercase tracking-widest">{inspection.inspector_name}</p>
           </div>
         </div>
 
         {/* Notes */}
         {inspection.notes && (
-          <div className="pt-2 border-t border-white/5">
-            <p className="text-[9px] uppercase text-gray-600 font-bold tracking-wider flex items-center gap-1 mb-1.5">
+          <div className="pt-4 border-t border-slate-50">
+            <p className="text-[8px] uppercase text-slate-400 font-black tracking-[0.2em] flex items-center gap-1.5 mb-2">
               <FileText className="w-3 h-3" /> Observaciones
             </p>
-            <p className="text-xs text-gray-400 italic leading-relaxed line-clamp-3">
+            <p className="text-[10px] text-slate-500 font-medium leading-relaxed italic line-clamp-3">
               "{inspection.notes}"
             </p>
           </div>
@@ -138,10 +133,13 @@ export function InspectionCard({ inspection, className }: InspectionCardProps) {
 
         {/* Footer */}
         {inspection.signature_url && (
-          <div className="flex items-center justify-between pt-2 border-t border-white/5">
-            <span className="text-[9px] text-gray-600 uppercase tracking-wider">Firmado digitalmente</span>
-            <div className="flex items-center gap-1 text-[10px] font-bold text-blue-400 cursor-pointer hover:text-blue-300 transition-colors group/link">
-              <span>Ver detalles</span>
+          <div className="flex items-center justify-between pt-4 border-t border-slate-50">
+            <div className="flex items-center gap-1.5">
+              <div className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse" />
+              <span className="text-[8px] text-slate-400 font-black uppercase tracking-widest">Firma Digital Validada</span>
+            </div>
+            <div className="flex items-center gap-1.5 text-[9px] font-black text-blue-600 cursor-pointer hover:text-blue-700 transition-colors group/link uppercase tracking-tighter">
+              <span>Auditoría</span>
               <ExternalLink className="w-3 h-3 group-hover/link:translate-x-0.5 group-hover/link:-translate-y-0.5 transition-transform" />
             </div>
           </div>

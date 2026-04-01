@@ -80,9 +80,17 @@ export function InspectionForm({ onSuccess }: InspectionFormProps) {
 
   // Load materials on mount
   React.useEffect(() => {
+    let isMounted = true;
     getMaterialsForSelect()
-      .then(setMaterials)
-      .finally(() => setLoadingMaterials(false));
+      .then((data) => {
+        if (isMounted) setMaterials(data);
+      })
+      .finally(() => {
+        if (isMounted) setLoadingMaterials(false);
+      });
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   const onSubmit = async (values: InspectionFormValues) => {
@@ -105,9 +113,8 @@ export function InspectionForm({ onSuccess }: InspectionFormProps) {
           duration: 6000,
         });
       } else {
-        toast.success('✅ Inspección guardada exitosamente', {
-          description: `${values.material_name} — CONFORME`,
-          duration: 4000,
+        toast.success('✅ Inspección CONFORME', {
+          description: values.material_name,
         });
       }
 
@@ -124,24 +131,27 @@ export function InspectionForm({ onSuccess }: InspectionFormProps) {
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-12">
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-12">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-12 lg:gap-20">
 
           {/* ── Left Column: Material Data ── */}
-          <div className="space-y-6">
-            <h3 className="text-[10px] font-bold text-blue-400 uppercase tracking-widest flex items-center gap-2">
-              <Package className="w-4 h-4" />
-              Datos de Recepción
-            </h3>
+          <div className="space-y-8">
+            <div className="flex items-center gap-3 border-b border-slate-100 pb-4">
+              <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center text-blue-600">
+                <Package className="w-4 h-4" />
+              </div>
+              <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">
+                Datos de Recepción
+              </h3>
+            </div>
 
-            {/* Material selector */}
             <FormField
               control={form.control}
               name="material_id"
               render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="text-[10px] uppercase text-gray-500 font-bold tracking-widest">
-                    Material
+                <FormItem className="space-y-3">
+                  <FormLabel className="text-[10px] uppercase text-slate-500 font-black tracking-widest pl-1">
+                    Material Vinculado
                   </FormLabel>
                   <Select
                     onValueChange={(val) => {
@@ -153,163 +163,161 @@ export function InspectionForm({ onSuccess }: InspectionFormProps) {
                     disabled={loadingMaterials}
                   >
                     <FormControl>
-                      <SelectTrigger className="rounded-xl border-white/10 bg-white/[0.04] h-12 text-sm">
+                      <SelectTrigger className="rounded-2xl border-slate-200 bg-slate-50/50 h-14 text-sm font-bold text-slate-900 focus:ring-blue-500 shadow-sm transition-all hover:bg-white">
                         <SelectValue
-                          placeholder={loadingMaterials ? 'Cargando materiales...' : 'Seleccionar Material'}
+                          placeholder={loadingMaterials ? 'Consultando base de datos...' : 'Seleccionar Material Maestro'}
                         />
                       </SelectTrigger>
                     </FormControl>
-                    <SelectContent className="border-white/10 bg-[#0d1117]/95 backdrop-blur-xl">
+                    <SelectContent className="border-slate-100 bg-white rounded-2xl shadow-2xl">
                       {materials.map((mat) => (
-                        <SelectItem key={mat.id} value={mat.id} className="text-white hover:bg-white/5">
-                          <span className="font-mono text-[10px] text-blue-400 mr-2">{mat.code}</span>
+                        <SelectItem key={mat.id} value={mat.id} className="text-slate-700 hover:bg-blue-50 font-bold text-xs py-3 rounded-xl mx-1">
+                          <span className="font-black text-[9px] text-blue-600 mr-3 px-2 py-1 bg-blue-50 rounded-md tracking-tighter">{mat.code}</span>
                           {mat.name}
                         </SelectItem>
                       ))}
-                      {materials.length === 0 && !loadingMaterials && (
-                        <div className="px-3 py-4 text-xs text-gray-500 text-center">
-                          No hay materiales registrados
-                        </div>
-                      )}
                     </SelectContent>
                   </Select>
-                  <FormMessage />
+                  <FormMessage className="text-[10px] font-black uppercase text-red-500 pl-1" />
                 </FormItem>
               )}
             />
 
-            {/* Manual material name (fallback if no dropdown match) */}
             <FormField
               control={form.control}
               name="material_name"
               render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="text-[10px] uppercase text-gray-500 font-bold tracking-widest">
-                    Nombre de Material <span className="text-gray-600 normal-case font-normal">(o escriba manualmente)</span>
+                <FormItem className="space-y-3">
+                  <FormLabel className="text-[10px] uppercase text-slate-500 font-black tracking-widest pl-1">
+                    Descripción Técnica <span className="text-slate-300 normal-case font-bold italic ml-2">(Edición manual permitida)</span>
                   </FormLabel>
                   <FormControl>
                     <Input
                       {...field}
-                      placeholder="Ej: Casco Dieléctrico Tipo I..."
-                      className="rounded-xl border-white/10 bg-white/[0.04] h-12 text-sm placeholder:text-gray-600"
+                      placeholder="Ej: Casco Dieléctrico Tipo I MSA..."
+                      className="rounded-2xl border-slate-200 bg-slate-50/50 h-14 text-sm font-bold text-slate-900 placeholder:text-slate-300 focus:ring-blue-500 shadow-sm transition-all hover:bg-white px-5"
                     />
                   </FormControl>
-                  <FormMessage />
+                  <FormMessage className="text-[10px] font-black uppercase text-red-500 pl-1" />
                 </FormItem>
               )}
             />
 
-            {/* Batch number */}
-            <FormField
-              control={form.control}
-              name="batch_number"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="text-[10px] uppercase text-gray-500 font-bold tracking-widest">
-                    N° de Lote / Serie
-                  </FormLabel>
-                  <FormControl>
-                    <Input
-                      {...field}
-                      placeholder="Ej: LT-2024-0045"
-                      className="rounded-xl border-white/10 bg-white/[0.04] h-12 text-sm font-mono placeholder:text-gray-600"
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            <div className="grid grid-cols-2 gap-6">
+              <FormField
+                control={form.control}
+                name="batch_number"
+                render={({ field }) => (
+                  <FormItem className="space-y-3">
+                    <FormLabel className="text-[10px] uppercase text-slate-500 font-black tracking-widest pl-1">
+                      N° de Lote / Serie
+                    </FormLabel>
+                    <FormControl>
+                      <Input
+                        {...field}
+                        placeholder="Ej: LT-2024-01"
+                        className="rounded-2xl border-slate-200 bg-slate-50/50 h-14 text-sm font-black text-slate-900 placeholder:text-slate-300 focus:ring-blue-500 shadow-sm transition-all hover:bg-white px-5 tracking-widest"
+                      />
+                    </FormControl>
+                    <FormMessage className="text-[10px] font-black uppercase text-red-500 pl-1" />
+                  </FormItem>
+                )}
+              />
 
-            {/* Status selector */}
-            <FormField
-              control={form.control}
-              name="status"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="text-[10px] uppercase text-gray-500 font-bold tracking-widest">
-                    Resultado de Cumplimiento
-                  </FormLabel>
-                  <div className="grid grid-cols-2 gap-3">
-                    <button
-                      type="button"
-                      onClick={() => field.onChange('pass')}
-                      className={cn(
-                        'h-16 rounded-xl font-bold text-sm uppercase tracking-widest transition-all duration-300 flex items-center justify-center gap-2 border',
-                        field.value === 'pass'
-                          ? 'bg-green-500/15 text-green-400 border-green-500/40 shadow-[0_0_20px_-5px_rgba(34,197,94,0.3)]'
-                          : 'bg-white/[0.02] text-gray-500 border-white/5 hover:border-white/10'
-                      )}
-                    >
-                      <CheckCircle2 className="w-4 h-4" />
-                      CONFORME
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => field.onChange('fail')}
-                      className={cn(
-                        'h-16 rounded-xl font-bold text-sm uppercase tracking-widest transition-all duration-300 flex items-center justify-center gap-2 border',
-                        field.value === 'fail'
-                          ? 'bg-red-500/15 text-red-400 border-red-500/40 shadow-[0_0_20px_-5px_rgba(239,68,68,0.3)]'
-                          : 'bg-white/[0.02] text-gray-500 border-white/5 hover:border-white/10'
-                      )}
-                    >
-                      <XCircle className="w-4 h-4" />
-                      RECHAZADO
-                    </button>
-                  </div>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+              <FormField
+                control={form.control}
+                name="status"
+                render={({ field }) => (
+                  <FormItem className="space-y-3">
+                    <FormLabel className="text-[10px] uppercase text-slate-500 font-black tracking-widest pl-1">
+                      Dictamen Final
+                    </FormLabel>
+                    <div className="grid grid-cols-2 gap-3 h-14">
+                      <button
+                        type="button"
+                        onClick={() => field.onChange('pass')}
+                        className={cn(
+                          'rounded-2xl font-black text-[9px] uppercase tracking-widest transition-all duration-300 flex items-center justify-center gap-2 border shadow-sm',
+                          field.value === 'pass'
+                            ? 'bg-green-600 text-white border-green-700 shadow-green-200 lg:scale-105'
+                            : 'bg-slate-50 text-slate-400 border-slate-200 hover:border-slate-300'
+                        )}
+                      >
+                        <CheckCircle2 className="w-3 h-3" />
+                        Pasa
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => field.onChange('fail')}
+                        className={cn(
+                          'rounded-2xl font-black text-[9px] uppercase tracking-widest transition-all duration-300 flex items-center justify-center gap-2 border shadow-sm',
+                          field.value === 'fail'
+                            ? 'bg-red-600 text-white border-red-700 shadow-red-200 lg:scale-105'
+                            : 'bg-slate-50 text-slate-400 border-slate-200 hover:border-slate-300'
+                        )}
+                      >
+                        <XCircle className="w-3 h-3" />
+                        Falla
+                      </button>
+                    </div>
+                    <FormMessage className="text-[10px] font-black uppercase text-red-500 pl-1" />
+                  </FormItem>
+                )}
+              />
+            </div>
           </div>
 
           {/* ── Right Column: Findings & Signature ── */}
-          <div className="space-y-6">
-            <h3 className="text-[10px] font-bold text-blue-400 uppercase tracking-widest flex items-center gap-2">
-              <Camera className="w-4 h-4" />
-              Hallazgos y Firma Digital
-            </h3>
+          <div className="space-y-8">
+            <div className="flex items-center gap-3 border-b border-slate-100 pb-4">
+              <div className="w-8 h-8 rounded-lg bg-indigo-50 flex items-center justify-center text-indigo-600">
+                <Camera className="w-4 h-4" />
+              </div>
+              <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">
+                Hallazgos y Validación
+              </h3>
+            </div>
 
-            {/* Notes / observations */}
             <FormField
               control={form.control}
               name="notes"
               render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="text-[10px] uppercase text-gray-500 font-bold tracking-widest">
-                    Observaciones Técnicas
+                <FormItem className="space-y-3">
+                  <FormLabel className="text-[10px] uppercase text-slate-500 font-black tracking-widest pl-1">
+                    Memorándum Técnico / Observaciones
                   </FormLabel>
                   <FormControl>
                     <Textarea
                       {...field}
                       rows={5}
-                      placeholder="Describa el estado del material, hallazgos visuales, mediciones, no conformidades encontradas..."
-                      className="rounded-xl border-white/10 bg-white/[0.04] text-sm resize-none placeholder:text-gray-600 leading-relaxed"
+                      placeholder="Describa el estado visual, dimensional o funcional del material..."
+                      className="rounded-2xl border-slate-200 bg-slate-50/50 text-sm font-bold text-slate-700 placeholder:text-slate-300 focus:ring-blue-500 shadow-sm transition-all hover:bg-white p-5 resize-none leading-relaxed"
                     />
                   </FormControl>
-                  <FormMessage />
+                  <FormMessage className="text-[10px] font-black uppercase text-red-500 pl-1" />
                 </FormItem>
               )}
             />
 
-            {/* Signature */}
             <FormField
               control={form.control}
               name="signature_url"
               render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="text-[10px] uppercase text-gray-500 font-bold tracking-widest">
-                    Firma Digital del Inspector
+                <FormItem className="space-y-3">
+                  <FormLabel className="text-[10px] uppercase text-slate-500 font-black tracking-widest pl-1">
+                    Firma Autógrafa del Auditor
                   </FormLabel>
                   <FormControl>
-                    <SignaturePad
-                      onSave={(dataUrl) => {
-                        field.onChange(dataUrl);
-                        toast.info('Firma capturada', { duration: 2000 });
-                      }}
-                    />
+                    <div className="rounded-[2rem] border-2 border-dashed border-slate-200 bg-slate-50 p-1 group hover:border-blue-400 hover:bg-blue-50/30 transition-all duration-500 overflow-hidden shadow-inner">
+                      <SignaturePad
+                        onSave={(dataUrl) => {
+                          field.onChange(dataUrl);
+                          toast.info('Validación capturada', { duration: 2000 });
+                        }}
+                      />
+                    </div>
                   </FormControl>
-                  <FormMessage />
+                  <FormMessage className="text-[10px] font-black uppercase text-red-500 pl-1" />
                 </FormItem>
               )}
             />
@@ -317,21 +325,21 @@ export function InspectionForm({ onSuccess }: InspectionFormProps) {
         </div>
 
         {/* ── Submit ── */}
-        <div className="pt-4 border-t border-white/5">
+        <div className="pt-10 border-t border-slate-100">
           <Button
             type="submit"
             disabled={isSubmitting}
-            className="w-full h-14 rounded-2xl bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white font-bold uppercase tracking-widest shadow-2xl shadow-blue-500/20 transition-all duration-300 text-sm"
+            className="w-full h-16 rounded-[2rem] bg-slate-900 hover:bg-blue-600 text-white font-black uppercase tracking-[0.3em] shadow-2xl shadow-blue-500/10 transition-all duration-500 text-[11px]"
           >
             {isSubmitting ? (
-              <><Loader2 className="w-5 h-5 mr-2 animate-spin" /> Procesando Inspección...</>
+              <><Loader2 className="w-5 h-5 mr-3 animate-spin" /> Procesando Registro...</>
             ) : (
-              'Finalizar y Registrar Inspección'
+              'Finalizar Auditoría de Calidad'
             )}
           </Button>
           {form.formState.errors.signature_url && (
-            <p className="text-center text-xs text-red-400 mt-3 flex items-center justify-center gap-1">
-              <AlertTriangle className="w-3 h-3" />
+            <p className="text-center text-[10px] font-black uppercase text-red-400 mt-4 flex items-center justify-center gap-2">
+              <AlertTriangle className="w-3.5 h-3.5" />
               {form.formState.errors.signature_url.message}
             </p>
           )}

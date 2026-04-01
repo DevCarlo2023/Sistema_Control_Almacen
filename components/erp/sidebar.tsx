@@ -3,32 +3,20 @@
 import * as React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { 
-  LayoutDashboard, 
-  Package, 
-  Wrench, 
-  ShieldCheck, 
-  Truck, 
-  Settings, 
-  Users, 
-  Factory,
-  ChevronLeft,
-  ChevronRight,
-  LogOut,
-  AppWindow
-} from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { Button } from '@/components/ui/button';
 
 const navItems = [
-  { name: 'Dashboard', icon: LayoutDashboard, href: '/dashboard' },
-  { name: 'Inventario', icon: Package, href: '/inventory' },
-  { name: 'Equipos', icon: Wrench, href: '/equipment' },
-  { name: 'Producción', icon: Factory, href: '/production' },
-  { name: 'Logística', icon: Truck, href: '/logistics' },
-  { name: 'Seguridad', icon: ShieldCheck, href: '/safety' },
-  { name: 'Usuarios', icon: Users, href: '/admin/users' },
-  { name: 'Ajustes', icon: Settings, href: '/settings' },
+  { name: 'Inventory', icon: 'inventory_2', href: '/erp/inventory' },
+  { name: 'Production', icon: 'precision_manufacturing', href: '/erp/production' },
+  { name: 'Logistics', icon: 'local_shipping', href: '/erp/logistics' },
+  { name: 'Analytics', icon: 'monitoring', href: '/erp/analytics' },
+  { name: 'Personnel', icon: 'badge', href: '/erp/personnel' },
+  { name: 'Compliance', icon: 'verified_user', href: '/erp/compliance' },
+];
+
+const footerItems = [
+  { name: 'Help Center', icon: 'help', href: '/erp/help' },
+  { name: 'System Logs', icon: 'terminal', href: '/erp/logs' },
 ];
 
 export function ERPSidebar() {
@@ -38,79 +26,95 @@ export function ERPSidebar() {
   return (
     <aside 
       className={cn(
-        "relative flex flex-col glass border-r h-screen transition-all duration-500 ease-in-out z-50",
+        "h-screen flex flex-col bg-surface-container-lowest dark:bg-zinc-950 border-r border-outline-variant/30 font-headline transition-all duration-300 z-50",
         isCollapsed ? "w-20" : "w-64"
       )}
-      style={{
-        background: 'rgba(10, 10, 15, 0.7)',
-        backdropFilter: 'blur(16px)',
-        borderColor: 'rgba(255, 255, 255, 0.05)'
-      }}
     >
-      {/* Brand Logo */}
-      <div className="p-6 flex items-center gap-3">
-        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center shadow-lg shadow-blue-500/20">
-          <AppWindow className="text-white w-6 h-6" />
-        </div>
-        {!isCollapsed && (
-          <span className="text-lg font-bold bg-gradient-to-r from-white to-gray-400 bg-clip-text text-transparent">
-            INDUSTRIAL ERP
-          </span>
-        )}
+      <div className="px-8 py-8 flex items-center gap-2">
+        <span className="text-primary font-black text-2xl tracking-tighter truncate">
+          {isCollapsed ? 'A' : 'ARCHITECT'}
+        </span>
       </div>
 
-      {/* Navigation */}
-      <nav className="flex-1 px-4 space-y-2 py-4">
+      {!isCollapsed && (
+        <div className="px-6 mb-8 mt-2 animate-in fade-in slide-in-from-left-2 duration-500">
+          <div className="flex items-center gap-3 mb-1 p-3 bg-surface-container rounded-lg border border-outline-variant/20">
+            <div className="w-8 h-8 rounded bg-primary-container flex items-center justify-center text-white shrink-0">
+              <span className="material-symbols-outlined text-sm">precision_manufacturing</span>
+            </div>
+            <div className="min-w-0">
+              <div className="text-[10px] text-outline leading-none uppercase font-bold tracking-widest">UNIT 01</div>
+              <div className="text-xs text-on-surface truncate">Active Session</div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <nav className="flex-1 px-3 space-y-1 overflow-y-auto custom-scrollbar">
         {navItems.map((item) => {
-          const isActive = pathname === item.href;
+          const isActive = pathname.startsWith(item.href);
           return (
             <Link 
               key={item.href} 
               href={item.href}
               className={cn(
-                "group flex items-center gap-3 px-3 py-3 rounded-xl transition-all duration-300 relative overflow-hidden",
+                "flex items-center gap-3 px-4 py-3 rounded-md transition-all group relative overflow-hidden",
                 isActive 
-                  ? "bg-white/10 text-white shadow-[inset_0px_1px_1px_rgba(255,255,255,0.1)]" 
-                  : "text-gray-400 hover:text-white hover:bg-white/5"
+                  ? "brutalist-gradient text-white shadow-lg shadow-primary/20" 
+                  : "text-on-surface-variant hover:bg-surface-container transition-all"
               )}
             >
-              <item.icon className={cn(
-                "w-5 h-5 transition-transform duration-300 group-hover:scale-110",
-                isActive && "text-blue-400"
-              )} />
+              <span className={cn(
+                "material-symbols-outlined transition-transform duration-300",
+                !isActive && "group-hover:translate-x-1"
+              )}>
+                {item.icon}
+              </span>
               {!isCollapsed && (
-                <span className="font-medium text-sm tracking-wide">{item.name}</span>
+                <span className="text-xs font-bold uppercase tracking-widest truncate">{item.name}</span>
               )}
               {isActive && (
-                <div className="absolute left-0 w-1 h-6 bg-blue-500 rounded-r-full shadow-[0_0_10px_#3b82f6]" />
+                <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-4 bg-white rounded-r-full" />
               )}
             </Link>
           );
         })}
       </nav>
 
-      {/* Footer / User */}
-      <div className="p-4 mt-auto border-t border-white/5">
-        <Button 
-          variant="ghost" 
-          className="w-full justify-start text-red-500 hover:bg-red-500/10 hover:text-red-500 rounded-xl gap-3"
-          onClick={() => {}}
+      {!isCollapsed && (
+        <div className="px-4 py-6">
+          <button className="w-full brutalist-gradient text-white py-3 rounded text-xs tracking-[0.2em] font-bold shadow-lg shadow-primary/20 active:scale-95 transition-transform uppercase">
+            NEW PRODUCTION RUN
+          </button>
+        </div>
+      )}
+
+      <div className="mt-auto border-t border-outline-variant/10 pt-4 pb-6 px-3 space-y-1">
+        {footerItems.map((item) => (
+          <Link 
+            key={item.href} 
+            href={item.href}
+            className="flex items-center gap-3 px-4 py-2 text-outline hover:text-primary transition-colors group"
+          >
+            <span className="material-symbols-outlined text-lg">{item.icon}</span>
+            {!isCollapsed && (
+              <span className="text-[10px] font-bold uppercase tracking-widest">{item.name}</span>
+            )}
+          </Link>
+        ))}
+        
+        <button 
+          onClick={() => setIsCollapsed(!isCollapsed)}
+          className="w-full flex items-center gap-3 px-4 py-2 text-outline hover:text-primary transition-colors group border-t border-outline-variant/10 mt-2 pt-4"
         >
-          <LogOut className="w-5 h-5" />
-          {!isCollapsed && <span className="font-medium">Cerrar Sesión</span>}
-        </Button>
+          <span className="material-symbols-outlined text-lg">
+            {isCollapsed ? 'side_navigation' : 'keyboard_double_arrow_left'}
+          </span>
+          {!isCollapsed && (
+            <span className="text-[10px] font-bold uppercase tracking-widest">Collapse View</span>
+          )}
+        </button>
       </div>
-
-      {/* Collapse Toggle */}
-      <button 
-        onClick={() => setIsCollapsed(!isCollapsed)}
-        className="absolute -right-3 top-20 w-6 h-6 rounded-full glass border flex items-center justify-center text-white hover:bg-white/10 transition-colors z-50 shadow-xl"
-      >
-        {isCollapsed ? <ChevronRight className="w-3 h-3" /> : <ChevronLeft className="w-3 h-3" />}
-      </button>
-
-      {/* Background Decor */}
-      <div className="absolute bottom-0 left-0 w-full h-32 bg-gradient-to-t from-blue-500/5 to-transparent pointer-events-none" />
     </aside>
   );
 }
