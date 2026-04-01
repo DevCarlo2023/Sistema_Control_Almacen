@@ -198,8 +198,10 @@ function EquipmentPageContent() {
         const checkAuth = async () => {
             const { data: { session } } = await supabase.auth.getSession();
             if (!session) { router.push('/login'); return; }
+            /*
             const { data: authorized } = await supabase.from('authorized_users').select('email').eq('email', session.user.email).single();
             if (!authorized) { await supabase.auth.signOut(); router.push('/login?error=Unauthorized'); return; }
+            */
             setUser(session.user);
         };
         checkAuth();
