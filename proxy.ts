@@ -27,26 +27,56 @@ export async function proxy(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser()
 
-  // Redirect to login if trying to access protected routes without authentication
+  const url = request.nextUrl.clone()
+  const hostname = request.headers.get('host') || ''
+  const rootDomain = process.env.NEXT_PUBLIC_ROOT_DOMAIN || 'carlotech.com'
+
+  // --- SUBDOMAIN ROUTING LOGIC ---
+  // Detect if the request is coming from the ERP subdomain
+  const isERPSubdomain =
+    hostname.startsWith('erp.') ||
+    hostname === `erp.${rootDomain}` ||
+    hostname === `erp.localhost` ||
+    hostname === `erp.localhost:3000`
+
+  // Detect if the request is coming from the Almacen subdomain
+  const isAlmacenSubdomain =
+    hostname.startsWith('almacen.') ||
+    hostname === `almacen.${rootDomain}` ||
+    hostname === `almacen.localhost` ||
+    hostname === `almacen.localhost:3000`
+
+  if (isERPSubdomain) {
+    // Rewrite the ERP subdomain root to the ERP dashboard
+    if (url.pathname === '/' || url.pathname === '') {
+      url.pathname = '/erp/dashboard'
+      return NextResponse.rewrite(url)
+    }
+    // Forward all ERP subdomain paths to the /erp/* directory
+    if (!url.pathname.startsWith('/erp')) {
+      url.pathname = `/erp${url.pathname}`
+      return NextResponse.rewrite(url)
+    }
+  }
+
+  // --- AUTH REDIRECT LOGIC ---
   if (
     !user &&
-    (request.nextUrl.pathname.startsWith('/inventory') ||
-      (request.nextUrl.pathname.startsWith('/api') && !request.nextUrl.pathname.startsWith('/api/bot')))
+    (url.pathname.startsWith('/inventory') ||
+      url.pathname.startsWith('/equipment') ||
+      url.pathname.startsWith('/erp') ||
+      (url.pathname.startsWith('/api') && !url.pathname.startsWith('/api/bot')))
   ) {
-    const loginUrl = request.nextUrl.clone()
+    const loginUrl = url.clone()
     loginUrl.pathname = '/login'
     return NextResponse.redirect(loginUrl)
   }
 
-  // Redirect to inventory if logged in and trying to access login/signup
-  if (
-    user &&
-    (request.nextUrl.pathname === '/login' ||
-      request.nextUrl.pathname === '/signup')
-  ) {
-    const inventoryUrl = request.nextUrl.clone()
-    inventoryUrl.pathname = '/inventory'
-    return NextResponse.redirect(inventoryUrl)
+  // Redirect authenticated users away from login/signup
+  if (user && (url.pathname === '/login' || url.pathname === '/signup')) {
+    const redirectUrl = url.clone()
+    redirectUrl.pathname = isERPSubdomain ? '/erp/dashboard' : '/inventory'
+    return NextResponse.redirect(redirectUrl)
   }
 
   return supabaseResponse

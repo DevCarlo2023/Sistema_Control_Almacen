@@ -26,10 +26,10 @@
   --ring: oklch(0.55 0.18 250 / 0.4);
   --radius: 1rem;
 
-  /* Glassmorphism Defaults (Neutralized for high contrast) */
-  --glass-bg: rgba(255, 255, 255, 1);
-  --glass-border: rgba(0, 0, 0, 0.1);
-  --glass-blur: 0px;
+  /* Glassmorphism - transparent frosted glass */
+  --glass-bg: rgba(255, 255, 255, 0.05);
+  --glass-border: rgba(255, 255, 255, 0.12);
+  --glass-blur: 20px;
 }
 
 .dark {
@@ -54,9 +54,9 @@
   --input: oklch(0.25 0.04 240);
   --ring: oklch(0.65 0.22 250 / 0.5);
 
-  --glass-bg: rgba(15, 23, 42, 1);
-  --glass-border: rgba(255, 255, 255, 0.1);
-  --glass-blur: 0px;
+  --glass-bg: rgba(15, 23, 42, 0.6);
+  --glass-border: rgba(255, 255, 255, 0.08);
+  --glass-blur: 20px;
 }
 
 @theme inline {
@@ -117,10 +117,19 @@
 
   .glass-card {
     background: var(--glass-bg);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
+    backdrop-filter: blur(var(--glass-blur));
+    -webkit-backdrop-filter: blur(var(--glass-blur));
     border: 1px solid var(--glass-border);
-    box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1), inset 0 1px 0 0 rgba(255, 255, 255, 0.05);
+    box-shadow: 0 8px 32px -8px rgb(0 0 0 / 0.4), 0 2px 4px -2px rgb(0 0 0 / 0.2), inset 0 1px 0 0 rgba(255, 255, 255, 0.06);
+  }
+
+  /* Force dark glass for ERP suite regardless of system theme */
+  .erp-glass {
+    background: rgba(10, 10, 20, 0.5);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 0 8px 32px -8px rgb(0 0 0 / 0.5), inset 0 1px 0 0 rgba(255, 255, 255, 0.05);
   }
 
   .glass-card-hover {
