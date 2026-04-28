@@ -164,6 +164,17 @@ export async function enviarWA(jid: string, mensaje: string) {
 
 export async function procesarRespuesta(jid: string, texto: string, media: any = null, msgId: string | null = null) {
     if (!jid) return "Error JID";
+    
+    // --- FILTRO DE SALUDOS CRÍTICO (SIN IA) ---
+    const rawText = (texto || '').trim().toLowerCase();
+    const greetingPattern = /^(hola|buenos?\s+d[ií]as?|buenas?\s+tardes?|buenas?\s+noches?)[.!?]*$/i;
+    
+    if (greetingPattern.test(rawText)) {
+        const staticGreeting = "¡Hola! Soy el Asistente Virtual de Almacén de PROMET. 🏗️ ¿En qué puedo ayudarte hoy?";
+        await enviarWA(jid, staticGreeting);
+        return staticGreeting;
+    }
+
     let { data: sessionData } = await supabase.from('bot_sessions').select('history').eq('jid', jid).maybeSingle();
     let history = sessionData?.history || [];
     if (msgId && history.some((h: any) => h.ref_id === msgId)) return "Mensaje ya procesado";
@@ -171,17 +182,6 @@ export async function procesarRespuesta(jid: string, texto: string, media: any =
     let resolvedText = texto || '';
     if (media && media.type === 'audio') {
         resolvedText = await geminiChatMultimodal("Escribe SOLO el texto de lo que oigas.", media, "Transcriptor.");
-    }
-    // Detect simple greetings and answer WITHOUT invoking Gemini (saves quota)
-    const greetingPattern = /^\s*[¡!]?\s*(hola|buenos?\s+d[ií]as?|buenas?\s+tardes?|buenas?\s+noches?)\s*[.!?]*\s*$/i;
-    const trimmed = resolvedText.trim();
-    console.log(`[BOT] jid=${jid} msg="${trimmed}" greeting=${greetingPattern.test(trimmed)}`);
-    if (greetingPattern.test(trimmed)) {
-        const staticGreeting = '¡Hola! Soy el Asistente Virtual de Almacén de PROMET. 🏗️ ¿En qué puedo ayudarte hoy?';
-        await enviarWA(jid, staticGreeting);
-        history.push({ role: 'bot', content: staticGreeting, ref_id: msgId });
-        await supabase.from('bot_sessions').upsert({ jid, history, updated_at: new Date().toISOString() }, { onConflict: 'jid' });
-        return staticGreeting;
     }
 
     // Rate limiting per user (10s window) to avoid rapid quota consumption
