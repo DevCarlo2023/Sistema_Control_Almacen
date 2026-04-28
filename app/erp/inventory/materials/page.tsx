@@ -19,11 +19,9 @@ import { MovementHistory } from '@/components/inventory/movement-history';
 import { cn } from '@/lib/utils';
 
 // ── Shared design tokens ────────────────────────────────────────────────
-const CARD = 'bg-white rounded border border-zinc-200 shadow-sm';
-const LABEL = 'text-[9px] font-black text-zinc-400 uppercase tracking-[0.25em] leading-none';
-const SECTION_TITLE = 'text-[10px] font-black text-zinc-500 uppercase tracking-[0.25em] leading-none';
-const BTN_PRIMARY = 'inline-flex items-center justify-center gap-2 px-4 h-9 rounded bg-primary text-white text-[10px] font-black uppercase tracking-[0.2em] hover:bg-primary/90 transition-all shadow-sm';
-const BTN_GHOST = 'inline-flex items-center justify-center gap-2 px-4 h-9 rounded text-[10px] font-black uppercase tracking-[0.2em] text-zinc-600 hover:bg-zinc-100 transition-all';
+const CARD = 'bg-white rounded-xl border border-zinc-100 shadow-sm overflow-hidden';
+const LABEL = 'text-[9px] font-black text-zinc-400 uppercase tracking-[0.3em] leading-none';
+const SECTION_TITLE = 'text-[10px] font-black text-zinc-500 uppercase tracking-[0.2em] leading-none';
 
 export default function MaterialsERPPage() {
   const router = useRouter();
@@ -57,95 +55,97 @@ export default function MaterialsERPPage() {
   };
 
   return (
-    <div className="space-y-5 animate-in fade-in duration-400">
+    <div className="space-y-8 animate-in fade-in duration-700 pb-10">
 
       {/* ── Header ─────────────────────────────────────────── */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-5 border-b border-zinc-200">
-        <div className="space-y-1">
-          <p className={cn(LABEL, 'flex items-center gap-1.5 text-primary')}>
-            <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
-            INVENTORY CLUSTER · MATERIALS
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-8">
+        <div className="space-y-3">
+          <p className="text-[10px] font-black text-blue-600 uppercase tracking-[0.4em] flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-blue-600 shadow-[0_0_8px_rgba(37,99,235,0.4)]" />
+            Inventory Cluster · Materials
           </p>
-          <h1 className="text-2xl md:text-4xl font-black text-zinc-950 tracking-tighter uppercase leading-none">
-            Gestión de <span className="text-primary">Materiales</span>
+          <h1 className="text-3xl md:text-5xl font-black text-zinc-950 tracking-tighter uppercase italic leading-none">
+            Gestión de <span className="text-blue-600">Materiales</span>
           </h1>
         </div>
-        <div className="flex items-center gap-1.5">
-          <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
-          <span className={cn(LABEL, 'text-zinc-400')}>Sincronizado</span>
+        <div>
+          <div className="inline-flex items-center gap-3 px-4 py-2 bg-green-50 border border-green-100 rounded-full">
+            <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+            <span className="text-[10px] font-black text-green-700 uppercase tracking-widest">Sistema Sincronizado</span>
+          </div>
         </div>
       </div>
 
       {/* ── Layout Grid ─────────────────────────────────────── */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
 
-        {/* Left Panel */}
-        <aside className="lg:col-span-3 space-y-4">
+        {/* Left Sidebars Panel */}
+        <aside className="lg:col-span-3 space-y-6">
 
-          {/* Warehouse */}
-          <div className={cn(CARD, 'p-4 space-y-3')}>
-            <p className={SECTION_TITLE}>Almacén activo</p>
+          {/* Warehouse Card */}
+          <div className={cn(CARD, 'p-6 space-y-4')}>
+            <div className="flex items-center gap-3">
+               <span className="material-symbols-outlined text-zinc-400">home_work</span>
+               <p className={SECTION_TITLE}>Almacén activo</p>
+            </div>
             <WarehouseSelector value={warehouseId} onWarehouseChange={handleWarehouseChange} />
           </div>
 
-          {/* Tools */}
-          <div className={cn(CARD, 'p-4 space-y-2')}>
-            <p className={SECTION_TITLE}>Exportación e importación</p>
-            <div className="pt-1 space-y-2">
-              <ExportButton warehouseId={warehouseId} warehouseName={warehouseName} />
-              <CriticalExportButton warehouseId={warehouseId} warehouseName={warehouseName} />
-              <ImportButton warehouseId={warehouseId} onImportSuccess={handleSuccess} />
-            </div>
+          {/* Sync Status Card */}
+          <div className="bg-blue-50/50 border border-blue-100 rounded-2xl p-6 space-y-3">
+            <p className="text-[10px] font-black text-blue-700 uppercase tracking-[0.2em] flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-blue-600 animate-pulse" />
+              Data Sync Active
+            </p>
+            <p className="text-[10px] font-medium text-blue-600/70 leading-relaxed">
+              Nodo central operativo en tiempo real. Todos los movimientos están protegidos por SSL.
+            </p>
           </div>
 
-          {/* Status */}
-          <div className="bg-primary/5 border border-primary/20 rounded p-4 space-y-1.5 hidden lg:block">
-            <div className="flex items-center gap-2">
-              <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
-              <span className={cn(LABEL, 'text-primary')}>Data Sync Active</span>
+          {/* Data Operations Card */}
+          <div className={cn(CARD, 'p-6 space-y-4')}>
+            <div className="flex items-center gap-3">
+               <span className="material-symbols-outlined text-zinc-400">database</span>
+               <p className={SECTION_TITLE}>Operaciones de Datos</p>
             </div>
-            <p className="text-[10px] text-zinc-500 leading-relaxed">
-              Nodo central operativo en tiempo real.
-            </p>
+            <div className="space-y-3 pt-2">
+              <ImportButton warehouseId={warehouseId} onImportSuccess={handleSuccess} />
+              <ExportButton warehouseId={warehouseId} warehouseName={warehouseName} />
+              <CriticalExportButton warehouseId={warehouseId} warehouseName={warehouseName} />
+            </div>
           </div>
         </aside>
 
-        {/* Main Panel */}
-        <div className="lg:col-span-9 space-y-5">
+        {/* Main Center Panel */}
+        <div className="lg:col-span-9 space-y-8">
 
-          {/* Action Card */}
-          <div className={cn(CARD, 'p-5')}>
-            {/* Card header row */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5 pb-4 border-b border-zinc-100">
-              <div className="flex items-center gap-2.5">
-                <div className="w-7 h-7 rounded bg-zinc-900 flex items-center justify-center flex-shrink-0">
-                  <span className="material-symbols-outlined text-white text-[16px]">bolt</span>
+          {/* Registrar Movimiento Card */}
+          <div className={cn(CARD, 'p-8')}>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8 pb-6 border-b border-zinc-50">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-zinc-950 flex items-center justify-center shadow-lg transform -rotate-3">
+                  <span className="material-symbols-outlined text-white text-xl">bolt</span>
                 </div>
-                <span className="text-xs font-black text-zinc-900 uppercase tracking-[0.15em]">
+                <h3 className="text-sm font-black text-zinc-900 uppercase tracking-[0.1em]">
                   {actionMode === 'movement' ? 'Registrar Movimiento' : 'Traslado entre Almacenes'}
-                </span>
+                </h3>
                 
-                {/* Form Collapse Eye Toggle */}
                 <button
                   onClick={() => setIsFormCollapsed(!isFormCollapsed)}
-                  className="ml-2 w-7 h-7 flex items-center justify-center rounded-full text-zinc-400 hover:bg-zinc-100 hover:text-zinc-900 transition-colors"
-                  title={isFormCollapsed ? 'Mostrar formulario' : 'Ocultar formulario'}
+                  className="ml-3 p-2 text-zinc-300 hover:text-zinc-900 transition-colors"
                 >
-                  <span className="material-symbols-outlined text-[18px]">
+                  <span className="material-symbols-outlined text-xl">
                     {isFormCollapsed ? 'visibility_off' : 'visibility'}
                   </span>
                 </button>
               </div>
 
-              {/* Toggle switch */}
-              <div className="flex bg-zinc-100 p-0.5 rounded gap-0.5 self-start sm:self-auto">
+              <div className="flex bg-zinc-100 p-1 rounded-xl gap-1">
                 <button
                   onClick={() => setActionMode('movement')}
                   className={cn(
-                    'h-8 px-3 rounded text-[9px] font-black uppercase tracking-[0.15em] transition-all',
-                    actionMode === 'movement'
-                      ? 'bg-zinc-900 text-white shadow-sm'
-                      : 'text-zinc-500 hover:text-zinc-700'
+                    'h-10 px-4 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all',
+                    actionMode === 'movement' ? 'bg-zinc-900 text-white shadow-lg' : 'text-zinc-400 hover:text-zinc-600'
                   )}
                 >
                   Ingreso / Salida
@@ -153,10 +153,8 @@ export default function MaterialsERPPage() {
                 <button
                   onClick={() => setActionMode('transfer')}
                   className={cn(
-                    'h-8 px-3 rounded text-[9px] font-black uppercase tracking-[0.15em] transition-all',
-                    actionMode === 'transfer'
-                      ? 'bg-zinc-800 text-white shadow-sm'
-                      : 'text-zinc-500 hover:text-zinc-700'
+                    'h-10 px-4 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all',
+                    actionMode === 'transfer' ? 'bg-zinc-900 text-white shadow-lg' : 'text-zinc-400 hover:text-zinc-600'
                   )}
                 >
                   Traslado
@@ -164,8 +162,7 @@ export default function MaterialsERPPage() {
               </div>
             </div>
 
-            {/* Content wrapped in collapsible div */}
-            <div className={cn("transition-all duration-300", isFormCollapsed ? "h-0 overflow-hidden opacity-0" : "opacity-100")}>
+            <div className={cn("transition-all duration-500 ease-in-out", isFormCollapsed ? "max-h-0 overflow-hidden opacity-0" : "max-h-[1000px] opacity-100")}>
               {actionMode === 'movement' ? (
                 <MovementForm
                   warehouseId={warehouseId}
@@ -184,12 +181,11 @@ export default function MaterialsERPPage() {
             </div>
           </div>
 
-          {/* Tabs Section */}
-          <div className="mt-8">
-            <Tabs defaultValue="global" className="space-y-0 relative">
-              <div className="flex gap-2 mb-4 items-start">
-                <TabsList className="bg-white border border-zinc-200 rounded p-1 gap-0.5 h-auto w-full shadow-sm flex flex-wrap flex-1">
-                  {[
+          {/* Main Tabs Navigation */}
+          <Tabs defaultValue="stock" className="space-y-6">
+            <div className="flex items-center gap-3">
+              <TabsList className="bg-white border border-zinc-100 rounded-2xl p-1.5 h-auto flex-1 shadow-sm">
+                {[
                   { value: 'global',  icon: 'search',      label: 'Consulta Global' },
                   { value: 'stock',   icon: 'inventory_2', label: 'Stock Almacén' },
                   { value: 'history', icon: 'history',     label: 'Historial' },
@@ -198,58 +194,50 @@ export default function MaterialsERPPage() {
                   <TabsTrigger
                     key={tab.value}
                     value={tab.value}
-                    onClick={() => setIsTabsCollapsed(false)}
-                    className={cn(
-                      'flex-1 h-9 flex items-center justify-center gap-1.5 rounded',
-                      'text-[9px] font-black uppercase tracking-[0.15em] transition-all',
-                      'text-zinc-500 data-[state=active]:bg-zinc-900 data-[state=active]:text-white data-[state=active]:shadow-sm'
-                    )}
+                    className="flex-1 h-11 flex items-center justify-center gap-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all text-zinc-400 data-[state=active]:bg-zinc-900 data-[state=active]:text-white data-[state=active]:shadow-lg"
                   >
-                    <span className="material-symbols-outlined text-[15px]">{tab.icon}</span>
+                    <span className="material-symbols-outlined text-lg leading-none">{tab.icon}</span>
                     <span className="hidden sm:inline">{tab.label}</span>
                   </TabsTrigger>
                 ))}
-                </TabsList>
-                
-                {/* Tabs Collapse Eye Toggle */}
-                <button
-                  onClick={() => setIsTabsCollapsed(!isTabsCollapsed)}
-                  className="w-10 h-10 mt-0.5 shrink-0 bg-white border border-zinc-200 rounded flex items-center justify-center text-zinc-400 hover:text-zinc-900 hover:bg-zinc-100 transition-all shadow-sm"
-                  title={isTabsCollapsed ? 'Mostrar paneles' : 'Ocultar paneles'}
-                >
-                  <span className="material-symbols-outlined text-[18px]">
-                    {isTabsCollapsed ? 'visibility_off' : 'visibility'}
-                  </span>
-                </button>
-              </div>
+              </TabsList>
               
-            <div className={cn("transition-all duration-300", isTabsCollapsed ? "h-0 overflow-hidden opacity-0" : "opacity-100")}>
-              <TabsContent value="global">
-              <div className={cn(CARD, 'p-5 md:p-6', 'animate-in fade-in duration-300')}>
-                <GlobalStockSearch refreshTrigger={refreshTrigger} />
-              </div>
-            </TabsContent>
+              <button
+                onClick={() => setIsTabsCollapsed(!isTabsCollapsed)}
+                className="w-14 h-14 bg-white border border-zinc-100 rounded-2xl flex items-center justify-center text-zinc-300 hover:text-zinc-950 transition-all shadow-sm"
+              >
+                <span className="material-symbols-outlined text-xl">
+                  {isTabsCollapsed ? 'visibility_off' : 'visibility'}
+                </span>
+              </button>
+            </div>
+            
+            <div className={cn("transition-all duration-500 ease-in-out", isTabsCollapsed ? "max-h-0 overflow-hidden opacity-0" : "max-h-[2000px] opacity-100")}>
+              <TabsContent value="global" className="m-0">
+                <div className={cn(CARD, 'p-8')}>
+                  <GlobalStockSearch refreshTrigger={refreshTrigger} />
+                </div>
+              </TabsContent>
 
-            <TabsContent value="stock">
-              <div className={cn(CARD, 'overflow-hidden min-h-[400px]', 'animate-in fade-in duration-300')}>
-                <StockTable warehouseId={warehouseId} refreshTrigger={refreshTrigger} />
-              </div>
-            </TabsContent>
+              <TabsContent value="stock" className="m-0">
+                <div className={cn(CARD, 'min-h-[600px]')}>
+                  <StockTable warehouseId={warehouseId} refreshTrigger={refreshTrigger} />
+                </div>
+              </TabsContent>
 
-            <TabsContent value="history">
-              <div className={cn(CARD, 'overflow-hidden', 'animate-in fade-in duration-300')}>
-                <MovementHistory warehouseId={warehouseId} warehouseName={warehouseName} refreshTrigger={refreshTrigger} />
-              </div>
-            </TabsContent>
+              <TabsContent value="history" className="m-0">
+                <div className={cn(CARD)}>
+                  <MovementHistory warehouseId={warehouseId} warehouseName={warehouseName} refreshTrigger={refreshTrigger} />
+                </div>
+              </TabsContent>
 
-            <TabsContent value="admin">
-              <div className={cn(CARD, 'p-5 md:p-6', 'animate-in fade-in duration-300')}>
-                <AdminTabs userEmail={user?.email} />
-              </div>
-            </TabsContent>
+              <TabsContent value="admin" className="m-0">
+                <div className={cn(CARD, 'p-8')}>
+                  <AdminTabs userEmail={user?.email} />
+                </div>
+              </TabsContent>
             </div>
           </Tabs>
-          </div>
         </div>
       </div>
     </div>
