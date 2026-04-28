@@ -40,6 +40,7 @@ export default function InventoryPage() {
         return;
       }
 
+      /* 
       // Check if user is in the whitelist
       const { data: authorized, error } = await supabase
         .from('authorized_users')
@@ -53,6 +54,7 @@ export default function InventoryPage() {
         router.push('/login?error=Unauthorized');
         return;
       }
+      */
 
       setUser(session.user);
     };
