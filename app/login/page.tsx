@@ -31,7 +31,7 @@ export default function LoginPage() {
         return;
       }
 
-      router.push('/inventory');
+      router.push('/erp/dashboard');
     } catch (err) {
       setError('Error al iniciar sesión. Por favor, intenta de nuevo.');
     } finally {
