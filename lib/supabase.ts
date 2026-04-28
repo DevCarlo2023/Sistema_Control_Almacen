@@ -4,8 +4,9 @@ import { type Database } from './database.types';
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 
+// No lanzar error durante el build si faltan variables (se validarán en runtime)
 if (!supabaseUrl || !supabaseAnonKey) {
-  throw new Error('Missing Supabase environment variables');
+  console.warn('⚠️ Supabase environment variables are missing');
 }
 
 // In dev, don't set a cookie domain (let browser use default for localhost).

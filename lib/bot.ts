@@ -18,7 +18,9 @@ const queryCache = new Map<string, { response: string; ts: number }>();
 const rateLimitMap = new Map<string, number>(); // Simple per‑user rate limiting (10 s window)
 
 const genAI = new GoogleGenerativeAI((process.env.GOOGLE_GEMINI_KEY || '').trim())
-const supabase = createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_SERVICE_KEY)
+const supabase = (CONFIG.SUPABASE_URL && CONFIG.SUPABASE_SERVICE_KEY) 
+    ? createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_SERVICE_KEY)
+    : null as any;
 
 function normalizar(texto: string): string {
     return texto.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();

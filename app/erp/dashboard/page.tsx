@@ -88,9 +88,9 @@ export default function ERPDashboard() {
             </div>
 
             <div className="space-y-4">
-              <StockAlertItem title="REQUERIMIENTO: ABRAZADERA AJUSTABLE 6\" INOX" msg="Stock actual 1 unidades por debajo del umbral mínimo de Carlo ERP." />
-              <StockAlertItem title="REQUERIMIENTO: ABRAZADERA CADDY GLV 3\"" msg="Stock actual 1 unidades por debajo del umbral mínimo de Carlo ERP." />
-              <StockAlertItem title="REQUERIMIENTO: ABRAZADERA CADDY GLV 3/4\"" msg="Stock actual 1 unidades por debajo del umbral mínimo de Carlo ERP." />
+              <StockAlertItem title='REQUERIMIENTO: ABRAZADERA AJUSTABLE 6" INOX' msg="Stock actual 1 unidades por debajo del umbral mínimo de Carlo ERP." />
+              <StockAlertItem title='REQUERIMIENTO: ABRAZADERA CADDY GLV 3"' msg="Stock actual 1 unidades por debajo del umbral mínimo de Carlo ERP." />
+              <StockAlertItem title='REQUERIMIENTO: ABRAZADERA CADDY GLV 3/4"' msg="Stock actual 1 unidades por debajo del umbral mínimo de Carlo ERP." />
             </div>
           </div>
         </div>
