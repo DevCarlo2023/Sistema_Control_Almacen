@@ -2,12 +2,50 @@
 
 import * as React from 'react';
 import { cn } from '@/lib/utils';
-import { ChevronRight } from 'lucide-react';
+import { Search, Bell, ChevronRight, LayoutDashboard, Package, Truck, ShieldCheck, Activity } from 'lucide-react';
 
 export default function ERPDashboard() {
   return (
     <div className="space-y-6 pb-10 bg-white min-h-screen animate-in fade-in duration-700">
       
+      {/* ── Top Navigation Bar ────────────────────────────── */}
+      <div className="flex items-center justify-between gap-4 mb-8">
+        <div className="flex items-center gap-4">
+          <div className="h-10 w-10 bg-black rounded-xl flex items-center justify-center shadow-lg transform hover:rotate-3 transition-transform">
+            <span className="text-white font-black text-xl italic tracking-tighter">A</span>
+          </div>
+          <div className="hidden sm:block">
+            <h1 className="text-xl font-black text-zinc-950 tracking-tighter uppercase leading-none">
+              Control <span className="text-blue-600">Project</span>
+            </h1>
+            <p className="text-[9px] font-bold text-zinc-400 uppercase tracking-[0.3em] mt-1">
+              Gestión de Activos 2024
+            </p>
+          </div>
+        </div>
+        
+        <div className="flex items-center gap-6">
+          <div className="flex items-center gap-2">
+            <button className="p-2 text-zinc-400 hover:text-zinc-950 transition-colors">
+              <Search className="w-5 h-5 stroke-[2.5]" />
+            </button>
+            <button className="p-2 text-zinc-400 hover:text-zinc-950 transition-colors relative">
+              <Bell className="w-5 h-5 stroke-[2.5]" />
+              <span className="absolute top-2 right-2.5 w-2 h-2 bg-red-500 rounded-full border-2 border-white" />
+            </button>
+          </div>
+          <div className="flex items-center gap-3 pl-4 border-l border-zinc-100">
+            <div className="text-right hidden md:block">
+              <p className="text-[10px] font-black text-zinc-900 uppercase">C. Peña Aponte</p>
+              <p className="text-[9px] font-bold text-blue-600 uppercase tracking-widest">Almacén</p>
+            </div>
+            <div className="h-10 w-10 rounded-full border border-zinc-200 overflow-hidden bg-zinc-100">
+              <img src="https://ui-avatars.com/api/?name=Carlo+Peña&background=0D0D0D&color=fff" alt="User" />
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* ── Hero Banner ─────────────────────────────────── */}
       <div className="relative overflow-hidden rounded-[2.5rem] h-[220px] md:h-[380px] shadow-sm border border-zinc-100 group">
         <img
