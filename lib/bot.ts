@@ -11,7 +11,7 @@ const CONFIG = {
 }
 
 // Fast model: use gemini-1.5-flash (standard stable version)
-const FAST_MODEL = (process.env.FAST_MODEL || 'gemini-1.5-flash-latest').trim()
+const FAST_MODEL = (process.env.FAST_MODEL || 'gemini-1.5-flash').trim()
 const GROQ_KEY = (process.env.GROQ_API_KEY || '').trim();
 
 const queryCache = new Map<string, { response: string; ts: number }>();
@@ -117,7 +117,7 @@ export async function geminiChatMultimodal(prompt: string, media: any = null, sy
 
     try {
         const model = genAI.getGenerativeModel({ 
-            model: FAST_MODEL, 
+            model: "gemini-1.5-flash", 
             systemInstruction: systemMsg || MASTER_PROMPT 
         });
 
