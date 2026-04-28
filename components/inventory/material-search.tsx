@@ -42,7 +42,7 @@ export function MaterialSearch({ onSelectMaterial, selectedMaterial }: MaterialS
     try {
       const { data, error } = await supabase
         .from('materials')
-        .select('*')
+        .select('*, inventory(quantity)')
         .or(`name.ilike.%${query}%,description.ilike.%${query}%`)
         .limit(50);
 
@@ -133,8 +133,13 @@ export function MaterialSearch({ onSelectMaterial, selectedMaterial }: MaterialS
                 <div className="font-black text-[13px] uppercase text-zinc-900 leading-tight group-hover:text-primary transition-colors truncate">
                   {material.name}
                 </div>
-                <div className="text-[11px] text-zinc-500 font-medium italic truncate">
-                  {material.description || 'Sin descripción disponible'}
+                <div className="flex items-center gap-2 mt-0.5">
+                  <span className="text-[9px] font-black uppercase text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-100">
+                    Stock: {material.inventory?.[0]?.quantity || 0}
+                  </span>
+                  <div className="text-[11px] text-zinc-500 font-medium italic truncate">
+                    {material.description || material.name}
+                  </div>
                 </div>
               </div>
               <span className="text-[9px] font-black bg-primary/10 text-primary px-2 py-0.5 rounded-md uppercase shrink-0 border border-primary/20">
