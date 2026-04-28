@@ -346,15 +346,15 @@ export function ImportButton({ warehouseId, onImportSuccess }: ImportButtonProps
             <div className="flex flex-col gap-2">
                 {!showImportConfirm ? (
                     <>
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            className="w-full h-10 rounded-xl font-black uppercase tracking-widest text-[10px] gap-2 border-border/50 hover:bg-primary/10 hover:text-primary transition-all shadow-sm"
+                        <button
+                            className="w-full flex items-center justify-center p-3 rounded-lg border border-zinc-200 bg-zinc-50 hover:bg-zinc-100 transition-all gap-3 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed group"
                             onClick={downloadTemplate}
                         >
-                            <FileDown className="w-3.5 h-3.5" />
-                            Descargar Plantilla Excel
-                        </Button>
+                            <FileDown className="w-6 h-6 text-zinc-600 shrink-0 group-hover:scale-110 transition-transform" strokeWidth={2.5} />
+                            <span className="text-[10px] font-black uppercase tracking-widest text-zinc-700 mt-0.5">
+                                Plantilla XLS
+                            </span>
+                        </button>
 
                         <div className="relative">
                             <input
@@ -365,19 +365,20 @@ export function ImportButton({ warehouseId, onImportSuccess }: ImportButtonProps
                                 onChange={handleFileUpload}
                                 disabled={loading || !warehouseId}
                             />
-                            <Button
-                                variant="default"
-                                className="w-full h-12 rounded-xl font-black uppercase tracking-widest text-[10px] gap-2 bg-green-600 hover:bg-green-700 shadow-[0_0_15px_rgba(22,163,74,0.3)] hover:shadow-[0_0_25px_rgba(22,163,74,0.5)] transition-all"
+                            <button
+                                className="w-full flex items-center justify-center p-3 rounded-lg border border-blue-200 bg-blue-50 hover:bg-blue-100 transition-all gap-3 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed group"
                                 onClick={() => fileInputRef.current?.click()}
                                 disabled={loading || !warehouseId}
                             >
                                 {loading ? (
-                                    <Loader2 className="w-4 h-4 animate-spin" />
+                                    <Loader2 className="w-6 h-6 border-[3px] border-blue-300 border-t-blue-600 rounded-full animate-spin shrink-0" />
                                 ) : (
-                                    <Upload className="w-4 h-4" />
+                                    <Upload className="w-6 h-6 text-blue-600 shrink-0 group-hover:scale-110 transition-transform" strokeWidth={2.5} />
                                 )}
-                                {loading ? 'Procesando...' : 'Subir Excel e Importar'}
-                            </Button>
+                                <span className="text-[10px] font-black uppercase tracking-widest text-blue-700 mt-0.5 whitespace-nowrap">
+                                    {loading ? 'Procesando...' : 'Subir e Importar'}
+                                </span>
+                            </button>
                         </div>
                     </>
                 ) : (
@@ -401,19 +402,16 @@ export function ImportButton({ warehouseId, onImportSuccess }: ImportButtonProps
                         <p className="text-[9px] font-bold text-muted-foreground leading-relaxed italic">
                             ⚠️ Por favor verifica que el contenido del archivo coincida con este resumen antes de confirmar.
                         </p>
-                        <div className="flex gap-2">
-                            <Button
-                                size="sm"
-                                className="flex-1 h-10 text-[10px] font-black uppercase bg-primary hover:bg-primary/90 rounded-lg shadow-lg shadow-primary/20"
+                        <div className="flex gap-2.5 pt-1">
+                            <button
+                                className="flex-1 h-9 flex items-center justify-center text-[9px] font-black uppercase tracking-[0.15em] transition-all rounded shadow-sm bg-primary text-white hover:bg-primary/90 disabled:opacity-50"
                                 onClick={handleConfirmImport}
                                 disabled={loading}
                             >
                                 {loading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : 'Confirmar Carga'}
-                            </Button>
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                className="flex-1 h-10 text-[10px] font-black uppercase rounded-lg border-border"
+                            </button>
+                            <button
+                                className="flex-1 h-9 flex items-center justify-center gap-2 text-[9px] font-black uppercase tracking-[0.15em] transition-all rounded border border-zinc-200 bg-white hover:bg-zinc-50 text-zinc-600 disabled:opacity-50"
                                 onClick={() => {
                                     setImportPreview(null);
                                     setShowImportConfirm(false);
@@ -421,29 +419,29 @@ export function ImportButton({ warehouseId, onImportSuccess }: ImportButtonProps
                                 }}
                                 disabled={loading}
                             >
-                                <XCircle className="w-3.5 h-3.5 mr-2" />
+                                <XCircle className="w-3.5 h-3.5" />
                                 Cancelar
-                            </Button>
+                            </button>
                         </div>
                     </div>
                 )}
 
                 {/* Revert last import button */}
                 {!showConfirm ? (
-                    <Button
-                        variant="outline"
-                        size="sm"
-                        className="w-full h-10 rounded-xl font-black uppercase tracking-widest text-[10px] gap-2 border-red-200 text-red-500 hover:bg-red-50 hover:border-red-400 transition-all"
+                    <button
+                        className="w-full flex items-center justify-center p-3 rounded-lg border border-red-200 bg-red-50 hover:bg-red-100 transition-all gap-3 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed group"
                         onClick={() => setShowConfirm(true)}
                         disabled={reverting || !warehouseId || showImportConfirm}
                     >
                         {reverting ? (
-                            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                            <Loader2 className="w-6 h-6 border-[3px] border-red-300 border-t-red-600 rounded-full animate-spin shrink-0" />
                         ) : (
-                            <Trash2 className="w-3.5 h-3.5" />
+                            <Trash2 className="w-6 h-6 text-red-600 shrink-0 group-hover:scale-110 transition-transform" strokeWidth={2.5} />
                         )}
-                        {reverting ? 'Revirtiendo...' : 'Revertir Última Carga'}
-                    </Button>
+                        <span className="text-[10px] font-black uppercase tracking-widest text-red-700 mt-0.5">
+                            {reverting ? 'Revirtiendo...' : 'Revertir Última'}
+                        </span>
+                    </button>
                 ) : (
                     <div className="rounded-xl border-2 border-red-200 bg-red-50 p-3 space-y-2">
                         <div className="flex items-start gap-2">
@@ -452,24 +450,21 @@ export function ImportButton({ warehouseId, onImportSuccess }: ImportButtonProps
                                 ¿Eliminar la última carga masiva de este almacén? Esta acción no se puede deshacer.
                             </p>
                         </div>
-                        <div className="flex gap-2">
-                            <Button
-                                size="sm"
-                                className="flex-1 h-8 text-[10px] font-black uppercase bg-red-600 hover:bg-red-700 rounded-lg"
+                        <div className="flex gap-2 pt-1">
+                            <button
+                                className="flex-1 h-8 flex items-center justify-center text-[9px] font-black uppercase tracking-[0.15em] transition-all rounded bg-red-600 hover:bg-red-700 text-white shadow-sm disabled:opacity-50"
                                 onClick={handleRevertLastImport}
                                 disabled={reverting}
                             >
-                                Sí, eliminar
-                            </Button>
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                className="flex-1 h-8 text-[10px] font-black uppercase rounded-lg"
+                                {reverting ? <Loader2 className="w-3 h-3 animate-spin" /> : 'Sí, eliminar'}
+                            </button>
+                            <button
+                                className="flex-1 h-8 flex items-center justify-center text-[9px] font-black uppercase tracking-[0.15em] transition-all rounded border border-red-200 bg-white hover:bg-red-50 text-red-600 disabled:opacity-50"
                                 onClick={() => setShowConfirm(false)}
                                 disabled={reverting}
                             >
                                 Cancelar
-                            </Button>
+                            </button>
                         </div>
                     </div>
                 )}

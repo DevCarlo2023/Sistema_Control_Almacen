@@ -116,12 +116,12 @@ export function EquipmentSearch({ onSelect, selected }: EquipmentSearchProps) {
                         </button>
                     )}
                 </div>
-                <Button
+                <button
                     onClick={() => searchEquipment(search)}
-                    className="h-12 px-6 rounded-xl font-black uppercase text-[10px] tracking-widest bg-primary shadow-lg hover:scale-[1.02] active:scale-[0.98] transition-all"
+                    className="h-12 px-6 flex items-center justify-center rounded-xl font-black uppercase text-[10px] tracking-widest bg-zinc-900 text-white shadow-md hover:-translate-y-0.5 hover:bg-zinc-800 transition-all"
                 >
                     Buscar
-                </Button>
+                </button>
             </div>
             {loading && <div className="absolute right-16 top-1/2 -translate-y-1/2"><div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary" /></div>}
             {typeof document !== 'undefined' && dropdown && createPortal(dropdown, document.body)}

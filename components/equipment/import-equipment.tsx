@@ -43,7 +43,7 @@ export function ImportEquipment({ onSuccess }: Props) {
                 if (!data.length) { toast.error('Archivo vacío'); setLoading(false); return; }
 
                 const { data: whs } = await supabase.from('warehouses').select('id, name');
-                const warehouseMap = new Map((whs || []).map(w => [w.name.toLowerCase(), w.id]));
+                const warehouseMap = new Map(((whs as any[]) || []).map((w: any) => [w.name.toLowerCase(), w.id]));
 
                 let ok = 0, fail = 0;
                 let lastError = '';
@@ -134,10 +134,10 @@ export function ImportEquipment({ onSuccess }: Props) {
                 {/* Full import button */}
                 <div className="relative flex-1">
                     <input type="file" accept=".xlsx,.xls" className="hidden" ref={fileRef} onChange={handleUpload} disabled={loading} />
-                    <Button className="w-full h-10 rounded-xl font-black uppercase tracking-widest text-[10px] gap-2 bg-blue-600 hover:bg-blue-700 shadow-[0_0_15px_rgba(37,99,235,0.2)] transition-all" onClick={() => fileRef.current?.click()} disabled={loading}>
+                    <button className="w-full h-10 flex items-center justify-center rounded-xl font-black uppercase tracking-widest text-[10px] gap-2 bg-blue-600 hover:bg-blue-700 shadow-md text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed hover:-translate-y-0.5 disabled:hover:translate-y-0" onClick={() => fileRef.current?.click()} disabled={loading}>
                         {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
                         {loading ? 'Importando...' : 'Importar Equipos'}
-                    </Button>
+                    </button>
                 </div>
             </div>
             {!showConfirm ? (
@@ -152,7 +152,7 @@ export function ImportEquipment({ onSuccess }: Props) {
                         <p className="text-[10px] text-red-700 font-bold leading-snug">¿Eliminar equipos importados sin movimientos? Esta acción no se puede deshacer.</p>
                     </div>
                     <div className="flex gap-2">
-                        <Button size="sm" className="flex-1 h-8 text-[10px] font-black uppercase bg-red-600 hover:bg-red-700 rounded-lg" onClick={handleRevert}>Sí, eliminar</Button>
+                        <Button size="sm" className="flex-1 h-8 text-[10px] font-black uppercase text-white bg-red-600 hover:bg-red-700 rounded-lg" onClick={handleRevert}>Sí, eliminar</Button>
                         <Button variant="outline" size="sm" className="flex-1 h-8 text-[10px] font-black uppercase rounded-lg" onClick={() => setShowConfirm(false)}>Cancelar</Button>
                     </div>
                 </div>

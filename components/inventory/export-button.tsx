@@ -5,6 +5,8 @@ import { Button } from '@/components/ui/button';
 import { supabase } from '@/lib/supabase';
 import { exportToExcel } from '@/lib/excel-export';
 
+import { Download } from 'lucide-react';
+
 interface ExportButtonProps {
   warehouseId: string;
   warehouseName: string;
@@ -58,19 +60,21 @@ export function ExportButton({ warehouseId, warehouseName }: ExportButtonProps) 
 
   return (
     <div className="space-y-2">
-      <Button
+      <button
         onClick={handleExport}
         disabled={loading || !warehouseId}
-        className="w-full h-10 rounded-xl font-black uppercase tracking-widest text-[10px] gap-2 border-border/50 hover:bg-primary/10 hover:text-primary transition-all shadow-sm"
-        variant="outline"
+        className="w-full flex items-center justify-center p-3 rounded-lg border border-emerald-200 bg-emerald-50 hover:bg-emerald-100 transition-all gap-3 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed group"
       >
         {loading ? (
-          <div className="w-4 h-4 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
+          <div className="w-6 h-6 border-[3px] border-emerald-300 border-t-emerald-600 rounded-full animate-spin shrink-0" />
         ) : (
-          <><span>📥</span> Descargar Stock (Excel)</>
+          <Download className="w-6 h-6 text-emerald-600 shrink-0 group-hover:scale-110 transition-transform" strokeWidth={2.5} />
         )}
-      </Button>
-      {error && <div className="text-[10px] font-bold text-destructive uppercase tracking-tight text-center bg-destructive/5 py-1.5 rounded-lg border border-destructive/10">{error}</div>}
+        <span className="text-[10px] font-black uppercase tracking-widest text-emerald-700 mt-0.5">
+          Stock (Excel)
+        </span>
+      </button>
+      {error && <div className="text-[9px] font-bold text-red-600 uppercase tracking-tight text-center bg-red-50 py-1.5 rounded border border-red-100">{error}</div>}
     </div>
   );
 }

@@ -23,11 +23,48 @@ export function TransferForm({
     onTransferSuccess,
 }: TransferFormProps) {
     const [toWarehouseId, setToWarehouseId] = useState('');
+    
+    // State for multi-item list
+    interface TransferItem {
+        material: Material;
+        quantity: number;
+    }
+    const [items, setItems] = useState<TransferItem[]>([]);
+    
     const [quantity, setQuantity] = useState('');
     const [notes, setNotes] = useState('');
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
     const [success, setSuccess] = useState(false);
+
+    // Add Item to List
+    const handleAddItem = () => {
+        if (!selectedMaterial) return;
+        if (!quantity || parseFloat(quantity) <= 0) {
+            setError('Ingresa una cantidad mayor a 0 para añadir');
+            setTimeout(() => setError(''), 3000);
+            return;
+        }
+        if (items.length >= 10) {
+            setError('Se alcanzó el límite de 10 productos por traslado');
+            setTimeout(() => setError(''), 3000);
+            return;
+        }
+        if (items.some(i => i.material.id === selectedMaterial.id)) {
+            setError('Este material ya fue añadido a la lista abajo');
+            setTimeout(() => setError(''), 3000);
+            return;
+        }
+
+        setItems([...items, { material: selectedMaterial, quantity: parseFloat(quantity) }]);
+        onSelectMaterial(null);
+        setQuantity('');
+        setError('');
+    };
+
+    const handleRemoveItem = (id: string) => {
+        setItems(items.filter(i => i.material.id !== id));
+    };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -49,39 +86,36 @@ export function TransferForm({
             return;
         }
 
-        if (!selectedMaterial) {
-            setError('Por favor selecciona un material');
-            return;
-        }
-
-        if (!quantity || parseFloat(quantity) <= 0) {
-            setError('La cantidad debe ser mayor a 0');
+        if (items.length === 0) {
+            setError('Por favor añade al menos un material a la lista');
             return;
         }
 
         setLoading(true);
 
         try {
-            const response = await fetch('/api/inventory/transfer', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    from_warehouse_id: fromWarehouseId,
-                    to_warehouse_id: toWarehouseId,
-                    material_id: selectedMaterial.id,
-                    quantity: parseFloat(quantity),
-                    notes: notes.trim() || undefined
-                })
-            });
+            for (const item of items) {
+                const response = await fetch('/api/inventory/transfer', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        from_warehouse_id: fromWarehouseId,
+                        to_warehouse_id: toWarehouseId,
+                        material_id: item.material.id,
+                        quantity: item.quantity,
+                        notes: notes.trim() || undefined
+                    })
+                });
 
-            const result = await response.json();
+                const result = await response.json();
 
-            if (!response.ok) {
-                throw new Error(result.error || 'Error al procesar el traslado');
+                if (!response.ok) {
+                    throw new Error(result.error || `Error al procesar el traslado de ${item.material.name}`);
+                }
             }
 
             setSuccess(true);
-            setQuantity('');
+            setItems([]);
             setNotes('');
             onTransferSuccess();
             toast.success('Traslado realizado con éxito');
@@ -127,7 +161,7 @@ export function TransferForm({
                         placeholder="0.00"
                         step="0.01"
                         min="0"
-                        className="h-12 bg-white dark:bg-slate-900 border-border rounded-xl font-bold text-lg focus:ring-2 focus:ring-primary/20"
+                        className="h-10 bg-white dark:bg-slate-900 border-border rounded-xl font-bold text-lg focus:ring-2 focus:ring-primary/20"
                         value={quantity}
                         onChange={(e) => setQuantity(e.target.value)}
                         required
@@ -136,29 +170,86 @@ export function TransferForm({
             </div>
 
             {selectedMaterial && (
-                <div className="flex items-center gap-3 md:gap-4 p-3 md:p-4 bg-primary/10 rounded-2xl border border-primary/20 glass animate-in fade-in slide-in-from-top-2">
-                    <div className="bg-primary text-primary-foreground h-10 w-10 md:h-12 md:w-12 rounded-xl flex items-center justify-center shadow-lg glow-primary shrink-0">
-                        <span className="text-[9px] md:text-[10px] font-black uppercase text-center leading-tight">
-                            {selectedMaterial.unit_of_measure}
-                        </span>
-                    </div>
-                    <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
-                            <p className="text-xs md:text-sm font-black uppercase tracking-tight truncate">{selectedMaterial.name}</p>
-                            {selectedMaterial.is_used && (
-                                <span className="px-1.5 py-0.5 rounded-md text-[8px] font-black bg-amber-500 text-white shadow-sm">USADO</span>
-                            )}
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-3 bg-zinc-100/80 rounded-xl border border-zinc-200 animate-in fade-in slide-in-from-top-2">
+                    <div className="flex items-center gap-3 w-full">
+                        <div className="bg-zinc-900 text-white h-10 w-10 flex-[0_0_40px] rounded flex items-center justify-center shadow-sm shrink-0">
+                            <span className="text-[10px] font-black uppercase text-center leading-tight">
+                                {selectedMaterial.unit_of_measure}
+                            </span>
                         </div>
-                        <p className="text-[10px] md:text-xs text-muted-foreground font-medium italic truncate">{selectedMaterial.description}</p>
+                        <div className="flex-1 min-w-0 pr-2">
+                            <div className="flex items-center gap-2">
+                                <p className="text-[11px] font-black uppercase tracking-tight truncate leading-tight">{selectedMaterial.name}</p>
+                                {selectedMaterial.is_used && (
+                                    <span className="px-1.5 py-0.5 rounded-md text-[8px] font-black bg-amber-500 text-white shadow-sm shrink-0">USADO</span>
+                                )}
+                            </div>
+                            <p className="text-[9px] text-muted-foreground font-medium italic truncate">{selectedMaterial.description}</p>
+                        </div>
+                        <div className="flex items-center gap-1.5 shrink-0">
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-8 w-8 rounded text-zinc-400 hover:bg-destructive/10 hover:text-destructive"
+                                onClick={() => { onSelectMaterial(null); setQuantity(''); }}
+                                title="Cancelar"
+                            >
+                                ✕
+                            </Button>
+                            <button
+                                type="button"
+                                onClick={handleAddItem}
+                                className="h-8 px-4 bg-zinc-900 text-white rounded text-[9px] font-black uppercase tracking-widest shadow-sm hover:translate-y-[-1px] transition-transform"
+                            >
+                                Añadir
+                            </button>
+                        </div>
                     </div>
-                    <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-8 w-8 md:h-10 md:w-10 rounded-full hover:bg-destructive/10 hover:text-destructive"
-                        onClick={() => onSelectMaterial(null)}
-                    >
-                        ✕
-                    </Button>
+                </div>
+            )}
+
+            {/* Multi-Item List */}
+            {items.length > 0 && (
+                <div className="space-y-1.5 animate-in fade-in">
+                    <div className="flex items-center justify-between px-1">
+                        <h4 className="text-[9px] font-black uppercase tracking-widest text-zinc-500">
+                            Productos a Trasladar ({items.length}/10)
+                        </h4>
+                    </div>
+                    <div className="space-y-1.5 max-h-[280px] overflow-y-auto compact-scrollbar pr-1">
+                        {items.map((item, index) => (
+                            <div key={item.material.id} className="flex items-center justify-between bg-white border border-zinc-200 p-2 rounded-lg shadow-sm">
+                                <div className="flex items-center gap-3 min-w-0">
+                                    <span className="text-[10px] sm:text-[11px] font-black tracking-widest text-zinc-300 ml-1">
+                                        {String(index + 1).padStart(2, '0')}
+                                    </span>
+                                    <div className="bg-zinc-100 text-zinc-700 h-8 w-8 rounded flex items-center justify-center border border-zinc-200 shrink-0">
+                                        <span className="text-[8px] font-black uppercase">{item.material.unit_of_measure}</span>
+                                    </div>
+                                    <div className="min-w-0">
+                                        <div className="flex items-center gap-2 mb-0.5">
+                                            <p className="text-[10px] font-black text-zinc-900 uppercase truncate leading-none mb-0.5">{item.material.name}</p>
+                                            {item.material.is_used && (
+                                                <span className="px-1 py-0.5 rounded-sm text-[7px] font-black bg-amber-500 text-white leading-none">USADO</span>
+                                            )}
+                                        </div>
+                                        {item.material.description && (
+                                            <p className="text-[8.5px] font-bold text-zinc-500 italic truncate mb-0.5">{item.material.description}</p>
+                                        )}
+                                        <p className="text-[9px] font-black text-primary">CANTIDAD: {item.quantity}</p>
+                                    </div>
+                                </div>
+                                <button
+                                    type="button"
+                                    onClick={() => handleRemoveItem(item.material.id)}
+                                    className="w-7 h-7 flex items-center justify-center text-zinc-400 hover:bg-red-50 hover:text-red-600 rounded shrink-0 transition-colors"
+                                    title="Quitar"
+                                >
+                                    ✕
+                                </button>
+                            </div>
+                        ))}
+                    </div>
                 </div>
             )}
 
@@ -170,15 +261,15 @@ export function TransferForm({
                         placeholder="Ej: Reabastecimiento de oficina, préstamo temporal..."
                         value={notes}
                         onChange={(e) => setNotes(e.target.value)}
-                        className="h-12 bg-white dark:bg-slate-900 border-border rounded-xl focus:ring-2 focus:ring-primary/20"
+                        className="h-10 bg-white dark:bg-slate-900 border-border rounded-xl focus:ring-2 focus:ring-primary/20"
                     />
                 </div>
                 <div className="w-full md:w-auto md:pt-6">
-                    <Button
+                    <button
                         type="button"
                         onClick={handleSubmit}
-                        disabled={loading || !fromWarehouseId || !toWarehouseId || !selectedMaterial}
-                        className="h-12 w-full md:w-64 rounded-xl font-black uppercase tracking-widest text-[10px] md:text-xs bg-blue-600 hover:bg-blue-700 shadow-[0_0_20px_rgba(37,99,235,0.3)] hover:shadow-[0_0_30px_rgba(37,99,235,0.5)] transition-all duration-300"
+                        disabled={loading || !fromWarehouseId || !toWarehouseId || items.length === 0}
+                        className="h-11 flex items-center justify-center w-full md:w-64 rounded-xl font-black uppercase tracking-widest text-[10px] text-white bg-blue-600 hover:bg-blue-700 shadow-md hover:-translate-y-0.5 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0"
                     >
                         {loading ? (
                             <div className="flex items-center gap-2">
@@ -187,10 +278,10 @@ export function TransferForm({
                             </div>
                         ) : (
                             <div className="flex items-center gap-2">
-                                <span>⚡ Procesar Traslado</span>
+                                <span>⚡ Trasladar {items.length} Item{items.length !== 1 ? 's' : ''}</span>
                             </div>
                         )}
-                    </Button>
+                    </button>
                 </div>
             </div>
 

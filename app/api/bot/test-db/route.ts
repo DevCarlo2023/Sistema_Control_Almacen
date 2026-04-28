@@ -15,6 +15,12 @@ export async function GET(req: Request) {
     }
 
     try {
+        if (!CONFIG.SUPABASE_URL || !CONFIG.SUPABASE_SERVICE_KEY) {
+            return NextResponse.json({ 
+                status: 'skipped', 
+                message: '⚠️ Supabase configuration missing' 
+            });
+        }
         const supabase = createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_SERVICE_KEY)
 
         // 1. Verificar Supabase

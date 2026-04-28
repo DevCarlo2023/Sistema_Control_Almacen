@@ -228,7 +228,7 @@ export function EquipmentTable({ refreshTrigger }: Props) {
                         {(['all', 'poder', 'computo', 'instrumentacion', 'izaje'] as const).map(f => {
                             const m = catMeta[f];
                             const isActive = categoryFilter === f;
-                            const activeColor = f === 'poder' ? 'bg-yellow-500 text-white' : f === 'computo' ? 'bg-blue-600 text-white' : f === 'instrumentacion' ? 'bg-purple-600 text-white' : f === 'izaje' ? 'bg-orange-500 text-white' : 'bg-primary text-primary-foreground';
+                            const activeColor = f === 'poder' ? 'bg-yellow-500 text-white' : f === 'computo' ? 'bg-blue-600 text-white' : f === 'instrumentacion' ? 'bg-purple-600 text-white' : f === 'izaje' ? 'bg-orange-500 text-white' : 'bg-zinc-900 text-white';
                             return (
                                 <button key={f} onClick={() => setCategoryFilter(f)}
                                     className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${isActive ? `${activeColor} shadow` : 'bg-muted/50 text-muted-foreground hover:bg-muted'}`}>
@@ -254,7 +254,7 @@ export function EquipmentTable({ refreshTrigger }: Props) {
                     </div>
                     <Dialog open={open} onOpenChange={setOpen}>
                         <DialogTrigger asChild>
-                            <Button onClick={openCreate} className="h-10 px-4 rounded-xl font-black uppercase text-[10px] tracking-widest bg-primary shadow gap-1.5">
+                            <Button onClick={openCreate} className="h-10 px-4 rounded-xl font-black uppercase text-[10px] tracking-widest bg-primary text-white shadow gap-1.5">
                                 <Plus className="w-3.5 h-3.5" /> Nuevo Equipo
                             </Button>
                         </DialogTrigger>
@@ -372,7 +372,7 @@ export function EquipmentTable({ refreshTrigger }: Props) {
                                     </div>
                                 )}
 
-                                <Button type="submit" disabled={saving} className="h-11 w-full rounded-xl font-black uppercase tracking-widest bg-primary shadow-lg gap-2">
+                                <Button type="submit" disabled={saving} className="h-11 w-full rounded-xl font-black uppercase tracking-widest bg-primary text-white shadow-lg gap-2">
                                     {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
                                     {isEditing ? 'Guardar Cambios' : 'Crear Equipo'}
                                 </Button>

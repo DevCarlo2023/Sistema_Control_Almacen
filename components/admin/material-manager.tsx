@@ -162,7 +162,7 @@ export function MaterialManager() {
 
                 <Dialog open={open} onOpenChange={setOpen}>
                     <DialogTrigger asChild>
-                        <Button onClick={handleAddNew} className="h-12 rounded-xl font-black uppercase tracking-widest text-[10px] px-8 bg-primary hover:bg-primary/90 shadow-lg glow-primary">
+                        <Button onClick={handleAddNew} className="h-12 rounded-xl font-black uppercase tracking-widest text-[10px] px-8 bg-primary hover:bg-primary/90 text-white shadow-lg glow-primary">
                             + Registrar Nuevo
                         </Button>
                     </DialogTrigger>
@@ -236,7 +236,7 @@ export function MaterialManager() {
                                     Material Usado (Segunda Mano)
                                 </label>
                             </div>
-                            <Button type="submit" className="h-12 w-full rounded-xl font-black uppercase tracking-widest bg-primary shadow-lg glow-primary">
+                            <Button type="submit" className="h-12 w-full rounded-xl font-black uppercase tracking-widest bg-primary text-white shadow-lg glow-primary">
                                 {isEditing ? 'Sincronizar Cambios' : 'Confirmar Creación'}
                             </Button>
                         </form>

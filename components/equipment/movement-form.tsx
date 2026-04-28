@@ -33,7 +33,7 @@ export function EquipmentMovementForm({ onSuccess, activeTab = 'history' }: Move
     useEffect(() => {
         const fetchWarehouses = async () => {
             const { data } = await supabase.from('warehouses').select('*').order('name');
-            if (data) setWarehouses(data);
+            if (data) setWarehouses(data as unknown as Warehouse[]);
         };
         fetchWarehouses();
     }, []);
@@ -232,15 +232,15 @@ export function EquipmentMovementForm({ onSuccess, activeTab = 'history' }: Move
                 />
             </div>
 
-            {/* Submit */}
             <div className="pt-1">
-                <Button
+                <button
+                    type="button"
                     onClick={handleSubmit}
                     disabled={loading || !!locationConflict}
-                    className={`w-full h-11 md:h-12 rounded-xl font-black uppercase tracking-widest text-[10px] md:text-[11px] flex items-center justify-center gap-2 transition-all ${movementType === 'ingreso'
-                        ? 'bg-green-600 hover:bg-green-700 shadow-[0_0_20px_rgba(22,163,74,0.3)]'
-                        : 'bg-red-600 hover:bg-red-700 shadow-[0_0_20px_rgba(220,38,38,0.3)]'
-                        } disabled:opacity-50 disabled:cursor-not-allowed`}
+                    className={`w-full h-11 md:h-12 rounded-xl font-black uppercase tracking-widest text-[10px] md:text-[11px] flex items-center justify-center gap-2 transition-all shadow-sm hover:-translate-y-0.5 text-white disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 ${movementType === 'ingreso'
+                        ? 'bg-emerald-600 hover:bg-emerald-700'
+                        : 'bg-red-600 hover:bg-red-700'
+                        }`}
                 >
                     {loading
                         ? <Loader2 className="w-4 h-4 animate-spin" />
@@ -248,7 +248,7 @@ export function EquipmentMovementForm({ onSuccess, activeTab = 'history' }: Move
                             ? <><ArrowDownCircle className="w-4 h-4 shrink-0" /><span>Registrar Ingreso</span></>
                             : <><ArrowUpCircle className="w-4 h-4 shrink-0" /><span>Registrar Egreso</span></>
                     }
-                </Button>
+                </button>
             </div>
         </div>
     );
