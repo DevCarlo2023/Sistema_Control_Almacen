@@ -10,8 +10,8 @@ const CONFIG = {
     INSTANCE_NAME: (process.env.INSTANCE_NAME || 'carlo_bot_v2').trim()
 }
 
-// Fast model: use gemini-1.5-flash-8b (NOT 2.5-flash which hits free quota)
-const FAST_MODEL = (process.env.GEMINI_FAST_MODEL || 'gemini-1.5-flash-8b').trim()
+// Fast model: use gemini-1.5-flash (standard stable version)
+const FAST_MODEL = (process.env.GEMINI_FAST_MODEL || 'gemini-1.5-flash').trim()
 const GROQ_KEY = (process.env.GROQ_API_KEY || '').trim();
 
 const queryCache = new Map<string, { response: string; ts: number }>();
@@ -68,6 +68,7 @@ REGLAS:
  * Motor Groq (Ultra rápido)
  */
 async function groqChat(prompt: string, systemMsg: string | null = null, jsonSchema: boolean = false) {
+    if (!GROQ_KEY) return null;
     try {
         const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
             method: 'POST',
@@ -85,8 +86,15 @@ async function groqChat(prompt: string, systemMsg: string | null = null, jsonSch
                 response_format: jsonSchema ? { type: 'json_object' } : undefined
             })
         });
+
+        if (!response.ok) {
+            const err = await response.json();
+            console.error('Groq API Error:', err);
+            return null;
+        }
+
         const data = await response.json();
-        return data.choices[0].message.content.trim();
+        return data.choices?.[0]?.message?.content?.trim() || null;
     } catch (e: any) {
         console.error('Groq Error:', e.message);
         return null;
@@ -97,7 +105,7 @@ async function groqChat(prompt: string, systemMsg: string | null = null, jsonSch
  * Robust Chat Orchestrator
  */
 export async function geminiChatMultimodal(prompt: string, media: any = null, systemMsg: string | null = null, jsonSchema: any = null) {
-    // 1. Si es solo texto, intentar Groq primero (es instantáneo y estable)
+    // 1. Si es solo texto, intentar Groq primero
     if (!media) {
         const groqRes = await groqChat(prompt, systemMsg, !!jsonSchema);
         if (groqRes) return groqRes;
@@ -108,9 +116,8 @@ export async function geminiChatMultimodal(prompt: string, media: any = null, sy
     if (!key || key.length < 10) return "❌ Error: API Key de Gemini no configurada.";
 
     try {
-        const modelName = media ? 'gemini-1.5-flash' : FAST_MODEL;
         const model = genAI.getGenerativeModel({ 
-            model: modelName, 
+            model: FAST_MODEL, 
             systemInstruction: systemMsg || MASTER_PROMPT 
         });
 
