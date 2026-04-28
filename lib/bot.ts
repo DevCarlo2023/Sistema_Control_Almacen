@@ -11,7 +11,7 @@ const CONFIG = {
 }
 
 // Fast model: use gemini-1.5-flash (standard stable version)
-const FAST_MODEL = (process.env.GEMINI_FAST_MODEL || 'gemini-1.5-flash').trim()
+const FAST_MODEL = (process.env.FAST_MODEL || 'gemini-1.5-flash-latest').trim()
 const GROQ_KEY = (process.env.GROQ_API_KEY || '').trim();
 
 const queryCache = new Map<string, { response: string; ts: number }>();
@@ -77,7 +77,7 @@ async function groqChat(prompt: string, systemMsg: string | null = null, jsonSch
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({
-                model: 'llama-3.3-70b-versatile',
+                model: 'llama3-8b-8192',
                 messages: [
                     { role: 'system', content: systemMsg || MASTER_PROMPT },
                     { role: 'user', content: prompt }
