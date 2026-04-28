@@ -115,7 +115,7 @@ export function WarehouseManager() {
                 </div>
                 <Dialog open={open} onOpenChange={setOpen}>
                     <DialogTrigger asChild>
-                        <Button onClick={handleAddNew} className="h-10 rounded-xl font-black uppercase tracking-widest text-[10px] px-6 bg-primary shadow-lg glow-primary">
+                        <Button onClick={handleAddNew} className="h-10 rounded-xl font-black uppercase tracking-widest text-[10px] px-6 bg-primary text-white shadow-lg glow-primary">
                             + Alta de Almacén
                         </Button>
                     </DialogTrigger>
@@ -146,7 +146,7 @@ export function WarehouseManager() {
                                     onChange={e => setCurrentWarehouse({ ...currentWarehouse, location: e.target.value })}
                                 />
                             </div>
-                            <Button type="submit" className="h-12 w-full rounded-xl font-black uppercase tracking-widest bg-primary shadow-lg glow-primary">
+                            <Button type="submit" className="h-12 w-full rounded-xl font-black uppercase tracking-widest bg-primary text-white shadow-lg glow-primary">
                                 {isEditing ? 'Actualizar Almacén' : 'Crear Almacén'}
                             </Button>
                         </form>

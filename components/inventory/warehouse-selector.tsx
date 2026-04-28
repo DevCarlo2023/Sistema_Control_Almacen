@@ -55,8 +55,7 @@ export function WarehouseSelector({ value, onWarehouseChange }: WarehouseSelecto
           </div>
         </SelectTrigger>
         <SelectContent
-          className="bg-white dark:bg-slate-950 border-border shadow-2xl rounded-xl z-[100]"
-          style={{ backgroundColor: 'white', opacity: 1, backdropFilter: 'none', WebkitBackdropFilter: 'none' }}
+          className="bg-white dark:bg-slate-950 border-zinc-200 shadow-2xl rounded-xl"
         >
           {warehouses.map((warehouse) => {
             const color = getWarehouseColor(warehouse.location || warehouse.name);

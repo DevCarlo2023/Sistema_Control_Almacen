@@ -94,7 +94,7 @@ export function MaterialSearch({ onSelectMaterial, selectedMaterial }: MaterialS
 
   const dropdown = showResults && results.length > 0 ? (
     <div
-      className="glass-card shadow-2xl overflow-hidden animate-in fade-in slide-in-from-top-2"
+      className="bg-white dark:bg-slate-950 border border-zinc-200 shadow-2xl overflow-hidden animate-in fade-in slide-in-from-top-2 rounded-xl"
       style={{
         position: 'absolute',
         top: dropdownPos.top,
@@ -106,7 +106,7 @@ export function MaterialSearch({ onSelectMaterial, selectedMaterial }: MaterialS
         flexDirection: 'column',
       }}
     >
-      <div className="px-4 py-2 border-b border-border/50 bg-muted/30 flex items-center justify-between sticky top-0 z-10 backdrop-blur-md">
+      <div className="px-4 py-2 border-b border-zinc-100 bg-slate-50 dark:bg-slate-900 flex items-center justify-between sticky top-0 z-10">
         <span className="text-[9px] font-black uppercase tracking-[0.2em] text-primary">
           {results.length} RESULTADO{results.length !== 1 ? 'S' : ''} ENCONTRADO{results.length !== 1 ? 'S' : ''}
         </span>
@@ -117,7 +117,7 @@ export function MaterialSearch({ onSelectMaterial, selectedMaterial }: MaterialS
           Cerrar
         </button>
       </div>
-      <div className="p-1.5 overflow-y-auto compact-scrollbar bg-card/50">
+      <div className="p-1.5 overflow-y-auto compact-scrollbar bg-white dark:bg-slate-950">
         {results.map((material) => (
           <button
             key={material.id}
@@ -126,14 +126,14 @@ export function MaterialSearch({ onSelectMaterial, selectedMaterial }: MaterialS
               e.preventDefault();
               handleSelectMaterial(material);
             }}
-            className="w-full text-left p-3 rounded-xl transition-all duration-200 hover:bg-primary/10 group mb-1 last:mb-0 border border-transparent hover:border-primary/20"
+            className="w-full text-left p-3 rounded-xl transition-all duration-200 hover:bg-zinc-50 group mb-1 last:mb-0 border border-transparent hover:border-zinc-200"
           >
             <div className="flex justify-between items-start gap-3">
               <div className="space-y-0.5 min-w-0">
-                <div className="font-black text-[13px] uppercase text-foreground leading-tight group-hover:text-primary transition-colors truncate">
+                <div className="font-black text-[13px] uppercase text-zinc-900 leading-tight group-hover:text-primary transition-colors truncate">
                   {material.name}
                 </div>
-                <div className="text-[11px] text-muted-foreground font-medium italic truncate">
+                <div className="text-[11px] text-zinc-500 font-medium italic truncate">
                   {material.description || 'Sin descripción disponible'}
                 </div>
               </div>
@@ -154,7 +154,7 @@ export function MaterialSearch({ onSelectMaterial, selectedMaterial }: MaterialS
           <Input
             type="text"
             placeholder="Escribe el código o el nombre..."
-            className="h-12 bg-white dark:bg-slate-900 border-border rounded-xl font-bold pr-10 shadow-sm"
+            className="h-10 bg-white dark:bg-slate-900 border-border rounded-xl font-bold pr-10 shadow-sm"
             value={search}
             onChange={handleChange}
             onFocus={handleFocus}
@@ -168,12 +168,12 @@ export function MaterialSearch({ onSelectMaterial, selectedMaterial }: MaterialS
             </button>
           )}
         </div>
-        <Button
+        <button
           onClick={() => searchMaterials(search)}
-          className="h-12 px-6 rounded-xl font-black uppercase text-[10px] tracking-widest bg-primary shadow-lg hover:scale-[1.02] active:scale-[0.98] transition-all"
+          className="h-10 px-6 flex items-center justify-center rounded-xl font-black uppercase text-[10px] tracking-widest bg-zinc-900 text-white shadow-md hover:-translate-y-0.5 hover:bg-zinc-800 transition-all"
         >
           Buscar
-        </Button>
+        </button>
       </div>
       {loading && (
         <div className="absolute right-16 top-1/2 -translate-y-1/2">

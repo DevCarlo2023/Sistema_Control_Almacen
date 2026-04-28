@@ -95,7 +95,7 @@ export function WorkerTable({ refreshTrigger }: Props) {
                     </div>
                     <Dialog open={open} onOpenChange={setOpen}>
                         <DialogTrigger asChild>
-                            <Button onClick={openCreate} className="h-10 px-4 rounded-xl font-black uppercase text-[10px] tracking-widest bg-purple-600 hover:bg-purple-700 shadow gap-1.5">
+                            <Button onClick={openCreate} className="h-10 px-4 rounded-xl font-black uppercase text-[10px] tracking-widest bg-purple-600 hover:bg-purple-700 text-white shadow gap-1.5">
                                 <Plus className="w-3.5 h-3.5" /> Nuevo Trabajador
                             </Button>
                         </DialogTrigger>
@@ -125,7 +125,7 @@ export function WorkerTable({ refreshTrigger }: Props) {
                                         <Input placeholder="Operario de campo, Técnico..." className="h-11 rounded-xl bg-muted/30 font-bold" value={current.position || ''} onChange={e => setCurrent({ ...current, position: e.target.value })} />
                                     </div>
                                 </div>
-                                <Button type="submit" disabled={saving} className="h-11 w-full rounded-xl font-black uppercase tracking-widest bg-purple-600 hover:bg-purple-700 shadow-lg gap-2">
+                                <Button type="submit" disabled={saving} className="h-11 w-full rounded-xl font-black uppercase tracking-widest bg-purple-600 hover:bg-purple-700 text-white shadow-lg gap-2">
                                     {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
                                     {isEditing ? 'Guardar Cambios' : 'Crear Trabajador'}
                                 </Button>

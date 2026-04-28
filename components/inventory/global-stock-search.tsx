@@ -154,10 +154,10 @@ export function GlobalStockSearch({ refreshTrigger = 0 }: GlobalStockSearchProps
                         />
                     </div>
                 </div>
-                <Button
+                <button
                     onClick={handleGlobalExport}
                     disabled={exporting}
-                    className="h-14 px-8 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-black uppercase tracking-widest shadow-lg shadow-blue-900/20 flex gap-3 transition-all hover:scale-[1.02] active:scale-[0.98]"
+                    className="h-14 px-8 rounded-2xl bg-zinc-900 hover:bg-zinc-800 text-white font-black uppercase tracking-widest shadow-lg shadow-black/20 flex items-center justify-center gap-3 transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none"
                 >
                     {exporting ? (
                         <div className="animate-spin rounded-full h-4 w-4 border-2 border-white/30 border-t-white" />
@@ -165,7 +165,7 @@ export function GlobalStockSearch({ refreshTrigger = 0 }: GlobalStockSearchProps
                         <Globe className="w-5 h-5" />
                     )}
                     {exporting ? 'Procesando...' : 'Exportar Todo (Excel)'}
-                </Button>
+                </button>
             </div>
 
             <div className="overflow-hidden rounded-2xl border border-border/50 bg-muted/5 shadow-xl">

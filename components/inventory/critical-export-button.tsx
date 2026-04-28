@@ -6,6 +6,8 @@ import { supabase } from '@/lib/supabase';
 import { getStockThreshold } from '@/lib/utils';
 import { toast } from 'sonner';
 
+import { AlertTriangle } from 'lucide-react';
+
 interface CriticalExportButtonProps {
     warehouseId: string;
     warehouseName: string;
@@ -118,17 +120,19 @@ export function CriticalExportButton({ warehouseId, warehouseName }: CriticalExp
     };
 
     return (
-        <Button
+        <button
             onClick={handleExport}
             disabled={loading || !warehouseId}
-            className="w-full h-10 rounded-xl font-black uppercase tracking-widest text-[10px] gap-2 border-orange-500/30 text-orange-600 hover:bg-orange-500/10 hover:border-orange-500 transition-all shadow-sm"
-            variant="outline"
+            className="w-full flex items-center justify-center p-3 rounded-lg border border-amber-200 bg-amber-50 hover:bg-amber-100 transition-all gap-3 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed group"
         >
             {loading ? (
-                <div className="w-4 h-4 border-2 border-orange-300 border-t-orange-600 rounded-full animate-spin" />
+                <div className="w-6 h-6 border-[3px] border-amber-300 border-t-amber-600 rounded-full animate-spin shrink-0" />
             ) : (
-                <><span>🛒</span> Descargar Stock Bajo/Crítico</>
+                <AlertTriangle className="w-6 h-6 text-amber-600 shrink-0 group-hover:scale-110 transition-transform" strokeWidth={2.5} />
             )}
-        </Button>
+            <span className="text-[10px] font-black uppercase tracking-widest text-amber-700 mt-0.5">
+                Bajo / Crítico
+            </span>
+        </button>
     );
 }

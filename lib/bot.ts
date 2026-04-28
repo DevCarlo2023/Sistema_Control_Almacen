@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js'
 import { GoogleGenerativeAI, SchemaType, Schema } from '@google/generative-ai'
+import crypto from 'crypto'
 
 const CONFIG = {
     SUPABASE_URL: (process.env.NEXT_PUBLIC_SUPABASE_URL || '').trim(),
@@ -9,10 +10,34 @@ const CONFIG = {
     INSTANCE_NAME: (process.env.INSTANCE_NAME || 'carlo_bot_v2').trim()
 }
 
+// Fast model: use gemini-1.5-flash-8b (NOT 2.5-flash which hits free quota)
+const FAST_MODEL = (process.env.GEMINI_FAST_MODEL || 'gemini-1.5-flash-8b').trim()
+
+const queryCache = new Map<string, { response: string; ts: number }>();
+const rateLimitMap = new Map<string, number>(); // Simple per‑user rate limiting (10 s window)
+
+
+const genAI = new GoogleGenerativeAI((process.env.GOOGLE_GEMINI_KEY || '').trim())
+
 const supabase = createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_SERVICE_KEY)
 
-function normalizar(texto: string) {
-    return texto.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
+function normalizar(texto: string): string {
+    return texto.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
+}
+
+function singularizar(palabra: string): string {
+    const p = normalizar(palabra);
+    if (p.endsWith('es')) return p.slice(0, -2);
+    if (p.endsWith('s') && !p.endsWith('ss')) return p.slice(0, -1);
+    return p;
+}
+
+function esConsultaSimple(texto: string): boolean {
+    const tokens = normalizar(texto).split(' ').filter(t => t.length > 0);
+    // Permitir hasta 6 palabras si contienen palabras clave críticas
+    if (tokens.length > 6) return false;
+    const keywords = ['guante', 'chaleco', 'tapon', 'mascarilla', 'protector', 'acido', 'corte', 'soldador', 'cable', 'cinta', 'lente', 'casco', 'arnes'];
+    return tokens.some(t => keywords.some(kw => t.includes(kw)));
 }
 
 const MASTER_PROMPT = `Eres el *Asistente Virtual de Almacén* de PROMET. 🏗️
@@ -24,7 +49,7 @@ REGLA DE FILTRADO:
 ⚠️ PROHIBIDO INVENTAR DATOS: Si el bloque === DATA === es insuficiente o está vacío, responde educadamente que no se encontraron registros en el sistema. Jamás inventes productos, stocks o ubicaciones.
 
 FORMATO MATERIALES:
-✅ [Nombre] - [Descripción] (Cód: [code])
+✅ [Nombre] - [Descripción] (Cód: [codigo])
 📦 Stock: [X] | 📍 [Almacén]
 
 FORMATO EQUIPOS/HERRAMIENTAS:
@@ -45,19 +70,41 @@ REGLAS:
  * Robust Chat 
  */
 export async function geminiChatMultimodal(prompt: string, media: any = null, systemMsg: string | null = null, jsonSchema: Schema | null = null) {
-    const rawKey = (process.env.GOOGLE_GEMINI_KEY || '').trim();
-    const key = rawKey.replace(/^y[\r\n\s]+/, '').replace(/^y/, '').trim();
+    const key = (process.env.GOOGLE_GEMINI_KEY || '').trim();
 
     if (!key || key.length < 10) {
         return "❌ Error: La API KEY no está configurada correctamente en Vercel. Asegúrate de llamarla GOOGLE_GEMINI_KEY";
     }
 
-    const genAI = new GoogleGenerativeAI(key);
 
+    
+    if (esConsultaSimple(prompt)) {
+        const cacheKey = crypto.createHash('md5').update(prompt).digest('hex')
+        const cached = queryCache.get(cacheKey)
+        if (cached && Date.now() - cached.ts < 5 * 60 * 1000) {
+            return cached.response
+        }
+        try {
+            const model = genAI.getGenerativeModel({ model: FAST_MODEL, systemInstruction: systemMsg || MASTER_PROMPT })
+            const parts: any[] = [{ text: prompt }]
+            if (media && media.base64 && media.mimeType) {
+                parts.push({ inlineData: { mimeType: media.mimeType, data: media.base64 } })
+            }
+            const result = await model.generateContent({ contents: [{ role: 'user', parts }] })
+            const response = await result.response
+            const text = response.text().trim()
+            queryCache.set(cacheKey, { response: text, ts: Date.now() })
+            return text
+        } catch (e: any) {
+            console.warn(`Fast model ${FAST_MODEL} failed: ${e.message}`)
+            // fall through to fallback models
+        }
+    }
+
+    // IMPORTANT: Do NOT use gemini-flash-latest (resolves to gemini-2.5-flash, free tier exhausted)
     const fallbackModels = [
-        'gemini-flash-latest',
-        'gemini-pro-latest',
-        'gemini-pro'
+        'gemini-1.5-flash',
+        'gemini-1.5-flash-8b'
     ];
 
     let lastError = '';
@@ -88,6 +135,11 @@ export async function geminiChatMultimodal(prompt: string, media: any = null, sy
         } catch (e: any) {
             console.warn(`Fallback ${modelName} failed: ${e.message}`);
             lastError = e.message;
+            // If it's a rate-limit / service unavailable error, wait and try next model
+            if (e.message.includes('503') || e.message.includes('Too Many Requests')) {
+                await new Promise(res => setTimeout(res, 2000));
+                continue;
+            }
             if (e.message.includes('401') || e.message.includes('API key')) break;
             continue;
         }
@@ -120,9 +172,31 @@ export async function procesarRespuesta(jid: string, texto: string, media: any =
     if (media && media.type === 'audio') {
         resolvedText = await geminiChatMultimodal("Escribe SOLO el texto de lo que oigas.", media, "Transcriptor.");
     }
+    // Detect simple greetings and answer WITHOUT invoking Gemini (saves quota)
+    const greetingPattern = /^\s*[¡!]?\s*(hola|buenos?\s+d[ií]as?|buenas?\s+tardes?|buenas?\s+noches?)\s*[.!?]*\s*$/i;
+    const trimmed = resolvedText.trim();
+    console.log(`[BOT] jid=${jid} msg="${trimmed}" greeting=${greetingPattern.test(trimmed)}`);
+    if (greetingPattern.test(trimmed)) {
+        const staticGreeting = '¡Hola! Soy el Asistente Virtual de Almacén de PROMET. 🏗️ ¿En qué puedo ayudarte hoy?';
+        await enviarWA(jid, staticGreeting);
+        history.push({ role: 'bot', content: staticGreeting, ref_id: msgId });
+        await supabase.from('bot_sessions').upsert({ jid, history, updated_at: new Date().toISOString() }, { onConflict: 'jid' });
+        return staticGreeting;
+    }
+
+    // Rate limiting per user (10s window) to avoid rapid quota consumption
+    const now = Date.now();
+    const last = rateLimitMap.get(jid) || 0;
+    if (now - last < 10_000) {
+        const throttleMsg = "⚡️ Por favor, espere unos segundos antes de volver a consultar.";
+        await enviarWA(jid, throttleMsg);
+        return throttleMsg;
+    }
+    rateLimitMap.set(jid, now);
+    
 
     history.push({ role: 'user', content: resolvedText, msg_id: msgId });
-    if (history.length > 10) history.shift();
+    if (history.length > 5) history.shift();
     const historyText = history.map((h: any) => `${h.role}: ${h.content}`).join('\n');
 
     try {
@@ -177,19 +251,22 @@ REGLAS DE EXTRACCIÓN:
             let eqMap = new Map();
 
             for (const concepto of keywords) {
-                const tokens = normalizar(concepto).split(' ').filter(t => t.length >= 2 && !['de', 'la', 'el', 'los', 'las', 'para', 'con', 'y', 'un', 'una'].includes(t));
+                const rawTokens = normalizar(concepto).split(' ').filter(t => t.length >= 2 && !['de', 'la', 'el', 'los', 'las', 'para', 'con', 'y', 'un', 'una'].includes(t));
+                const tokens = rawTokens.map(singularizar);
                 if (tokens.length === 0) continue;
                 const primaryToken = tokens[0];
 
+                console.log(`🔍 Buscando: "${concepto}" -> Tokens: [${tokens.join(', ')}]`);
+
                 // --- BUSQUEDA MATERIALES ---
-                const { data: mats } = await supabase.from('materials').select('id, name, description').or(`name.ilike.%${primaryToken}%,description.ilike.%${primaryToken}%`).limit(20);
+                const { data: mats } = await supabase.from('materials').select('id, name, description, codigo').or(`name.ilike.%${primaryToken}%,description.ilike.%${primaryToken}%`).limit(30);
                 if (mats && mats.length > 0) {
                     const filteredMats = mats.filter((m: any) => tokens.every(tk => normalizar(`${m.name} ${m.description}`).includes(tk)));
                     if (filteredMats.length > 0) {
                         const mid = filteredMats.map((m: any) => m.id);
                         const [{ data: stocks }, { data: lastMovs }] = await Promise.all([
-                            supabase.from('inventory').select('quantity, material:materials(id, name, description), warehouse:warehouses(name)').in('material_id', mid).gt('quantity', 0),
-                            supabase.from('inventory_movements').select('movement_type, quantity, notes, created_at, material:materials(name, description)').in('material_id', mid).order('created_at', { ascending: false }).limit(3)
+                            supabase.from('inventory').select('quantity, material:materials(id, name, description, codigo), warehouse:warehouses(name)').in('material_id', mid).gt('quantity', 0),
+                            supabase.from('inventory_movements').select('movement_type, quantity, notes, created_at, material:materials(name, description, codigo)').in('material_id', mid).order('created_at', { ascending: false }).limit(3)
                         ]);
                         stocks?.forEach((s: any) => {
                             const desc = s.material?.description ? ` - ${s.material.description}` : '';
@@ -232,9 +309,13 @@ REGLAS DE EXTRACCIÓN:
             }
 
             const invList = Array.from(invMap.values());
-            const eqList = Array.from(eqMap.values());
-            if (invList.length > 0) inventoryContext = `MATERIALES/STOCK: ${JSON.stringify(invList)}`;
-            if (eqList.length > 0) equipmentContext = `EQUIPOS/HISTORIAL: ${JSON.stringify(eqList)}`;
+            const formattedInv = invList.map((s: any) => {
+                const desc = s.material?.description ? ` - ${s.material.description}` : '';
+                const code = s.material?.codigo || s.material?.id;
+                return `✅ ${s.material?.name}${desc} (Cód: ${code})\n📦 Stock: ${s.quantity} | 📍 ${s.warehouse?.name}`;
+            }).join('\n\n');
+
+            if (formattedInv) inventoryContext = `MATERIALES/STOCK:\n${formattedInv}`;
         }
 
         const prompt = `Consulta del usuario: ${resolvedText}\n\n=== DATA / UNICA FUENTE DE VERDAD ===\n${inventoryContext || 'NO HAY MATERIALES EN STOCK'}\n${equipmentContext || 'NO HAY EQUIPOS REGISTRADOS'}\n\nREGLA: Solo responde sobre los items que aparecen en DATA. Si el usuario pide algo que NO está en DATA, di que "No se encontró stock de [item] en el sistema". No inventes nada.`;

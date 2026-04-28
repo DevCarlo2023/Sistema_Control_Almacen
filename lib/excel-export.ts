@@ -58,3 +58,45 @@ export async function exportToExcel(
     throw new Error('Error al exportar el inventario a Excel');
   }
 }
+
+export async function exportMovementsToExcel(
+  movements: any[],
+  warehouseName: string
+) {
+  try {
+    const XLSX = await import('xlsx');
+
+    const exportData = movements.map((m: any) => ({
+      'Fecha': new Date(m.created_at).toLocaleDateString('es-ES') + ' ' + new Date(m.created_at).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }),
+      'Tipo': m.movement_type.toUpperCase(),
+      'Material': m.materials?.name || 'N/A',
+      'Descripción': m.materials?.description || '',
+      'Cantidad': m.quantity,
+      'Notas': m.notes || '',
+      'Usuario': m.user_id || 'N/A'
+    }));
+
+    const worksheet = XLSX.utils.json_to_sheet(exportData);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Historial');
+
+    const columnWidths = [
+      { wch: 20 }, // Fecha
+      { wch: 12 }, // Tipo
+      { wch: 25 }, // Material
+      { wch: 30 }, // Descripción
+      { wch: 12 }, // Cantidad
+      { wch: 35 }, // Notas
+      { wch: 20 }  // Usuario
+    ];
+    worksheet['!cols'] = columnWidths;
+
+    const timestamp = new Date().toLocaleDateString('es-ES').replace(/\//g, '-');
+    const filename = `Movimientos_${warehouseName}_${timestamp}.xlsx`;
+
+    XLSX.writeFile(workbook, filename);
+  } catch (error) {
+    console.error('Error exporting movements to Excel:', error);
+    throw new Error('Error al exportar el historial a Excel');
+  }
+}

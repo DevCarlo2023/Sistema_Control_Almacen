@@ -124,7 +124,7 @@ export function WorkerSelector({ onSelect, selected, onClear }: WorkerSelectorPr
                 </div>
                 <Button
                     onClick={() => searchWorkers(search)}
-                    className="h-12 px-6 rounded-xl font-black uppercase text-[10px] tracking-widest bg-primary shadow-lg hover:scale-[1.02] active:scale-[0.98] transition-all"
+                    className="h-12 px-6 rounded-xl font-black uppercase text-[10px] tracking-widest bg-primary text-white shadow-lg hover:scale-[1.02] active:scale-[0.98] transition-all"
                 >
                     Buscar
                 </Button>

@@ -18,12 +18,15 @@ import { Button } from '@/components/ui/button';
 import { Search, Printer, Trash2, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 
+import { exportMovementsToExcel } from '@/lib/excel-export';
+
 interface MovementHistoryProps {
     warehouseId: string;
+    warehouseName?: string;
     refreshTrigger: number;
 }
 
-export function MovementHistory({ warehouseId, refreshTrigger }: MovementHistoryProps) {
+export function MovementHistory({ warehouseId, warehouseName, refreshTrigger }: MovementHistoryProps) {
     const [movements, setMovements] = useState<InventoryMovement[]>([]);
     const [searchQuery, setSearchQuery] = useState('');
     const [loading, setLoading] = useState(false);
@@ -32,6 +35,15 @@ export function MovementHistory({ warehouseId, refreshTrigger }: MovementHistory
 
     const handlePrint = () => {
         window.print();
+    };
+
+    const handleExportExcel = async () => {
+        try {
+            await exportMovementsToExcel(movements, warehouseName || 'General');
+            toast.success('Excel generado correctamente');
+        } catch (err: any) {
+            toast.error(err.message || 'Error al exportar a Excel');
+        }
     };
 
     const fetchMovements = async () => {
@@ -141,15 +153,26 @@ export function MovementHistory({ warehouseId, refreshTrigger }: MovementHistory
                             onChange={(e) => setSearchQuery(e.target.value)}
                         />
                     </div>
-                    <Button
-                        onClick={handlePrint}
-                        variant="outline"
-                        size="sm"
-                        className="h-10 rounded-xl font-black uppercase tracking-widest text-[10px] gap-2 border-border/50 hover:bg-primary/10 hover:text-primary transition-all"
-                    >
-                        <Printer className="w-3.5 h-3.5" />
-                        PDF
-                    </Button>
+                    <div className="flex items-center gap-2">
+                        <Button
+                            onClick={handleExportExcel}
+                            variant="outline"
+                            size="sm"
+                            className="h-10 rounded-xl font-black uppercase tracking-widest text-[10px] gap-2 border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 transition-all"
+                        >
+                            <img src="https://img.icons8.com/color/48/microsoft-excel-2019.png" className="w-4 h-4" />
+                            Excel
+                        </Button>
+                        <Button
+                            onClick={handlePrint}
+                            variant="outline"
+                            size="sm"
+                            className="h-10 rounded-xl font-black uppercase tracking-widest text-[10px] gap-2 border-border/50 hover:bg-primary/10 hover:text-primary transition-all"
+                        >
+                            <Printer className="w-3.5 h-3.5" />
+                            PDF
+                        </Button>
+                    </div>
                 </div>
             </div>
 

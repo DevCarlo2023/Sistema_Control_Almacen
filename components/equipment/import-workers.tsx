@@ -77,10 +77,10 @@ export function ImportWorkers({ onSuccess }: Props) {
                 {/* Full import button */}
                 <div className="relative flex-1">
                     <input type="file" accept=".xlsx,.xls" className="hidden" ref={fileRef} onChange={handleUpload} disabled={loading} />
-                    <Button className="w-full h-10 rounded-xl font-black uppercase tracking-widest text-[10px] gap-2 bg-purple-600 hover:bg-purple-700 shadow-[0_0_15px_rgba(147,51,234,0.2)] transition-all" onClick={() => fileRef.current?.click()} disabled={loading}>
+                    <button className="w-full h-10 flex items-center justify-center rounded-xl font-black uppercase tracking-widest text-[10px] gap-2 bg-purple-600 hover:bg-purple-700 shadow-md text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed hover:-translate-y-0.5 disabled:hover:translate-y-0" onClick={() => fileRef.current?.click()} disabled={loading}>
                         {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
                         {loading ? 'Importando...' : 'Importar Trabajadores'}
-                    </Button>
+                    </button>
                 </div>
             </div>
         </div>
