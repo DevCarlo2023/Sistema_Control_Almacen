@@ -153,7 +153,7 @@ export async function procesarRespuesta(jid: string, texto: string, media: any =
     const greetingPattern = /^(hola|buenos?\s+d[ií]as?|buenas?\s+tardes?|buenas?\s+noches?)[.!?]*$/i;
     
     if (greetingPattern.test(rawText)) {
-        const staticGreeting = "¡Hola! Soy el Asistente Virtual de Almacén de PROMET. 🏗️ ¿En qué puedo ayudarte hoy?";
+        const staticGreeting = "🚀 BOT ACTUALIZADO CON GROQ 🚀 ¿En qué puedo ayudarte hoy?";
         await enviarWA(jid, staticGreeting);
         return staticGreeting;
     }
