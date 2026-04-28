@@ -47,8 +47,22 @@ export function ERPSidebar({ className, isMobile = false }: { className?: string
   const pathname = usePathname();
   const { collapsed, toggle, closeMobile } = useSidebar();
   const [expandedMenu, setExpandedMenu] = React.useState<string | null>('ALMACÉN');
+  const [user, setUser] = React.useState<any>(null);
+
+  React.useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user);
+    });
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user);
+    });
+    return () => subscription.unsubscribe();
+  }, []);
 
   const sidebarCollapsed = isMobile ? false : collapsed;
+  const fullName = user?.user_metadata?.full_name || 'C. Peña Aponte';
+  const role = user?.user_metadata?.role || 'Almacén';
+  const avatarUrl = user?.user_metadata?.avatar_url || `https://ui-avatars.com/api/?name=${fullName}&background=0D0D0D&color=fff`;
 
   return (
     <aside
@@ -58,13 +72,13 @@ export function ERPSidebar({ className, isMobile = false }: { className?: string
         className
       )}
     >
-      {/* ── Sidebar Toggle Handle (Identical to capture) ──────── */}
+      {/* ── Sidebar Toggle Handle (Small & Discreet as in Photo 4) ──────── */}
       {!isMobile && (
         <button
           onClick={toggle}
-          className="absolute -right-3 top-1/2 -translate-y-1/2 w-6 h-24 bg-white border border-zinc-200 border-l-0 rounded-r-xl shadow-sm flex items-center justify-center group hover:bg-zinc-50 transition-all z-[60]"
+          className="absolute -right-3 top-[45%] w-6 h-12 bg-white border border-zinc-200 border-l-0 rounded-r-lg shadow-sm flex items-center justify-center group hover:bg-zinc-50 transition-all z-[60]"
         >
-          <div className="w-1 h-12 bg-zinc-100 rounded-full group-hover:bg-zinc-300 transition-colors" />
+          <div className="w-0.5 h-6 bg-zinc-200 rounded-full group-hover:bg-zinc-400 transition-colors" />
         </button>
       )}
 
@@ -76,14 +90,14 @@ export function ERPSidebar({ className, isMobile = false }: { className?: string
               "rounded-xl border-2 border-white shadow-lg overflow-hidden bg-zinc-100 transition-all",
               sidebarCollapsed ? "h-11 w-11" : "h-14 w-14"
             )}>
-               <img src="https://ui-avatars.com/api/?name=Carlo+Peña&background=0D0D0D&color=fff" alt="User" />
+               <img src={avatarUrl} alt="User" />
             </div>
             <div className="absolute -right-1 -bottom-1 w-4 h-4 bg-green-500 rounded-full border-4 border-[#fcfcfc] shadow-sm" />
           </div>
           {!sidebarCollapsed && (
             <div className="min-w-0">
-              <h2 className="text-[12px] font-black text-zinc-950 leading-none uppercase tracking-tighter">C. Peña Aponte</h2>
-              <p className="text-[10px] font-bold text-blue-600 uppercase tracking-widest mt-2">Almacén</p>
+              <h2 className="text-[12px] font-black text-zinc-950 leading-none uppercase tracking-tighter truncate">{fullName}</h2>
+              <p className="text-[10px] font-bold text-blue-600 uppercase tracking-widest mt-2">{role}</p>
             </div>
           )}
         </div>
@@ -97,7 +111,7 @@ export function ERPSidebar({ className, isMobile = false }: { className?: string
           const isExpanded = expandedMenu === item.name;
 
           return (
-            <div key={item.name} className="relative">
+            <div key={item.name}>
               <Link
                 href={item.href}
                 onClick={(e) => {
@@ -110,7 +124,7 @@ export function ERPSidebar({ className, isMobile = false }: { className?: string
                 className={cn(
                   "flex items-center transition-all duration-200 group rounded-xl px-5 py-4",
                   isActive && !hasSubItems
-                    ? "bg-blue-600 text-white shadow-xl shadow-blue-200"
+                    ? "bg-blue-600 text-white shadow-xl shadow-blue-100"
                     : isExpanded && !sidebarCollapsed
                       ? "bg-blue-50/50 text-blue-600"
                       : "text-zinc-500 hover:text-zinc-950 hover:bg-zinc-100/50"
@@ -119,11 +133,7 @@ export function ERPSidebar({ className, isMobile = false }: { className?: string
                 <span className={cn(
                   "material-symbols-outlined flex-shrink-0",
                   sidebarCollapsed ? "text-[28px]" : "text-[24px]",
-                  isActive && !hasSubItems 
-                    ? "text-white" 
-                    : isExpanded && !sidebarCollapsed 
-                      ? "text-blue-600" 
-                      : "text-zinc-400 group-hover:text-blue-600 transition-colors"
+                  isActive && !hasSubItems ? "text-white" : "text-zinc-400 group-hover:text-blue-600 transition-colors"
                 )}>
                   {item.icon}
                 </span>
