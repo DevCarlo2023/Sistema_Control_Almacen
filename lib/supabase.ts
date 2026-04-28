@@ -9,16 +9,9 @@ if (!supabaseUrl || !supabaseAnonKey) {
   console.warn('⚠️ Supabase environment variables are missing');
 }
 
-// In dev, don't set a cookie domain (let browser use default for localhost).
-// In production, share cookies across subdomains.
-const cookieDomain =
-  process.env.NODE_ENV === 'production'
-    ? (process.env.NEXT_PUBLIC_COOKIE_DOMAIN || '.carlotech.com')
-    : undefined;
-
+// Eliminar restricción de dominio para que funcione en Vercel y subdominios dinámicos
 export const supabase = createBrowserClient<Database>(supabaseUrl, supabaseAnonKey, {
   cookieOptions: {
-    ...(cookieDomain ? { domain: cookieDomain } : {}),
     path: '/',
     sameSite: 'lax',
     secure: process.env.NODE_ENV === 'production',
