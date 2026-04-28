@@ -10,12 +10,27 @@ import {
   Settings,
   History,
   Database,
-  SearchIcon
+  SearchIcon,
+  Check
 } from 'lucide-react';
+
+const warehouses = [
+  { id: 'ALM-J1', name: 'CANTERA', color: 'bg-orange-500' },
+  { id: 'ALM-MIR-01', name: 'MIRADOR', color: 'bg-blue-500' },
+  { id: 'ALM-OF-01', name: 'OFICINA', color: 'bg-blue-500', selected: true },
+  { id: 'ALM-OF-02', name: 'OFICINA', color: 'bg-red-500' },
+  { id: 'ALM-SAT-01', name: 'SATELITE', color: 'bg-blue-500' },
+  { id: 'JAULA-ALM-01', name: 'OFICINA', color: 'bg-red-500' },
+  { id: 'JAULA-VEST-01', name: 'VESTIDORES', color: 'bg-green-500' },
+  { id: 'PATIO-OF', name: 'OFICINA', color: 'bg-blue-500' },
+  { id: 'PATIO-SAT', name: 'SATELITE', color: 'bg-red-500' },
+];
 
 export default function MaterialsPage() {
   const [activeTab, setActiveTab] = React.useState('stock');
   const [activeOperation, setActiveOperation] = React.useState('ingreso');
+  const [showWarehouses, setShowWarehouses] = React.useState(false);
+  const [selectedWarehouse, setSelectedWarehouse] = React.useState(warehouses[2]);
 
   return (
     <div className="space-y-8 animate-in fade-in duration-700">
@@ -24,7 +39,7 @@ export default function MaterialsPage() {
       <div className="flex items-center justify-between">
         <div>
           <span className="text-[10px] font-black text-blue-600 uppercase tracking-[0.4em] mb-3 block">Inventory Cluster / Materials</span>
-          <h1 className="text-5xl font-black text-zinc-950 uppercase tracking-tighter leading-none">
+          <h1 className="text-5xl font-black text-zinc-950 uppercase tracking-tighter leading-none italic">
             Gestión de <span className="text-blue-600">Materiales</span>
           </h1>
         </div>
@@ -38,27 +53,53 @@ export default function MaterialsPage() {
         
         {/* ── Left Column ────────────────────────────────── */}
         <div className="space-y-6">
-          {/* Almacén Activo Selector */}
-          <div className="bg-white border border-zinc-100 rounded-2xl p-6 shadow-sm">
+          {/* Almacén Activo Selector WITH DROPDOWN AS PER PHOTO 2 */}
+          <div className="bg-white border border-zinc-100 rounded-2xl p-6 shadow-sm relative">
             <div className="flex items-center gap-3 mb-6">
               <span className="material-symbols-outlined text-zinc-400">home_work</span>
               <h3 className="text-[10px] font-black text-zinc-400 uppercase tracking-[0.2em]">Almacén Activo</h3>
             </div>
-            <div className="relative group">
-              <div className="bg-zinc-50 border border-zinc-100 rounded-xl p-4 flex items-center justify-between cursor-pointer hover:border-blue-600 transition-all">
-                <div className="flex items-center gap-3">
-                  <div className="w-2 h-2 rounded-full bg-blue-600" />
-                  <span className="text-xs font-black text-zinc-950 uppercase tracking-tighter">ALM-OF-01</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-[9px] font-bold text-zinc-400 uppercase">Oficina</span>
-                  <ChevronDown className="w-4 h-4 text-zinc-300" />
+            
+            <div 
+              onClick={() => setShowWarehouses(!showWarehouses)}
+              className="bg-zinc-50 border border-zinc-100 rounded-xl p-4 flex items-center justify-between cursor-pointer hover:border-blue-600 transition-all"
+            >
+              <div className="flex items-center gap-3">
+                <div className={cn("w-2 h-2 rounded-full", selectedWarehouse.color)} />
+                <div className="flex flex-col">
+                  <span className="text-xs font-black text-zinc-950 uppercase tracking-tighter">{selectedWarehouse.id}</span>
+                  <span className="text-[8px] font-bold text-zinc-400 uppercase leading-none">{selectedWarehouse.name}</span>
                 </div>
               </div>
+              <ChevronDown className="w-4 h-4 text-zinc-300" />
             </div>
+
+            {/* FLOATING DROPDOWN LIST (MATCHES PHOTO 2) */}
+            {showWarehouses && (
+              <div className="absolute left-6 right-6 top-[120px] bg-white border border-zinc-100 rounded-2xl shadow-2xl z-[100] py-4 max-h-[400px] overflow-y-auto custom-scrollbar animate-in fade-in slide-in-from-top-2">
+                {warehouses.map((wh) => (
+                  <div 
+                    key={wh.id}
+                    onClick={() => {
+                      setSelectedWarehouse(wh);
+                      setShowWarehouses(false);
+                    }}
+                    className="px-6 py-4 flex items-center justify-between hover:bg-zinc-50 cursor-pointer transition-colors group"
+                  >
+                    <div className="flex items-center gap-4">
+                      <div className={cn("w-2 h-2 rounded-full", wh.color)} />
+                      <div className="flex flex-col">
+                        <span className="text-[11px] font-black text-zinc-950 uppercase tracking-tighter">{wh.id}</span>
+                        <span className="text-[9px] font-bold text-zinc-400 uppercase tracking-widest">{wh.name}</span>
+                      </div>
+                    </div>
+                    {wh.id === selectedWarehouse.id && <Check className="w-3.5 h-3.5 text-zinc-400" />}
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
-          {/* Sync Status Card */}
           <div className="bg-blue-50/30 border border-blue-100 rounded-2xl p-6">
             <div className="flex items-center gap-3 mb-4">
               <div className="w-2 h-2 rounded-full bg-blue-600" />
@@ -69,7 +110,6 @@ export default function MaterialsPage() {
             </p>
           </div>
 
-          {/* Operations Buttons */}
           <div className="bg-white border border-zinc-100 rounded-2xl p-6 shadow-sm">
             <div className="flex items-center gap-3 mb-6">
               <Database className="w-4 h-4 text-zinc-300" />
@@ -86,11 +126,11 @@ export default function MaterialsPage() {
         {/* ── Main Section ──────────────────────────────── */}
         <div className="lg:col-span-3 space-y-8">
           
-          {/* Registrar Movimiento Panel (REGAINED ORIGINAL WHITE LOOK) */}
-          <div className="bg-white border border-zinc-100 rounded-[2.5rem] p-10 shadow-sm relative">
+          {/* Registrar Movimiento Panel (IDENTICAL TO PHOTO 2) */}
+          <div className="bg-white border border-zinc-100 rounded-[2.5rem] p-10 shadow-sm">
             <div className="flex items-center justify-between mb-10">
               <div className="flex items-center gap-4">
-                <div className="w-10 h-10 bg-zinc-950 rounded-xl flex items-center justify-center">
+                <div className="w-10 h-10 bg-zinc-950 rounded-xl flex items-center justify-center shadow-lg shadow-zinc-200">
                   <span className="material-symbols-outlined text-white">bolt</span>
                 </div>
                 <div className="flex items-center gap-3">
@@ -99,7 +139,6 @@ export default function MaterialsPage() {
                 </div>
               </div>
 
-              {/* Tabs inside Operation Panel */}
               <div className="flex items-center gap-2 bg-zinc-100 p-1.5 rounded-xl border border-zinc-200">
                 <button 
                   onClick={() => setActiveOperation('ingreso')}
@@ -122,7 +161,6 @@ export default function MaterialsPage() {
               </div>
             </div>
 
-            {/* Form Fields */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
               <div className="space-y-3">
                 <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest ml-1">Tipo de Operación</label>
@@ -138,9 +176,9 @@ export default function MaterialsPage() {
                   <input 
                     type="text" 
                     placeholder="Escribe el código o el nombre..."
-                    className="flex-1 bg-zinc-50 border border-zinc-100 rounded-xl px-5 py-4 text-xs font-bold text-zinc-950 outline-none focus:bg-white focus:border-blue-600 transition-all"
+                    className="flex-1 bg-zinc-50 border border-zinc-100 rounded-xl px-5 py-4 text-xs font-bold text-zinc-950 outline-none focus:bg-white focus:border-blue-600 transition-all shadow-sm"
                   />
-                  <button className="px-6 py-4 bg-zinc-950 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-blue-600 transition-all">Buscar</button>
+                  <button className="px-6 py-4 bg-zinc-950 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-blue-600 transition-all shadow-lg">Buscar</button>
                 </div>
               </div>
 
@@ -149,7 +187,7 @@ export default function MaterialsPage() {
                 <input 
                   type="number" 
                   placeholder="0.00"
-                  className="w-full bg-zinc-50 border border-zinc-100 rounded-xl px-5 py-4 text-xs font-black text-zinc-950 outline-none focus:bg-white focus:border-blue-600 transition-all"
+                  className="w-full bg-zinc-50 border border-zinc-100 rounded-xl px-5 py-4 text-xs font-black text-zinc-950 outline-none focus:bg-white focus:border-blue-600 transition-all shadow-sm"
                 />
               </div>
 
@@ -158,26 +196,24 @@ export default function MaterialsPage() {
                 <input 
                   type="text" 
                   placeholder="Ej: Entrega de proveedor..."
-                  className="w-full bg-zinc-50 border border-zinc-100 rounded-xl px-5 py-4 text-xs font-bold text-zinc-950 outline-none focus:bg-white focus:border-blue-600 transition-all"
+                  className="w-full bg-zinc-50 border border-zinc-100 rounded-xl px-5 py-4 text-xs font-bold text-zinc-950 outline-none focus:bg-white focus:border-blue-600 transition-all shadow-sm"
                 />
               </div>
 
               <div className="flex items-end pb-1">
-                <button className="w-full py-4.5 bg-green-500/50 text-white rounded-xl text-[10px] font-black uppercase tracking-widest cursor-not-allowed">
+                <button className="w-full py-4 bg-green-500/50 text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-green-100 cursor-not-allowed">
                   Registrar 0 Items
                 </button>
               </div>
             </div>
           </div>
 
-          {/* Table Area */}
+          {/* Table Area (Pixel Perfect Rows from previous step preserved) */}
           <div className="bg-white border border-zinc-100 rounded-[2.5rem] shadow-sm overflow-hidden">
-            
-            {/* Table Search & Title */}
             <div className="p-10 flex flex-col md:flex-row items-center justify-between gap-6 border-b border-zinc-50">
               <div className="flex items-center gap-4">
                 <div className="w-1.5 h-10 bg-blue-600 rounded-full" />
-                <h2 className="text-lg font-black text-zinc-950 uppercase tracking-tighter">ALM-OF-01</h2>
+                <h2 className="text-lg font-black text-zinc-950 uppercase tracking-tighter">{selectedWarehouse.id}</h2>
               </div>
               <div className="relative w-full md:w-96">
                 <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-300" />
@@ -189,7 +225,6 @@ export default function MaterialsPage() {
               </div>
             </div>
 
-            {/* Bottom Tabs */}
             <div className="px-10 border-b border-zinc-50 bg-zinc-50/30 flex items-center justify-center md:justify-start gap-8">
               <TableTab active={activeTab === 'global'} label="Consulta Global" icon={<SearchIcon className="w-4 h-4" />} />
               <TableTab active={activeTab === 'stock'} label="Stock Almacén" icon={<Database className="w-4 h-4" />} />
@@ -197,7 +232,6 @@ export default function MaterialsPage() {
               <TableTab active={activeTab === 'admin'} label="Administración" icon={<Settings className="w-4 h-4" />} />
             </div>
 
-            {/* Table Rows (Fixed and correct) */}
             <div className="overflow-x-auto">
               <table className="w-full border-collapse">
                 <thead>
@@ -220,7 +254,6 @@ export default function MaterialsPage() {
               </table>
             </div>
 
-            {/* Total Footer */}
             <div className="p-10 bg-zinc-50/50 border-t border-zinc-100 flex justify-end items-center gap-6">
               <span className="text-[10px] font-black text-zinc-400 uppercase tracking-[0.2em]">Valoración Total del Almacén:</span>
               <span className="text-2xl font-black text-zinc-950 tracking-tighter">S/. 670.00</span>
