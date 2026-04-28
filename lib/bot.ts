@@ -12,13 +12,12 @@ const CONFIG = {
 
 // Fast model: use gemini-1.5-flash-8b (NOT 2.5-flash which hits free quota)
 const FAST_MODEL = (process.env.GEMINI_FAST_MODEL || 'gemini-1.5-flash-8b').trim()
+const GROQ_KEY = (process.env.GROQ_API_KEY || '').trim();
 
 const queryCache = new Map<string, { response: string; ts: number }>();
 const rateLimitMap = new Map<string, number>(); // Simple per‑user rate limiting (10 s window)
 
-
 const genAI = new GoogleGenerativeAI((process.env.GOOGLE_GEMINI_KEY || '').trim())
-
 const supabase = createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_SERVICE_KEY)
 
 function normalizar(texto: string): string {
@@ -34,7 +33,6 @@ function singularizar(palabra: string): string {
 
 function esConsultaSimple(texto: string): boolean {
     const tokens = normalizar(texto).split(' ').filter(t => t.length > 0);
-    // Permitir hasta 6 palabras si contienen palabras clave críticas
     if (tokens.length > 6) return false;
     const keywords = ['guante', 'chaleco', 'tapon', 'mascarilla', 'protector', 'acido', 'corte', 'soldador', 'cable', 'cinta', 'lente', 'casco', 'arnes'];
     return tokens.some(t => keywords.some(kw => t.includes(kw)));
@@ -67,84 +65,69 @@ REGLAS:
 - No des párrafos largos. Solo datos limpios con iconos.`;
 
 /**
- * Robust Chat 
+ * Motor Groq (Ultra rápido)
  */
-export async function geminiChatMultimodal(prompt: string, media: any = null, systemMsg: string | null = null, jsonSchema: Schema | null = null) {
+async function groqChat(prompt: string, systemMsg: string | null = null, jsonSchema: boolean = false) {
+    try {
+        const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${GROQ_KEY}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                model: 'llama-3.3-70b-versatile',
+                messages: [
+                    { role: 'system', content: systemMsg || MASTER_PROMPT },
+                    { role: 'user', content: prompt }
+                ],
+                temperature: 0.1,
+                response_format: jsonSchema ? { type: 'json_object' } : undefined
+            })
+        });
+        const data = await response.json();
+        return data.choices[0].message.content.trim();
+    } catch (e: any) {
+        console.error('Groq Error:', e.message);
+        return null;
+    }
+}
+
+/**
+ * Robust Chat Orchestrator
+ */
+export async function geminiChatMultimodal(prompt: string, media: any = null, systemMsg: string | null = null, jsonSchema: any = null) {
+    // 1. Si es solo texto, intentar Groq primero (es instantáneo y estable)
+    if (!media) {
+        const groqRes = await groqChat(prompt, systemMsg, !!jsonSchema);
+        if (groqRes) return groqRes;
+    }
+
+    // 2. Si hay media o Groq falló, usar Gemini
     const key = (process.env.GOOGLE_GEMINI_KEY || '').trim();
+    if (!key || key.length < 10) return "❌ Error: API Key de Gemini no configurada.";
 
-    if (!key || key.length < 10) {
-        return "❌ Error: La API KEY no está configurada correctamente en Vercel. Asegúrate de llamarla GOOGLE_GEMINI_KEY";
-    }
+    try {
+        const modelName = media ? 'gemini-1.5-flash' : FAST_MODEL;
+        const model = genAI.getGenerativeModel({ 
+            model: modelName, 
+            systemInstruction: systemMsg || MASTER_PROMPT 
+        });
 
-
-    
-    if (esConsultaSimple(prompt)) {
-        const cacheKey = crypto.createHash('md5').update(prompt).digest('hex')
-        const cached = queryCache.get(cacheKey)
-        if (cached && Date.now() - cached.ts < 5 * 60 * 1000) {
-            return cached.response
+        const parts: any[] = [{ text: prompt }];
+        if (media?.base64) {
+            parts.push({ inlineData: { mimeType: media.mimeType, data: media.base64 } });
         }
-        try {
-            const model = genAI.getGenerativeModel({ model: FAST_MODEL, systemInstruction: systemMsg || MASTER_PROMPT })
-            const parts: any[] = [{ text: prompt }]
-            if (media && media.base64 && media.mimeType) {
-                parts.push({ inlineData: { mimeType: media.mimeType, data: media.base64 } })
-            }
-            const result = await model.generateContent({ contents: [{ role: 'user', parts }] })
-            const response = await result.response
-            const text = response.text().trim()
-            queryCache.set(cacheKey, { response: text, ts: Date.now() })
-            return text
-        } catch (e: any) {
-            console.warn(`Fast model ${FAST_MODEL} failed: ${e.message}`)
-            // fall through to fallback models
-        }
+
+        const result = await model.generateContent({ 
+            contents: [{ role: 'user', parts }],
+            generationConfig: jsonSchema ? { responseMimeType: "application/json", responseSchema: jsonSchema } : undefined
+        });
+        const response = await result.response;
+        return response.text().trim();
+    } catch (e: any) {
+        return `Lo siento, hay un inconveniente temporal con la IA. (Detalle: ${e.message})`;
     }
-
-    // IMPORTANT: Do NOT use gemini-flash-latest (resolves to gemini-2.5-flash, free tier exhausted)
-    const fallbackModels = [
-        'gemini-1.5-flash',
-        'gemini-1.5-flash-8b'
-    ];
-
-    let lastError = '';
-    for (const modelName of fallbackModels) {
-        try {
-            const modelConfig: any = {
-                model: modelName,
-                systemInstruction: systemMsg || MASTER_PROMPT
-            };
-
-            if (jsonSchema) {
-                modelConfig.generationConfig = {
-                    responseMimeType: "application/json",
-                    responseSchema: jsonSchema
-                };
-            }
-
-            const model = genAI.getGenerativeModel(modelConfig);
-
-            const parts: any[] = [{ text: prompt }];
-            if (media && media.base64 && media.mimeType) {
-                parts.push({ inlineData: { mimeType: media.mimeType, data: media.base64 } });
-            }
-
-            const result = await model.generateContent({ contents: [{ role: 'user', parts }] });
-            const response = await result.response;
-            return response.text().trim();
-        } catch (e: any) {
-            console.warn(`Fallback ${modelName} failed: ${e.message}`);
-            lastError = e.message;
-            // If it's a rate-limit / service unavailable error, wait and try next model
-            if (e.message.includes('503') || e.message.includes('Too Many Requests')) {
-                await new Promise(res => setTimeout(res, 2000));
-                continue;
-            }
-            if (e.message.includes('401') || e.message.includes('API key')) break;
-            continue;
-        }
-    }
-    return `Lo siento, hay un inconveniente temporal con la IA. ¿Qué necesitas de Almacén? (Internal: ${lastError})`;
 }
 
 export async function enviarWA(jid: string, mensaje: string) {
