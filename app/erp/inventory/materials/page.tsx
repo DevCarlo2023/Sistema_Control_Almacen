@@ -4,59 +4,61 @@ import * as React from 'react';
 import { cn } from '@/lib/utils';
 import { 
   Search, 
-  Plus, 
   FileText, 
-  Download, 
-  Filter, 
-  MoreHorizontal,
-  ChevronRight,
+  ChevronDown,
+  Eye,
+  Settings,
+  History,
   Database,
-  RefreshCcw,
-  Eye
+  SearchIcon
 } from 'lucide-react';
 
 export default function MaterialsPage() {
   const [activeTab, setActiveTab] = React.useState('stock');
+  const [activeOperation, setActiveOperation] = React.useState('ingreso');
 
   return (
     <div className="space-y-8 animate-in fade-in duration-700">
       
-      {/* ── Header Area ─────────────────────────────────── */}
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+      {/* ── Header ────────────────────────────────────── */}
+      <div className="flex items-center justify-between">
         <div>
-          <span className="text-[10px] font-black text-blue-600 uppercase tracking-[0.4em] mb-4 block">Inventory Cluster / Materials</span>
-          <h1 className="text-5xl font-black text-zinc-950 uppercase tracking-tighter leading-none italic">
+          <span className="text-[10px] font-black text-blue-600 uppercase tracking-[0.4em] mb-3 block">Inventory Cluster / Materials</span>
+          <h1 className="text-5xl font-black text-zinc-950 uppercase tracking-tighter leading-none">
             Gestión de <span className="text-blue-600">Materiales</span>
           </h1>
         </div>
-        
-        <div className="flex items-center gap-4">
-          <div className="flex items-center gap-2 bg-green-50 px-4 py-2 rounded-full border border-green-100">
-            <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-            <span className="text-[10px] font-black text-green-700 uppercase tracking-widest">Sistema Sincronizado</span>
-          </div>
+        <div className="flex items-center gap-2 bg-green-50 px-4 py-2 rounded-full border border-green-100">
+          <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+          <span className="text-[10px] font-black text-green-700 uppercase tracking-widest">Sistema Sincronizado</span>
         </div>
       </div>
 
-      {/* ── Main Layout ─────────────────────────────────── */}
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
         
-        {/* Left Column: Stats & Operations */}
+        {/* ── Left Column ────────────────────────────────── */}
         <div className="space-y-6">
+          {/* Almacén Activo Selector */}
           <div className="bg-white border border-zinc-100 rounded-2xl p-6 shadow-sm">
             <div className="flex items-center gap-3 mb-6">
               <span className="material-symbols-outlined text-zinc-400">home_work</span>
               <h3 className="text-[10px] font-black text-zinc-400 uppercase tracking-[0.2em]">Almacén Activo</h3>
             </div>
-            <div className="bg-zinc-50 border border-zinc-100 rounded-xl p-4 flex items-center justify-between group cursor-pointer hover:border-blue-600 transition-all">
-              <div className="flex items-center gap-3">
-                <div className="w-2 h-2 rounded-full bg-blue-600" />
-                <span className="text-xs font-black text-zinc-950 uppercase tracking-tighter">ALM-OF-01</span>
+            <div className="relative group">
+              <div className="bg-zinc-50 border border-zinc-100 rounded-xl p-4 flex items-center justify-between cursor-pointer hover:border-blue-600 transition-all">
+                <div className="flex items-center gap-3">
+                  <div className="w-2 h-2 rounded-full bg-blue-600" />
+                  <span className="text-xs font-black text-zinc-950 uppercase tracking-tighter">ALM-OF-01</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-[9px] font-bold text-zinc-400 uppercase">Oficina</span>
+                  <ChevronDown className="w-4 h-4 text-zinc-300" />
+                </div>
               </div>
-              <span className="text-[9px] font-bold text-zinc-400 uppercase">Oficina</span>
             </div>
           </div>
 
+          {/* Sync Status Card */}
           <div className="bg-blue-50/30 border border-blue-100 rounded-2xl p-6">
             <div className="flex items-center gap-3 mb-4">
               <div className="w-2 h-2 rounded-full bg-blue-600" />
@@ -67,50 +69,118 @@ export default function MaterialsPage() {
             </p>
           </div>
 
+          {/* Operations Buttons */}
           <div className="bg-white border border-zinc-100 rounded-2xl p-6 shadow-sm">
             <div className="flex items-center gap-3 mb-6">
-              <span className="material-symbols-outlined text-zinc-400">database</span>
+              <Database className="w-4 h-4 text-zinc-300" />
               <h3 className="text-[10px] font-black text-zinc-400 uppercase tracking-[0.2em]">Operaciones de Datos</h3>
             </div>
             <div className="space-y-3">
-              <OperationButton icon="upload_file" label="Carga Masiva" color="text-blue-600" />
-              <OperationButton icon="download" label="Stock (Excel)" color="text-green-600" />
-              <OperationButton icon="warning" label="Bajo / Crítico" color="text-orange-600" />
+              <SidebarButton icon="upload_file" label="Carga Masiva" color="text-blue-600" />
+              <SidebarButton icon="download" label="Stock (Excel)" color="text-green-600" />
+              <SidebarButton icon="warning" label="Bajo / Crítico" color="text-orange-600" />
             </div>
           </div>
         </div>
 
-        {/* Right Column: Table Section */}
-        <div className="lg:col-span-3 space-y-6">
+        {/* ── Main Section ──────────────────────────────── */}
+        <div className="lg:col-span-3 space-y-8">
           
-          {/* Quick Actions Bar */}
-          <div className="bg-zinc-950 rounded-2xl p-8 text-white flex flex-col md:flex-row items-center justify-between gap-6 shadow-2xl shadow-zinc-200">
-            <div className="flex items-center gap-4">
-              <div className="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center">
-                <span className="material-symbols-outlined text-white">bolt</span>
+          {/* Registrar Movimiento Panel (REGAINED ORIGINAL WHITE LOOK) */}
+          <div className="bg-white border border-zinc-100 rounded-[2.5rem] p-10 shadow-sm relative">
+            <div className="flex items-center justify-between mb-10">
+              <div className="flex items-center gap-4">
+                <div className="w-10 h-10 bg-zinc-950 rounded-xl flex items-center justify-center">
+                  <span className="material-symbols-outlined text-white">bolt</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <h3 className="text-sm font-black uppercase tracking-widest text-zinc-950">Registrar Movimiento</h3>
+                  <Eye className="w-4 h-4 text-zinc-300" />
+                </div>
               </div>
-              <div>
-                <h3 className="text-sm font-black uppercase tracking-widest">Registrar Movimiento</h3>
-                <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest mt-1">Entrada o salida de inventario rápido</p>
+
+              {/* Tabs inside Operation Panel */}
+              <div className="flex items-center gap-2 bg-zinc-100 p-1.5 rounded-xl border border-zinc-200">
+                <button 
+                  onClick={() => setActiveOperation('ingreso')}
+                  className={cn(
+                    "px-6 py-2.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all",
+                    activeOperation === 'ingreso' ? "bg-zinc-950 text-white shadow-lg" : "text-zinc-400 hover:text-zinc-600"
+                  )}
+                >
+                  Ingreso / Salida
+                </button>
+                <button 
+                  onClick={() => setActiveOperation('traslado')}
+                  className={cn(
+                    "px-6 py-2.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all",
+                    activeOperation === 'traslado' ? "bg-zinc-950 text-white shadow-lg" : "text-zinc-400 hover:text-zinc-600"
+                  )}
+                >
+                  Traslado
+                </button>
               </div>
             </div>
-            <div className="flex items-center gap-2 bg-white/5 p-1.5 rounded-xl border border-white/10">
-              <button className="px-6 py-2.5 bg-white text-zinc-950 rounded-lg text-[10px] font-black uppercase tracking-widest">Ingreso / Salida</button>
-              <button className="px-6 py-2.5 text-zinc-400 hover:text-white rounded-lg text-[10px] font-black uppercase tracking-widest transition-all">Traslado</button>
+
+            {/* Form Fields */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+              <div className="space-y-3">
+                <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest ml-1">Tipo de Operación</label>
+                <div className="bg-zinc-50 border border-zinc-100 rounded-xl p-4 flex items-center justify-between cursor-pointer">
+                  <span className="text-xs font-black text-zinc-950 uppercase">▲ Entrada</span>
+                  <ChevronDown className="w-4 h-4 text-zinc-300" />
+                </div>
+              </div>
+              
+              <div className="md:col-span-2 space-y-3">
+                <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest ml-1">Buscar Producto (Código o Nombre)</label>
+                <div className="flex gap-2">
+                  <input 
+                    type="text" 
+                    placeholder="Escribe el código o el nombre..."
+                    className="flex-1 bg-zinc-50 border border-zinc-100 rounded-xl px-5 py-4 text-xs font-bold text-zinc-950 outline-none focus:bg-white focus:border-blue-600 transition-all"
+                  />
+                  <button className="px-6 py-4 bg-zinc-950 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-blue-600 transition-all">Buscar</button>
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest ml-1">Cantidad Neta</label>
+                <input 
+                  type="number" 
+                  placeholder="0.00"
+                  className="w-full bg-zinc-50 border border-zinc-100 rounded-xl px-5 py-4 text-xs font-black text-zinc-950 outline-none focus:bg-white focus:border-blue-600 transition-all"
+                />
+              </div>
+
+              <div className="md:col-span-3 space-y-3">
+                <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest ml-1">Notas de Auditoría (Opcional)</label>
+                <input 
+                  type="text" 
+                  placeholder="Ej: Entrega de proveedor..."
+                  className="w-full bg-zinc-50 border border-zinc-100 rounded-xl px-5 py-4 text-xs font-bold text-zinc-950 outline-none focus:bg-white focus:border-blue-600 transition-all"
+                />
+              </div>
+
+              <div className="flex items-end pb-1">
+                <button className="w-full py-4.5 bg-green-500/50 text-white rounded-xl text-[10px] font-black uppercase tracking-widest cursor-not-allowed">
+                  Registrar 0 Items
+                </button>
+              </div>
             </div>
           </div>
 
-          {/* Table Container */}
+          {/* Table Area */}
           <div className="bg-white border border-zinc-100 rounded-[2.5rem] shadow-sm overflow-hidden">
             
-            {/* Table Header / Search */}
+            {/* Table Search & Title */}
             <div className="p-10 flex flex-col md:flex-row items-center justify-between gap-6 border-b border-zinc-50">
               <div className="flex items-center gap-4">
                 <div className="w-1.5 h-10 bg-blue-600 rounded-full" />
                 <h2 className="text-lg font-black text-zinc-950 uppercase tracking-tighter">ALM-OF-01</h2>
               </div>
-              <div className="relative w-full md:w-96 group">
-                <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-300 group-focus-within:text-blue-600 transition-colors" />
+              <div className="relative w-full md:w-96">
+                <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-300" />
                 <input 
                   type="text" 
                   placeholder="Buscar material o código..." 
@@ -119,14 +189,15 @@ export default function MaterialsPage() {
               </div>
             </div>
 
-            {/* Tabs */}
+            {/* Bottom Tabs */}
             <div className="px-10 border-b border-zinc-50 bg-zinc-50/30 flex items-center justify-center md:justify-start gap-8">
-              <TableTab active={activeTab === 'stock'} onClick={() => setActiveTab('stock')} label="Stock Almacén" icon="inventory_2" />
-              <TableTab active={activeTab === 'history'} onClick={() => setActiveTab('history')} label="Historial" icon="history" />
-              <TableTab active={activeTab === 'admin'} onClick={() => setActiveTab('admin')} label="Administración" icon="settings" />
+              <TableTab active={activeTab === 'global'} label="Consulta Global" icon={<SearchIcon className="w-4 h-4" />} />
+              <TableTab active={activeTab === 'stock'} label="Stock Almacén" icon={<Database className="w-4 h-4" />} />
+              <TableTab active={activeTab === 'history'} label="Historial" icon={<History className="w-4 h-4" />} />
+              <TableTab active={activeTab === 'admin'} label="Administración" icon={<Settings className="w-4 h-4" />} />
             </div>
 
-            {/* The Table */}
+            {/* Table Rows (Fixed and correct) */}
             <div className="overflow-x-auto">
               <table className="w-full border-collapse">
                 <thead>
@@ -144,15 +215,12 @@ export default function MaterialsPage() {
                   <TableRow code="40015895" desc="ABRAZADERA CADDY GLV 3&quot;" unit="UND" cant="1.0" price="S/. 5.00" total="S/. 5.00" isCritical />
                   <TableRow code="40015885" desc="ABRAZADERA CADDY GLV 3/4&quot;" unit="UND" cant="1.0" price="S/. 5.00" total="S/. 5.00" isCritical />
                   <TableRow code="40015890" desc="ABRAZADERA CLEVIS 2&quot;" unit="UND" cant="1.0" price="S/. 5.00" total="S/. 5.00" isCritical />
-                  <TableRow code="40019663" desc="ACOPLE CHICAGO HEMBRA 1/2&quot; ZINC" unit="UND" cant="2.0" price="S/. 5.00" total="S/. 10.00" isCritical />
-                  <TableRow code="40018347" desc="ADAPTADOR UNION PRESION/ROSCA PVC 1&quot;" unit="UND" cant="27.0" price="S/. 5.00" total="S/. 135.00" isCritical />
-                  <TableRow code="40012659" desc="CASCO SEG. T/JOCKEY BLANCO" unit="UND" cant="25.0" price="S/. 5.00" total="S/. 125.00" isCritical />
                   <TableRow code="54046112" desc="GUANTE ANTICORTE TALLA L" unit="PAA" cant="50.0" price="S/. 5.00" total="S/. 250.00" isHighlighted />
                 </tbody>
               </table>
             </div>
 
-            {/* Footer */}
+            {/* Total Footer */}
             <div className="p-10 bg-zinc-50/50 border-t border-zinc-100 flex justify-end items-center gap-6">
               <span className="text-[10px] font-black text-zinc-400 uppercase tracking-[0.2em]">Valoración Total del Almacén:</span>
               <span className="text-2xl font-black text-zinc-950 tracking-tighter">S/. 670.00</span>
@@ -200,25 +268,19 @@ function TableRow({ code, desc, unit, cant, price, total, isCritical, isHighligh
   );
 }
 
-function TableTab({ active, onClick, label, icon }: any) {
+function TableTab({ active, label, icon }: any) {
   return (
-    <button
-      onClick={onClick}
-      className={cn(
-        "flex items-center gap-3 px-6 py-5 transition-all relative",
-        active ? "text-zinc-950" : "text-zinc-400 hover:text-zinc-600"
-      )}
-    >
-      <span className={cn("material-symbols-outlined text-[20px]", active ? "text-zinc-950" : "text-zinc-300")}>{icon}</span>
+    <button className={cn(
+      "flex items-center gap-3 px-6 py-5 transition-all relative",
+      active ? "text-zinc-950 border-b-2 border-zinc-950" : "text-zinc-400 hover:text-zinc-600"
+    )}>
+      {icon}
       <span className="text-[10px] font-black uppercase tracking-[0.2em]">{label}</span>
-      {active && (
-        <div className="absolute bottom-0 left-0 right-0 h-1 bg-zinc-950 rounded-t-full" />
-      )}
     </button>
   );
 }
 
-function OperationButton({ icon, label, color }: { icon: string; label: string; color: string }) {
+function SidebarButton({ icon, label, color }: { icon: string; label: string; color: string }) {
   return (
     <button className="w-full flex items-center justify-center gap-4 bg-white border border-zinc-100 px-6 py-4 rounded-xl shadow-sm hover:shadow-md hover:border-blue-600 transition-all group">
       <span className={cn("material-symbols-outlined", color)}>{icon}</span>
