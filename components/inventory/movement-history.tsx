@@ -60,7 +60,7 @@ export function MovementHistory({ warehouseId, warehouseName, refreshTrigger }: 
           notes,
           created_at,
           user_id,
-          materials (name, description)
+          materials (name, description, codigo)
         `)
                 .eq('warehouse_id', warehouseId)
                 .order('created_at', { ascending: false })
@@ -127,6 +127,7 @@ export function MovementHistory({ warehouseId, warehouseName, refreshTrigger }: 
         const material = (m as any).materials;
         const searchLower = searchQuery.toLowerCase();
         return (
+            material?.codigo?.toLowerCase().includes(searchLower) ||
             material?.name?.toLowerCase().includes(searchLower) ||
             material?.description?.toLowerCase().includes(searchLower) ||
             m.notes?.toLowerCase().includes(searchLower)
@@ -225,10 +226,10 @@ export function MovementHistory({ warehouseId, warehouseName, refreshTrigger }: 
                                                 </div>
                                             </TableCell>
                                             <TableCell className="py-4 px-6 font-bold uppercase text-sm tracking-tight text-foreground">
-                                                {(m as any).materials?.name}
+                                                {(m as any).materials?.codigo || 'S/C'}
                                             </TableCell>
                                             <TableCell className="py-4 px-6 text-sm text-muted-foreground italic font-medium">
-                                                {(m as any).materials?.description || '-'}
+                                                {(m as any).materials?.name || (m as any).materials?.description || '-'}
                                             </TableCell>
                                             <TableCell className="py-4 px-6">
                                                 <span className={`
@@ -299,7 +300,7 @@ export function MovementHistory({ warehouseId, warehouseName, refreshTrigger }: 
                                     <div className="flex justify-between items-start">
                                         <div className="flex flex-col">
                                             <span className="text-[10px] font-black uppercase text-primary tracking-widest">{format(new Date(m.created_at), 'dd MMM yyyy', { locale: es })}</span>
-                                            <span className="text-sm font-bold truncate max-w-[180px]">{(m as any).materials?.name}</span>
+                                            <span className="text-sm font-bold truncate max-w-[180px]">{(m as any).materials?.codigo || 'S/C'} - {(m as any).materials?.name}</span>
                                         </div>
                                         <span className={`
                                             inline-flex items-center px-2 py-0.5 rounded-full text-[8px] font-black tracking-widest uppercase

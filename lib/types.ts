@@ -7,6 +7,7 @@ export interface Warehouse {
 
 export interface Material {
   id: string;
+  codigo?: string;
   name: string;
   description: string;
   unit_of_measure: string;

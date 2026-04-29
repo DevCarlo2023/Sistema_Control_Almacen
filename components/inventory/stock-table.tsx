@@ -129,6 +129,7 @@ export function StockTable({ warehouseId, refreshTrigger }: StockTableProps) {
     const material = (item as any).materials;
     const searchLower = searchQuery.toLowerCase();
     return (
+      material?.codigo?.toLowerCase().includes(searchLower) ||
       material?.name?.toLowerCase().includes(searchLower) ||
       material?.description?.toLowerCase().includes(searchLower)
     );
@@ -198,7 +199,7 @@ export function StockTable({ warehouseId, refreshTrigger }: StockTableProps) {
                   >
                     <TableCell className="py-2 px-3 font-bold">
                       <div className="flex flex-col gap-1.5">
-                        <span className="text-sm tracking-tight uppercase">{(item as any).materials?.name || 'N/A'}</span>
+                        <span className="text-sm tracking-tight uppercase">{(item as any).materials?.codigo || 'S/C'}</span>
                         <div className="flex gap-2">
                           {(item as any).materials?.is_used && (
                             <span className="px-2 py-0.5 rounded-md text-[9px] font-black bg-amber-500 text-white shadow-sm">
@@ -220,7 +221,7 @@ export function StockTable({ warehouseId, refreshTrigger }: StockTableProps) {
                     </TableCell>
                     <TableCell className="py-2 px-3">
                       <span className="text-sm text-muted-foreground font-medium italic group-hover:text-foreground transition-colors">
-                        {(item as any).materials?.description || '-'}
+                        {(item as any).materials?.name || (item as any).materials?.description || '-'}
                       </span>
                     </TableCell>
                     <TableCell className="py-2 px-3">
