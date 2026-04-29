@@ -10,8 +10,8 @@ const CONFIG = {
     INSTANCE_NAME: (process.env.INSTANCE_NAME || 'carlo_bot_v2').trim()
 }
 
-// Fast model: use gemini-1.5-flash (standard stable version)
-const FAST_MODEL = (process.env.FAST_MODEL || 'gemini-1.5-flash').trim()
+// Fast model: use gemini-1.5-flash-latest
+const FAST_MODEL = (process.env.FAST_MODEL || 'gemini-1.5-flash-latest').trim()
 const GROQ_KEY = (process.env.GROQ_API_KEY || '').trim();
 
 const queryCache = new Map<string, { response: string; ts: number }>();
@@ -20,7 +20,7 @@ const rateLimitMap = new Map<string, number>(); // Simple per‑user rate limiti
 const genAI = new GoogleGenerativeAI((process.env.GOOGLE_GEMINI_KEY || '').trim())
 const supabase = (CONFIG.SUPABASE_URL && CONFIG.SUPABASE_SERVICE_KEY) 
     ? createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_SERVICE_KEY)
-    : null as any;
+    : null;
 
 function normalizar(texto: string): string {
     return texto.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
@@ -119,7 +119,7 @@ export async function geminiChatMultimodal(prompt: string, media: any = null, sy
 
     try {
         const model = genAI.getGenerativeModel({ 
-            model: "gemini-1.5-flash", 
+            model: FAST_MODEL, 
             systemInstruction: systemMsg || MASTER_PROMPT 
         });
 
@@ -156,20 +156,33 @@ export async function enviarWA(jid: string, mensaje: string) {
 
 export async function procesarRespuesta(jid: string, texto: string, media: any = null, msgId: string | null = null) {
     if (!jid) return "Error JID";
+    if (!supabase) return "Error: Conexión a base de datos no configurada.";
     
-    // --- FILTRO DE SALUDOS CRÍTICO (SIN IA) ---
+    let { data: sessionData } = await supabase.from('bot_sessions').select('history').eq('jid', jid).maybeSingle();
+    let history = sessionData?.history || [];
+    
+    // Prevención de duplicados por msgId
+    if (msgId && history.some((h: any) => h.msg_id === msgId || h.ref_id === msgId)) {
+        console.log(`⚠️ Mensaje ${msgId} ya procesado, ignorando.`);
+        return "Mensaje ya procesado";
+    }
+
+    // --- FILTRO DE SALUDOS ---
     const rawText = (texto || '').trim().toLowerCase();
     const greetingPattern = /^(hola|buenos?\s+d[ií]as?|buenas?\s+tardes?|buenas?\s+noches?)[.!?]*$/i;
     
     if (greetingPattern.test(rawText)) {
         const staticGreeting = "🚀 BOT ACTUALIZADO CON GROQ 🚀 ¿En qué puedo ayudarte hoy?";
-        await enviarWA(jid, staticGreeting);
+        history.push({ role: 'user', content: rawText, msg_id: msgId });
+        history.push({ role: 'bot', content: staticGreeting, ref_id: msgId });
+        if (history.length > 6) history.shift();
+        
+        await Promise.all([
+            enviarWA(jid, staticGreeting),
+            supabase.from('bot_sessions').upsert({ jid, history, updated_at: new Date().toISOString() }, { onConflict: 'jid' })
+        ]);
         return staticGreeting;
     }
-
-    let { data: sessionData } = await supabase.from('bot_sessions').select('history').eq('jid', jid).maybeSingle();
-    let history = sessionData?.history || [];
-    if (msgId && history.some((h: any) => h.ref_id === msgId)) return "Mensaje ya procesado";
 
     let resolvedText = texto || '';
     if (media && media.type === 'audio') {
@@ -231,9 +244,20 @@ REGLAS DE EXTRACCIÓN:
             }
         };
 
-        let kwStr = await geminiChatMultimodal(extractionPrompt, null, "Analista experto, estricto con el JSON array.", extractionSchema);
+        let kwStr = await geminiChatMultimodal(extractionPrompt, null, "Analista experto, responde SIEMPRE con un JSON array de strings.", extractionSchema);
         let keywords: string[] = [];
-        try { keywords = JSON.parse(kwStr); } catch (e) { }
+        try { 
+            const parsed = JSON.parse(kwStr); 
+            if (Array.isArray(parsed)) {
+                keywords = parsed;
+            } else if (typeof parsed === 'object' && parsed !== null) {
+                // Caso Groq: a veces envuelve el resultado en un objeto
+                keywords = parsed.keywords || parsed.items || Object.values(parsed).find(v => Array.isArray(v)) || [];
+            }
+        } catch (e) { 
+            // Fallback: intentar extraer palabras si el JSON falla
+            keywords = kwStr.replace(/[\[\]"]/g, '').split(',').map(s => s.trim()).filter(s => s.length > 0);
+        }
 
         let inventoryContext = '';
         let equipmentContext = '';
@@ -251,7 +275,7 @@ REGLAS DE EXTRACCIÓN:
                 console.log(`🔍 Buscando: "${concepto}" -> Tokens: [${tokens.join(', ')}]`);
 
                 // --- BUSQUEDA MATERIALES ---
-                const { data: mats } = await supabase.from('materials').select('id, name, description, codigo').or(`name.ilike.%${primaryToken}%,description.ilike.%${primaryToken}%`).limit(30);
+                const { data: mats } = await supabase.from('materials').select('id, name, description, codigo').or(`name.ilike.%${primaryToken}%,description.ilike.%${primaryToken}%,codigo.ilike.%${primaryToken}%`).limit(30);
                 if (mats && mats.length > 0) {
                     const filteredMats = mats.filter((m: any) => tokens.every(tk => normalizar(`${m.name} ${m.description}`).includes(tk)));
                     if (filteredMats.length > 0) {
@@ -304,10 +328,23 @@ REGLAS DE EXTRACCIÓN:
             const formattedInv = invList.map((s: any) => {
                 const desc = s.material?.description ? ` - ${s.material.description}` : '';
                 const code = s.material?.codigo || s.material?.id;
-                return `✅ ${s.material?.name}${desc} (Cód: ${code})\n📦 Stock: ${s.quantity} | 📍 ${s.warehouse?.name}`;
+                let movInfo = '';
+                if (s.last_movements && s.last_movements.length > 0) {
+                    const last = s.last_movements[0];
+                    const date = new Date(last.created_at).toLocaleDateString('es-PE', { day: '2-digit', month: '2-digit' });
+                    movInfo = `\n⏱️ Últ. mov: ${last.movement_type === 'ingreso' ? '📥 Ingreso' : '📤 Salida'} (${date})`;
+                }
+                return `✅ ${s.material?.name}${desc} (Cód: ${code})\n📦 Stock: ${s.quantity} | 📍 ${s.warehouse?.name}${movInfo}`;
             }).join('\n\n');
 
-            if (formattedInv) inventoryContext = `MATERIALES/STOCK:\n${formattedInv}`;
+            if (formattedInv) inventoryContext = `MATERIALES EN STOCK:\n${formattedInv}`;
+
+            const eqList = Array.from(eqMap.values());
+            const formattedEq = eqList.map((e: any) => {
+                return `🔧 ${e.name} (${e.brand} ${e.model})\n📌 S/N: ${e.serial_number} | Estado: ${e.status}\n👤 Resp: ${e.last_worker}\n⏱️ ${e.last_action}\n🗓️ Calibración: ${e.calStatus}`;
+            }).join('\n\n');
+
+            if (formattedEq) equipmentContext = `EQUIPOS Y HERRAMIENTAS:\n${formattedEq}`;
         }
 
         const prompt = `Consulta del usuario: ${resolvedText}\n\n=== DATA / UNICA FUENTE DE VERDAD ===\n${inventoryContext || 'NO HAY MATERIALES EN STOCK'}\n${equipmentContext || 'NO HAY EQUIPOS REGISTRADOS'}\n\nREGLA: Solo responde sobre los items que aparecen en DATA. Si el usuario pide algo que NO está en DATA, di que "No se encontró stock de [item] en el sistema". No inventes nada.`;

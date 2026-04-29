@@ -15,7 +15,7 @@ const CONFIG = {
     INSTANCE_NAME: 'carlo_bot_v2',
     PORT: 3001,
     GEMINI_API_KEY: 'AIzaSyDiGfC0Ytpb51-Jl_6eQcH_2w6SSY_Qjd0',
-    GEMINI_MODEL: 'gemini-2.5-flash'
+    GEMINI_MODEL: 'gemini-1.5-flash-latest'
 };
 
 const app = express({ limit: '50mb' });
@@ -78,7 +78,7 @@ async function enviarWA(jid, mensaje) {
     }
 }
 
-async function procesarRespuesta(jid, texto, media = null) {
+async function procesarRespuesta(jid, texto, media = null, msgId = null) {
     if (!jid) return "Error JID";
 
     // 1. Cargar sesión desde Supabase
@@ -89,6 +89,29 @@ async function procesarRespuesta(jid, texto, media = null) {
         .maybeSingle();
 
     let history = sessionData?.history || [];
+
+    // Prevención de duplicados por msgId
+    if (msgId && history.some(h => h.msg_id === msgId || h.ref_id === msgId)) {
+        console.log(`⚠️ Mensaje ${msgId} ya procesado, ignorando.`);
+        return "Mensaje ya procesado";
+    }
+
+    // --- FILTRO DE SALUDOS ---
+    const rawText = (texto || '').trim().toLowerCase();
+    const greetingPattern = /^(hola|buenos?\s+d[ií]as?|buenas?\s+tardes?|buenas?\s+noches?)[.!?]*$/i;
+    
+    if (greetingPattern.test(rawText)) {
+        const staticGreeting = "🚀 BOT ACTUALIZADO V24.1 🚀 ¿En qué puedo ayudarte hoy?";
+        history.push({ role: 'user', content: rawText, msg_id: msgId });
+        history.push({ role: 'bot', content: staticGreeting, ref_id: msgId });
+        if (history.length > 6) history.shift();
+        
+        await Promise.all([
+            enviarWA(jid, staticGreeting),
+            supabase.from('bot_sessions').upsert({ jid, history, updated_at: new Date().toISOString() }, { onConflict: 'jid' })
+        ]);
+        return staticGreeting;
+    }
     let resolvedText = texto || '';
 
     if (media && media.type === 'audio') {
@@ -117,36 +140,83 @@ async function procesarRespuesta(jid, texto, media = null) {
         console.log(`🎯 Keywords Asociativas (V24): [${keywords.join(', ')}]`);
 
         let stockContext = '';
+        let equipmentContext = '';
+
         if (keywords.length > 0) {
-            let resultsMap = new Map();
+            let invMap = new Map();
+            let eqMap = new Map();
+
             for (const kw of keywords) {
-                const { data } = await supabase
-                    .from('inventory')
-                    .select('quantity, material:materials!inner(name, description, unit_of_measure), warehouse:warehouses(name)')
-                    .or(`name.ilike.%${kw}%,description.ilike.%${kw}%`, { foreignTable: "materials" })
+                // --- BUSQUEDA MATERIALES ---
+                const { data: mats } = await supabase
+                    .from('materials')
+                    .select('id, name, description, codigo')
+                    .or(`name.ilike.%${kw}%,description.ilike.%${kw}%,codigo.ilike.%${kw}%`)
                     .limit(10);
 
-                if (data) {
-                    data.forEach(item => {
-                        const key = `${item.material.name}-${item.warehouse?.name || 'Gral'}`;
-                        if (!resultsMap.has(key)) {
-                            resultsMap.set(key, item);
-                        }
+                if (mats && mats.length > 0) {
+                    const mid = mats.map(m => m.id);
+                    const [{ data: stocks }, { data: lastMovs }] = await Promise.all([
+                        supabase.from('inventory').select('quantity, material:materials(id, name, description, codigo), warehouse:warehouses(name)').in('material_id', mid).gt('quantity', 0),
+                        supabase.from('inventory_movements').select('movement_type, quantity, created_at, material_id').in('material_id', mid).order('created_at', { ascending: false }).limit(3)
+                    ]);
+
+                    stocks?.forEach(s => {
+                        const m_id = s.material?.id;
+                        const m_last = lastMovs?.filter(lm => lm.material_id === m_id) || [];
+                        const key = `${s.material?.name}-${s.warehouse?.name}`;
+                        invMap.set(key, { ...s, last_movements: m_last });
                     });
                 }
+
+                // --- BUSQUEDA EQUIPOS ---
+                const { data: equips } = await supabase
+                    .from('equipment')
+                    .select('*, warehouse:warehouses(name)')
+                    .or(`name.ilike.%${kw}%,model.ilike.%${kw}%,serial_number.ilike.%${kw}%,brand.ilike.%${kw}%`)
+                    .limit(5);
+
+                if (equips && equips.length > 0) {
+                    for (const eq of equips) {
+                        const { data: movs } = await supabase.from('equipment_movements').select('movement_type, created_at, worker:workers(full_name)').eq('equipment_id', eq.id).order('created_at', { ascending: false }).limit(1);
+                        let last_action = 'Sin actividad';
+                        let last_worker = 'N/A';
+                        if (movs && movs.length > 0) {
+                            const date = new Date(movs[0].created_at).toLocaleDateString('es-PE');
+                            last_action = `${movs[0].movement_type === 'egreso' ? 'Retirado' : 'Devuelto'} el ${date}`;
+                            last_worker = movs[0].worker?.full_name || 'N/A';
+                        }
+                        const calStatus = eq.calibration_end ? (new Date(eq.calibration_end) > new Date() ? 'VIGENTE' : 'VENCIDA') : 'No requiere';
+                        eqMap.set(eq.id, { ...eq, last_worker, last_action, calStatus });
+                    }
+                }
             }
-            const results = Array.from(resultsMap.values());
-            if (results.length > 0) {
-                console.log(`📦 STOCK DEDUPLICADO (Raw): ${JSON.stringify(results)}`);
-                stockContext = `DATA REAL DB: ${JSON.stringify(results)}`;
-            }
+
+            const formattedInv = Array.from(invMap.values()).map(s => {
+                const desc = s.material?.description ? ` - ${s.material.description}` : '';
+                const code = s.material?.codigo || s.material?.id;
+                let movInfo = '';
+                if (s.last_movements && s.last_movements.length > 0) {
+                    const last = s.last_movements[0];
+                    const date = new Date(last.created_at).toLocaleDateString('es-PE', { day: '2-digit', month: '2-digit' });
+                    movInfo = `\n⏱️ Últ. mov: ${last.movement_type === 'ingreso' ? '📥 Ingreso' : '📤 Salida'} (${date})`;
+                }
+                return `✅ ${s.material?.name}${desc} (Cód: ${code})\n📦 Stock: ${s.quantity} | 📍 ${s.warehouse?.name}${movInfo}`;
+            }).join('\n\n');
+
+            if (formattedInv) stockContext = `MATERIALES:\n${formattedInv}`;
+
+            const formattedEq = Array.from(eqMap.values()).map(e => {
+                return `🔧 ${e.name} (${e.brand} ${e.model})\n📌 S/N: ${e.serial_number} | Estado: ${e.status}\n👤 Resp: ${e.last_worker}\n⏱️ ${e.last_action}\n🗓️ Calibración: ${e.calStatus}`;
+            }).join('\n\n');
+
+            if (formattedEq) equipmentContext = `EQUIPOS:\n${formattedEq}`;
         }
 
         // 2. Respuesta Final
-        const finalPrompt = `HISTORIAL:\n${historyText}\n\n${stockContext}\n
+        const finalPrompt = `HISTORIAL:\n${historyText}\n\n=== DATA DB ===\n${stockContext || 'NO HAY MATERIALES'}\n${equipmentContext || 'NO HAY EQUIPOS'}\n
         TAREA: Responde con empatía y rapidez (máx 4 líneas). 
-        Confirma que entiendes lo que necesita (aunque use jerga).
-        Si encontraste stock, da los números. Si no, sugiere lo más parecido.
+        Usa la DATA de arriba para responder. Si no hay data para lo pedido, di que no encontraste stock.
         Menciona siempre Seguridad Mina (⚠️).`;
 
         const respuesta = await geminiChatMultimodal(finalPrompt);
@@ -206,10 +276,10 @@ app.post('/webhook', async (req, res) => {
 
     if (jid && (texto || media)) {
         try {
+            const msgId = data.key?.id;
             console.log(`🤖 Procesando respuesta para ${jid}...`);
-            const respuesta = await procesarRespuesta(jid, texto, media);
+            const respuesta = await procesarRespuesta(jid, texto, media, msgId);
             console.log(`✨ Respuesta generada: ${respuesta.substring(0, 50)}...`);
-            await enviarWA(jid, respuesta);
         } catch (err) {
             console.error(`❌ ERROR en el flujo del bot:`, err);
         }
