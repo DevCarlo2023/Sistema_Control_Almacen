@@ -30,6 +30,7 @@ export const viewport = {
 }
 
 import { OfflineSyncProvider } from '@/components/offline-sync-provider'
+import { PWAUpdater } from '@/components/pwa-updater'
 
 export default function RootLayout({
   children,
@@ -46,6 +47,7 @@ export default function RootLayout({
       </head>
       <body className={`${inter.className} antialiased pb-20 lg:pb-0`}>
         <OfflineSyncProvider>
+          <PWAUpdater />
           {children}
           <Suspense fallback={null}>
             <MobileNav />
