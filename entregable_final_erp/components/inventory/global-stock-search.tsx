@@ -220,7 +220,7 @@ export function GlobalStockSearch({ refreshTrigger = 0 }: GlobalStockSearchProps
                                                         </p>
                                                     )}
                                                     <p className="text-[9px] text-muted-foreground font-medium italic truncate max-w-[250px]">
-                                                        {item.materials.description || '-'}
+                                                        {item.materials.codigo || '-'}
                                                     </p>
                                                 </TableCell>
 
