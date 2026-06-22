@@ -157,7 +157,7 @@ export function GlobalStockSearch({ refreshTrigger = 0 }: GlobalStockSearchProps
                 <button
                     onClick={handleGlobalExport}
                     disabled={exporting}
-                    className="h-14 px-8 rounded-2xl bg-zinc-900 hover:bg-zinc-800 text-white font-black uppercase tracking-widest shadow-lg shadow-black/20 flex items-center justify-center gap-3 transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none"
+                    className="h-14 w-full md:w-auto px-8 rounded-2xl bg-zinc-900 hover:bg-zinc-800 text-white font-black uppercase tracking-widest shadow-lg shadow-black/20 flex items-center justify-center gap-3 transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none"
                 >
                     {exporting ? (
                         <div className="animate-spin rounded-full h-4 w-4 border-2 border-white/30 border-t-white" />
@@ -174,11 +174,11 @@ export function GlobalStockSearch({ refreshTrigger = 0 }: GlobalStockSearchProps
                         <Table>
                             <TableHeader className="sticky top-0 bg-background z-10">
                                 <TableRow className="bg-muted/30 border-b border-border/50">
-                                    <TableHead className="py-3 px-4 text-[10px] uppercase font-black tracking-[0.1em] text-muted-foreground w-[120px]">Almacén</TableHead>
-                                    <TableHead className="py-3 px-4 text-[10px] uppercase font-black tracking-[0.1em] text-muted-foreground">Descripción / Código</TableHead>
-                                    <TableHead className="py-3 px-4 text-[10px] uppercase font-black tracking-[0.1em] text-muted-foreground text-right w-[80px]">Stock</TableHead>
-                                    <TableHead className="py-3 px-4 text-[10px] uppercase font-black tracking-[0.1em] text-muted-foreground text-right w-[100px]">P. Unit</TableHead>
-                                    <TableHead className="py-3 px-4 text-[10px] uppercase font-black tracking-[0.1em] text-muted-foreground text-right w-[110px]">Total</TableHead>
+                                    <TableHead className="py-3 px-4 text-[10px] uppercase font-black tracking-[0.1em] text-muted-foreground min-w-[120px]">Almacén</TableHead>
+                                    <TableHead className="py-3 px-4 text-[10px] uppercase font-black tracking-[0.1em] text-muted-foreground min-w-[200px]">Descripción / Código</TableHead>
+                                    <TableHead className="py-3 px-4 text-[10px] uppercase font-black tracking-[0.1em] text-muted-foreground text-right min-w-[80px]">Stock</TableHead>
+                                    <TableHead className="py-3 px-4 text-[10px] uppercase font-black tracking-[0.1em] text-muted-foreground text-right min-w-[100px]">P. Unit</TableHead>
+                                    <TableHead className="py-3 px-4 text-[10px] uppercase font-black tracking-[0.1em] text-muted-foreground text-right min-w-[110px]">Total</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>

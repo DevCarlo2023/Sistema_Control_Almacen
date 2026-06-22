@@ -144,7 +144,7 @@ export function MovementHistory({ warehouseId, warehouseName, refreshTrigger }: 
                     <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest bg-muted/50 px-2 py-1 rounded">Últimos 50 registros</span>
                 </div>
 
-                <div className="flex items-center gap-3">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 w-full md:w-auto">
                     <div className="relative w-full md:w-64">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                         <Input
@@ -154,12 +154,12 @@ export function MovementHistory({ warehouseId, warehouseName, refreshTrigger }: 
                             onChange={(e) => setSearchQuery(e.target.value)}
                         />
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 w-full sm:w-auto">
                         <Button
                             onClick={handleExportExcel}
                             variant="outline"
                             size="sm"
-                            className="h-10 rounded-xl font-black uppercase tracking-widest text-[10px] gap-2 border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 transition-all"
+                            className="h-10 flex-1 sm:flex-none rounded-xl font-black uppercase tracking-widest text-[10px] gap-2 border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 transition-all"
                         >
                             <img src="https://img.icons8.com/color/48/microsoft-excel-2019.png" className="w-4 h-4" />
                             Excel
@@ -168,7 +168,7 @@ export function MovementHistory({ warehouseId, warehouseName, refreshTrigger }: 
                             onClick={handlePrint}
                             variant="outline"
                             size="sm"
-                            className="h-10 rounded-xl font-black uppercase tracking-widest text-[10px] gap-2 border-border/50 hover:bg-primary/10 hover:text-primary transition-all"
+                            className="h-10 flex-1 sm:flex-none rounded-xl font-black uppercase tracking-widest text-[10px] gap-2 border-border/50 hover:bg-primary/10 hover:text-primary transition-all"
                         >
                             <Printer className="w-3.5 h-3.5" />
                             PDF

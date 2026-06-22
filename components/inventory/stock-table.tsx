@@ -166,12 +166,12 @@ export function StockTable({ warehouseId, refreshTrigger }: StockTableProps) {
         <Table>
           <TableHeader>
             <TableRow className="bg-muted/30 border-b border-border/50">
-              <TableHead className="py-3 px-3 text-[10px] uppercase font-black tracking-[0.1em] text-muted-foreground w-[120px]">Código</TableHead>
-              <TableHead className="py-3 px-3 text-[10px] uppercase font-black tracking-[0.1em] text-muted-foreground">Descripción</TableHead>
-              <TableHead className="py-3 px-3 text-[10px] uppercase font-black tracking-[0.1em] text-muted-foreground w-[80px]">Und.</TableHead>
-              <TableHead className="py-3 px-3 text-[10px] uppercase font-black tracking-[0.1em] text-muted-foreground text-right w-[80px]">Cant.</TableHead>
-              <TableHead className="py-3 px-3 text-[10px] uppercase font-black tracking-[0.1em] text-muted-foreground text-right w-[100px]">P. Unit</TableHead>
-              <TableHead className="py-3 px-3 text-[10px] uppercase font-black tracking-[0.1em] text-muted-foreground text-right w-[110px]">Total</TableHead>
+              <TableHead className="py-3 px-3 text-[10px] uppercase font-black tracking-[0.1em] text-muted-foreground min-w-[120px]">Código</TableHead>
+              <TableHead className="py-3 px-3 text-[10px] uppercase font-black tracking-[0.1em] text-muted-foreground min-w-[200px]">Descripción</TableHead>
+              <TableHead className="py-3 px-3 text-[10px] uppercase font-black tracking-[0.1em] text-muted-foreground min-w-[80px]">Und.</TableHead>
+              <TableHead className="py-3 px-3 text-[10px] uppercase font-black tracking-[0.1em] text-muted-foreground text-right min-w-[80px]">Cant.</TableHead>
+              <TableHead className="py-3 px-3 text-[10px] uppercase font-black tracking-[0.1em] text-muted-foreground text-right min-w-[100px]">P. Unit</TableHead>
+              <TableHead className="py-3 px-3 text-[10px] uppercase font-black tracking-[0.1em] text-muted-foreground text-right min-w-[110px]">Total</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>

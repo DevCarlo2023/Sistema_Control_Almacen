@@ -120,7 +120,7 @@ export default function MaterialsERPPage() {
         <div className="lg:col-span-9 space-y-8">
 
           {/* Registrar Movimiento Card */}
-          <div className={cn(CARD, 'p-8')}>
+          <div className={cn(CARD, 'p-4 sm:p-8')}>
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8 pb-6 border-b border-zinc-50">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-xl bg-zinc-950 flex items-center justify-center shadow-lg transform -rotate-3">
@@ -183,8 +183,8 @@ export default function MaterialsERPPage() {
 
           {/* Main Tabs Navigation */}
           <Tabs defaultValue="stock" className="space-y-6">
-            <div className="flex items-center gap-3">
-              <TabsList className="bg-white border border-zinc-100 rounded-2xl p-1.5 h-auto flex-1 shadow-sm">
+            <div className="flex items-center gap-3 w-full">
+              <TabsList className="bg-white border border-zinc-100 rounded-2xl p-1.5 h-auto flex-1 shadow-sm overflow-x-auto flex-nowrap hide-scrollbar justify-start sm:justify-center">
                 {[
                   { value: 'global',  icon: 'search',      label: 'Consulta Global' },
                   { value: 'stock',   icon: 'inventory_2', label: 'Stock Almacén' },
@@ -214,7 +214,7 @@ export default function MaterialsERPPage() {
             
             <div className={cn("transition-all duration-500 ease-in-out", isTabsCollapsed ? "max-h-0 overflow-hidden opacity-0" : "max-h-[2000px] opacity-100")}>
               <TabsContent value="global" className="m-0">
-                <div className={cn(CARD, 'p-8')}>
+                <div className={cn(CARD, 'p-4 sm:p-8')}>
                   <GlobalStockSearch refreshTrigger={refreshTrigger} />
                 </div>
               </TabsContent>
@@ -232,7 +232,7 @@ export default function MaterialsERPPage() {
               </TabsContent>
 
               <TabsContent value="admin" className="m-0">
-                <div className={cn(CARD, 'p-8')}>
+                <div className={cn(CARD, 'p-4 sm:p-8')}>
                   <AdminTabs userEmail={user?.email} />
                 </div>
               </TabsContent>
