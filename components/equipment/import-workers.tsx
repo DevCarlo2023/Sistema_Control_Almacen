@@ -41,7 +41,12 @@ export function ImportWorkers({ onSuccess }: Props) {
                 let ok = 0, fail = 0;
                 let lastError = '';
                 for (const row of data) {
-                    const get = (k: string) => { const f = Object.keys(row).find(x => x.toLowerCase() === k.toLowerCase()); return f ? String(row[f]).trim() : ''; };
+                    const get = (k: string) => {
+                        const f = Object.keys(row).find(x => x.toLowerCase() === k.toLowerCase());
+                        if (!f) return '';
+                        const val = row[f];
+                        return val instanceof Date ? val.toISOString().split('T')[0] : String(val).trim();
+                    };
                     const full_name = formatText(get('nombre_completo'));
                     if (!full_name) continue;
                     const { error } = await supabase.from('workers').insert({

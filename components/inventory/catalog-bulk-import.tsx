@@ -138,32 +138,34 @@ export function CatalogBulkImport({ type, onSuccess }: CatalogBulkImportProps) {
           cal_freq: findKey(['frecuencia meses', 'cal_freq', 'meses', 'frecuencia']),
         };
 
+        const safeStr = (val: any) => val instanceof Date ? val.toISOString().split('T')[0] : String(val || '').trim();
+
         // --- MAPPING AND SANITIZATION ---
         const processed = data.map(row => {
           if (type === 'material') {
             const rawItem = {
-              codigo: keys.codigo ? String(row[keys.codigo] || '').trim() : '',
-              name: keys.name ? String(row[keys.name] || '').trim() : '',
-              description: keys.description ? String(row[keys.description] || '').trim() : '',
-              unit_of_measure: keys.unit ? String(row[keys.unit] || '').trim() : 'UND',
-              unit_price: parseFloat(keys.price ? String(row[keys.price] || '0').replace(/[^0-9.]/g, '') : '0') || 0
+              codigo: keys.codigo ? safeStr(row[keys.codigo]) : '',
+              name: keys.name ? safeStr(row[keys.name]) : '',
+              description: keys.description ? safeStr(row[keys.description]) : '',
+              unit_of_measure: keys.unit ? safeStr(row[keys.unit]) : 'UND',
+              unit_price: parseFloat(keys.price ? safeStr(row[keys.price]).replace(/[^0-9.]/g, '') : '0') || 0
             };
             return smartMaterialSanitizer(rawItem);
           } else {
             return {
-              name: keys.name ? String(row[keys.name] || '').trim() : '',
-              serial_number: keys.serial ? String(row[keys.serial] || '').trim() : '',
-              brand: keys.brand ? String(row[keys.brand] || '').trim() : '',
-              model: keys.model ? String(row[keys.model] || '').trim() : '',
-              category: (keys.category ? String(row[keys.category] || '') : 'general').toLowerCase(),
-              ownership: (keys.ownership ? String(row[keys.ownership] || '') : 'propio').toLowerCase(),
-              unit_price: parseFloat(keys.price ? String(row[keys.price] || '0').replace(/[^0-9.]/g, '') : '0') || 0,
+              name: keys.name ? safeStr(row[keys.name]) : '',
+              serial_number: keys.serial ? safeStr(row[keys.serial]) : '',
+              brand: keys.brand ? safeStr(row[keys.brand]) : '',
+              model: keys.model ? safeStr(row[keys.model]) : '',
+              category: (keys.category ? safeStr(row[keys.category]) : 'general').toLowerCase(),
+              ownership: (keys.ownership ? safeStr(row[keys.ownership]) : 'propio').toLowerCase(),
+              unit_price: parseFloat(keys.price ? safeStr(row[keys.price]).replace(/[^0-9.]/g, '') : '0') || 0,
               status: 'operativo',
-              calibration_start: keys.cal_start ? String(row[keys.cal_start] || '').trim() || null : null,
-              calibration_frequency: keys.cal_freq ? parseInt(String(row[keys.cal_freq] || '0')) || null : null,
+              calibration_start: keys.cal_start ? safeStr(row[keys.cal_start]) || null : null,
+              calibration_frequency: keys.cal_freq ? parseInt(safeStr(row[keys.cal_freq]) || '0') || null : null,
               calibration_end: (() => {
-                const startStr = keys.cal_start ? String(row[keys.cal_start] || '').trim() : '';
-                const freqStr = keys.cal_freq ? String(row[keys.cal_freq] || '0') : '0';
+                const startStr = keys.cal_start ? safeStr(row[keys.cal_start]) : '';
+                const freqStr = keys.cal_freq ? safeStr(row[keys.cal_freq]) : '0';
                 if (startStr && freqStr && parseInt(freqStr) > 0) {
                   const start = new Date(startStr);
                   if (!isNaN(start.getTime())) {

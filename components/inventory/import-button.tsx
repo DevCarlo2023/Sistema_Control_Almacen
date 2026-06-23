@@ -202,7 +202,9 @@ export function ImportButton({ warehouseId, onImportSuccess }: ImportButtonProps
                     const foundKey = Object.keys(row).find(k =>
                         keys.some(key => k.toLowerCase().trim() === key.toLowerCase())
                     );
-                    return foundKey ? String(row[foundKey]).trim() : '';
+                    if (!foundKey) return '';
+                    const val = row[foundKey];
+                    return val instanceof Date ? val.toISOString().split('T')[0] : String(val).trim();
                 };
 
                 const processedRows = data.map(row => {

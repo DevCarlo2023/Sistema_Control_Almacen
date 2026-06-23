@@ -50,7 +50,9 @@ export function ImportEquipment({ onSuccess }: Props) {
                 for (const row of data) {
                     const get = (k: string) => {
                         const f = Object.keys(row).find(x => x.toLowerCase() === k.toLowerCase());
-                        return f ? String(row[f]).trim() : '';
+                        if (!f) return '';
+                        const val = row[f];
+                        return val instanceof Date ? val.toISOString().split('T')[0] : String(val).trim();
                     };
                     const name = formatText(get('nombre'));
                     if (!name) continue;

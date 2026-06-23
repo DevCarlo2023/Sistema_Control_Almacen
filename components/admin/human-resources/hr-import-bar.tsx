@@ -119,6 +119,8 @@ export function HRImportBar({ onSuccess }: Props) {
                     return;
                 }
 
+                const safeStr = (val: any) => val instanceof Date ? val.toISOString().split('T')[0] : String(val || '').trim();
+
                 // --- DATA PROCESSING ---
                 const processed = data.map(row => {
                     // Safe DNI conversion
@@ -126,8 +128,8 @@ export function HRImportBar({ onSuccess }: Props) {
                     if (typeof rawDni === 'number') {
                         rawDni = rawDni.toLocaleString('fullwide', { useGrouping: false });
                     }
-                    const dni = String(rawDni || '').replace(/[^0-9]/g, '').trim();
-                    const name = formatText(String(row[keys.name!] || ''));
+                    const dni = safeStr(rawDni).replace(/[^0-9]/g, '');
+                    const name = formatText(safeStr(row[keys.name!]));
 
                     // Date parsing
                     let joiningDate = new Date().toISOString().split('T')[0];
@@ -139,8 +141,8 @@ export function HRImportBar({ onSuccess }: Props) {
                     return {
                         dni,
                         full_name: name,
-                        position: keys.position ? formatText(String(row[keys.position] || '')) : 'OPERARIO',
-                        status: keys.status && String(row[keys.status]).toLowerCase().includes('cesa') ? 'cesado' : 'activo',
+                        position: keys.position ? formatText(safeStr(row[keys.position])) : 'OPERARIO',
+                        status: keys.status && safeStr(row[keys.status]).toLowerCase().includes('cesa') ? 'cesado' : 'activo',
                         joining_date: joiningDate,
                         _isDuplicate: false
                     };
