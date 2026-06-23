@@ -98,9 +98,9 @@ export function CatalogBulkImport({ type, onSuccess }: CatalogBulkImportProps) {
     reader.onload = async (evt) => {
       try {
         const bstr = evt.target?.result;
-        const wb = XLSX.read(bstr, { type: 'binary' });
+        const wb = XLSX.read(bstr, { type: 'array', cellDates: true });
         const ws = wb.Sheets[wb.SheetNames[0]];
-        const data = XLSX.utils.sheet_to_json(ws) as any[];
+        const data = XLSX.utils.sheet_to_json(ws, { raw: true, defval: '' }) as any[];
 
         if (data.length === 0) {
           toast.error('El archivo está vacío');
@@ -232,7 +232,7 @@ export function CatalogBulkImport({ type, onSuccess }: CatalogBulkImportProps) {
       }
     };
 
-    reader.readAsBinaryString(file);
+    reader.readAsArrayBuffer(file);
   };
 
   const handleImport = async () => {
@@ -340,9 +340,9 @@ export function CatalogBulkImport({ type, onSuccess }: CatalogBulkImportProps) {
           const reader = new FileReader();
           reader.onload = (evt) => {
             const bstr = evt.target?.result;
-            const wb = XLSX.read(bstr, { type: 'binary' });
+            const wb = XLSX.read(bstr, { type: 'array', cellDates: true });
             const ws = wb.Sheets[wb.SheetNames[0]];
-            const data = XLSX.utils.sheet_to_json(ws) as any[];
+            const data = XLSX.utils.sheet_to_json(ws, { raw: true, defval: '' }) as any[];
             // ... (rest of parsing logic)
           };
           // For simplicity, I'll refactor handleFileUpload slightly to take a file directly or simulate event

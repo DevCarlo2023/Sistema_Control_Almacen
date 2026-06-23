@@ -187,10 +187,10 @@ export function ImportButton({ warehouseId, onImportSuccess }: ImportButtonProps
         reader.onload = async (evt) => {
             try {
                 const bstr = evt.target?.result;
-                const wb = XLSX.read(bstr, { type: 'binary' });
+                const wb = XLSX.read(bstr, { type: 'array', cellDates: true });
                 const wsname = wb.SheetNames[0];
                 const ws = wb.Sheets[wsname];
-                const data = XLSX.utils.sheet_to_json(ws) as any[];
+                const data = XLSX.utils.sheet_to_json(ws, { raw: true, defval: '' }) as any[];
 
                 if (data.length === 0) {
                     toast.error('El archivo está vacío');
@@ -233,7 +233,7 @@ export function ImportButton({ warehouseId, onImportSuccess }: ImportButtonProps
             }
         };
 
-        reader.readAsBinaryString(file);
+        reader.readAsArrayBuffer(file);
     };
 
     const handleConfirmImport = async () => {

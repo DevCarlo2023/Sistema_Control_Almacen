@@ -1,0 +1,19 @@
+{
+  "mcpServers": {
+    "stitch": {
+      "url": "https://stitch.googleapis.com/mcp",
+      "headers": {
+        "Authorization": "Bearer TU_STITCH_API_KEY_AQUI"
+      }
+    },
+    "supabase": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@supabase/mcp-server-supabase@latest",
+        "--access-token",
+        "TU_SUPABASE_ACCESS_TOKEN_AQUI"
+      ]
+    }
+  }
+}

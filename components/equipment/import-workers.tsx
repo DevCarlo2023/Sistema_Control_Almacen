@@ -34,8 +34,8 @@ export function ImportWorkers({ onSuccess }: Props) {
         const reader = new FileReader();
         reader.onload = async (evt) => {
             try {
-                const wb = XLSX.read(evt.target?.result, { type: 'binary' });
-                const data = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]) as any[];
+                const wb = XLSX.read(evt.target?.result, { type: 'array', cellDates: true });
+                const data = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { raw: true, defval: '' }) as any[];
                 if (!data.length) { toast.error('Archivo vacío'); setLoading(false); return; }
 
                 let ok = 0, fail = 0;
@@ -59,7 +59,7 @@ export function ImportWorkers({ onSuccess }: Props) {
             } catch (err: any) { toast.error(`Error al procesar el archivo: ${err.message || err}`); }
             finally { setLoading(false); }
         };
-        reader.readAsBinaryString(file);
+        reader.readAsArrayBuffer(file);
     };
 
     return (

@@ -51,8 +51,8 @@ function ImportBar({ onSuccess }: { onSuccess: () => void }) {
     const reader = new FileReader();
     reader.onload = async (evt) => {
       try {
-        const wb = XLSX.read(evt.target?.result, { type: 'binary' });
-        const rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]) as any[];
+        const wb = XLSX.read(evt.target?.result, { type: 'array', cellDates: true });
+        const rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { raw: true, defval: '' }) as any[];
         if (!rows.length) { toast.error('Archivo vacío'); setter(false); return; }
         const { data: whs } = await supabase.from('warehouses').select('id, name');
         const warehouseMap = new Map((whs || []).map(w => [w.name.toLowerCase(), w.id]));
@@ -85,7 +85,7 @@ function ImportBar({ onSuccess }: { onSuccess: () => void }) {
       } catch { toast.error('Error al procesar el archivo'); }
       finally { setter(false); }
     };
-    reader.readAsBinaryString(file);
+    reader.readAsArrayBuffer(file);
   };
 
   const handleRevert = async () => {

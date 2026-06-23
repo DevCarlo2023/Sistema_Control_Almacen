@@ -3,7 +3,6 @@
 import * as React from 'react';
 import { Search, Bell, Menu } from 'lucide-react';
 import { useSidebar } from './sidebar-context';
-import { cn } from '@/lib/utils';
 import { supabase } from '@/lib/supabase';
 
 export function ERPTopBar() {
@@ -25,16 +24,18 @@ export function ERPTopBar() {
   const avatarUrl = user?.user_metadata?.avatar_url || `https://ui-avatars.com/api/?name=${fullName}&background=0D0D0D&color=fff`;
 
   return (
-    <header className="h-20 bg-white border-b border-zinc-100 flex items-center justify-between px-8 md:px-12 shrink-0 z-40">
-      {/* Left: Mobile Toggle & Branding */}
-      <div className="flex items-center gap-6">
-        <button 
+    <header className="h-20 bg-white border-b border-zinc-100 flex items-center justify-between px-6 md:px-10 shrink-0 z-40">
+      {/* Left: Hamburger & Branding */}
+      <div className="flex items-center gap-5">
+        {/* Hamburger — visible en TODOS los tamaños */}
+        <button
           onClick={toggleMobile}
-          className="md:hidden p-2 hover:bg-zinc-100 rounded-lg transition-colors"
+          aria-label="Abrir menú"
+          className="p-2.5 hover:bg-zinc-100 rounded-xl transition-colors text-zinc-500 hover:text-zinc-900"
         >
-          <Menu className="w-6 h-6 text-zinc-600" />
+          <Menu className="w-6 h-6" />
         </button>
-        
+
         <div className="flex items-center gap-4">
           <div className="w-10 h-10 bg-zinc-950 rounded-lg flex items-center justify-center text-white font-black text-xl shadow-lg shadow-zinc-200">A</div>
           <div className="hidden sm:block">
@@ -44,12 +45,12 @@ export function ERPTopBar() {
         </div>
       </div>
 
-      {/* Center: Search (Optional/Hidden on mobile) */}
+      {/* Center: Search */}
       <div className="hidden lg:flex items-center bg-zinc-50 border border-zinc-100 rounded-xl px-4 py-2 w-96 group focus-within:border-blue-600 focus-within:bg-white transition-all">
         <Search className="w-4 h-4 text-zinc-400 group-focus-within:text-blue-600" />
-        <input 
-          type="text" 
-          placeholder="Buscar módulos o reportes..." 
+        <input
+          type="text"
+          placeholder="Buscar módulos o reportes..."
           className="bg-transparent border-none outline-none text-xs font-bold ml-3 w-full text-zinc-600 placeholder:text-zinc-300"
         />
       </div>
@@ -71,7 +72,7 @@ export function ERPTopBar() {
             <p className="text-[9px] font-bold text-blue-600 uppercase tracking-widest mt-1.5">{role}</p>
           </div>
           <div className="h-11 w-11 rounded-xl border-2 border-zinc-50 overflow-hidden bg-zinc-100 shadow-sm group-hover:shadow-md transition-all">
-             <img src={avatarUrl} alt="Profile" className="w-full h-full object-cover" />
+            <img src={avatarUrl} alt="Profile" className="w-full h-full object-cover" />
           </div>
         </div>
       </div>

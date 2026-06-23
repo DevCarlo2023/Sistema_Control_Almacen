@@ -79,9 +79,9 @@ export function HRImportBar({ onSuccess }: Props) {
         reader.onload = async (evt) => {
             try {
                 const bstr = evt.target?.result;
-                const wb = XLSX.read(bstr, { type: 'binary', cellDates: true });
+                const wb = XLSX.read(bstr, { type: 'array', cellDates: true });
                 const ws = wb.Sheets[wb.SheetNames[0]];
-                const data = XLSX.utils.sheet_to_json(ws) as any[];
+                const data = XLSX.utils.sheet_to_json(ws, { raw: true, defval: '' }) as any[];
 
                 if (data.length === 0) {
                     toast.error('El archivo está vacío');
@@ -180,7 +180,7 @@ export function HRImportBar({ onSuccess }: Props) {
             if (fileRef.current) fileRef.current.value = '';
         };
 
-        reader.readAsBinaryString(file);
+        reader.readAsArrayBuffer(file);
     };
 
     const handleImport = async () => {

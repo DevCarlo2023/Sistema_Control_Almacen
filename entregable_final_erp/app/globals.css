@@ -1,0 +1,164 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@300;400;500;600;700;800;900&display=swap');
+@import 'tailwindcss';
+@import 'tw-animate-css';
+
+@custom-variant dark (&:is(.dark *));
+
+:root {
+  /* ARCHITECT ERP - Precision Brutalism Palette */
+  --background: #f7f9fb;
+  --foreground: #191c1e;
+  
+  --primary: #003fd1;
+  --primary-container: #1a56ff;
+  --on-primary: #ffffff;
+  
+  --secondary: #515f74;
+  --secondary-container: #d5e3fc;
+  --on-secondary-container: #57657a;
+  
+  --tertiary: #972900;
+  --tertiary-container: #c13700;
+  
+  --error: #ba1a1a;
+  --error-container: #ffdad6;
+  --on-error-container: #93000a;
+  
+  --surface: #f7f9fb;
+  --surface-variant: #e0e3e5;
+  --on-surface: #191c1e;
+  --on-surface-variant: #434656;
+  
+  --outline: #747688;
+  --outline-variant: #c3c5d9;
+  
+  --surface-container-lowest: #ffffff;
+  --surface-container-low: #f2f4f6;
+  --surface-container: #eceef0;
+  --surface-container-high: #e6e8ea;
+  --surface-container-highest: #e0e3e5;
+
+  --radius: 0.125rem; /* Brutalist sharp corners */
+}
+
+.dark {
+  --background: #191c1e;
+  --foreground: #e0e3e5;
+  
+  --primary: #b8c4ff;
+  --primary-container: #0037b9;
+  --on-primary: #001453;
+  
+  --secondary: #b9c7df;
+  --secondary-container: #3a485b;
+  
+  --tertiary: #ffb59f;
+  --tertiary-container: #862300;
+  
+  --surface: #191c1e;
+  --surface-variant: #434656;
+  --on-surface: #e0e3e5;
+  --on-surface-variant: #c3c5d9;
+  
+  --surface-container-lowest: #0d0e0f;
+  --surface-container-low: #1c1d1e;
+  --surface-container: #202122;
+  --surface-container-high: #2a2b2c;
+  --surface-container-highest: #353637;
+}
+
+@theme inline {
+  --font-sans: 'Inter', sans-serif;
+  --font-headline: 'Outfit', sans-serif;
+  --font-body: 'Inter', sans-serif;
+  --font-label: 'Inter', sans-serif;
+  
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  
+  --color-primary: var(--primary);
+  --color-primary-container: var(--primary-container);
+  --color-on-primary: var(--on-primary);
+  
+  --color-secondary: var(--secondary);
+  --color-secondary-container: var(--secondary-container);
+  --color-on-secondary-container: var(--on-secondary-container);
+  
+  --color-tertiary: var(--tertiary);
+  --color-tertiary-container: var(--tertiary-container);
+  
+  --color-error: var(--error);
+  --color-error-container: var(--error-container);
+  --color-on-error-container: var(--on-error-container);
+  
+  --color-surface: var(--surface);
+  --color-surface-variant: var(--surface-variant);
+  --color-on-surface: var(--on-surface);
+  --color-on-surface-variant: var(--on-surface-variant);
+  
+  --color-outline-primary: var(--outline);
+  --color-outline-variant: var(--outline-variant);
+  
+  --color-surface-container-lowest: var(--surface-container-lowest);
+  --color-surface-container-low: var(--surface-container-low);
+  --color-surface-container: var(--surface-container);
+  --color-surface-container-high: var(--surface-container-high);
+  --color-surface-container-highest: var(--surface-container-highest);
+
+  --radius-none: 0;
+  --radius-sm: 0.125rem;
+  --radius-md: 0.25rem;
+  --radius-lg: 0.25rem; /* Industrial sharp corners */
+  --radius-xl: 0.5rem;
+  --radius-full: 0.75rem;
+}
+
+@layer base {
+  * {
+    @apply border-outline-variant/20;
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-headline font-bold tracking-tighter uppercase;
+  }
+}
+
+@layer utilities {
+  .brutalist-gradient {
+    background: linear-gradient(135deg, #003fd1 0%, #1a56ff 100%);
+  }
+
+  .glass-header {
+    background: rgba(255, 255, 255, 0.8);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+  }
+
+  .dark .glass-header {
+    background: rgba(25, 28, 30, 0.8);
+  }
+
+  .material-symbols-outlined {
+    font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+    display: inline-block;
+    vertical-align: middle;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-track {
+    @apply bg-transparent;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    @apply bg-outline-variant/20 rounded-full hover:bg-outline-variant/40 transition-colors;
+  }
+}
