@@ -1,61 +1,47 @@
-import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
-export default async function middleware(request: NextRequest) {
-  let supabaseResponse = NextResponse.next({
-    request,
-  })
+/**
+ * Middleware ultra-liviano para Edge Runtime de Vercel.
+ * 
+ * NO hace llamadas de red a Supabase (eso causaba el error 504).
+ * Solo verifica la existencia de la cookie de sesión de Supabase
+ * leyéndola directamente — operación instantánea, sin red.
+ * 
+ * La verificación real del token (seguridad) ocurre en los
+ * Server Components / Route Handlers de cada página protegida.
+ */
+export default function middleware(request: NextRequest) {
+  const { pathname } = request.nextUrl
 
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() {
-          return request.cookies.getAll()
-        },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value, options }) =>
-            supabaseResponse.cookies.set(name, value, options)
-          )
-        },
-      },
-    }
+  // Detectar si existe alguna cookie de sesión de Supabase
+  const hasSession = request.cookies.getAll().some(
+    (cookie) => cookie.name.startsWith('sb-') && cookie.name.endsWith('-auth-token')
   )
 
-  // Usamos getSession() en lugar de getUser() para evitar llamadas de red
-  // que causan el error 504 MIDDLEWARE_INVOCATION_TIMEOUT en Vercel.
-  // getSession() lee la sesión directamente desde la cookie (sin red).
-  const {
-    data: { session },
-  } = await supabase.auth.getSession()
+  // Rutas protegidas — redirigir al login si no hay sesión
+  const isProtectedRoute =
+    pathname.startsWith('/inventory') ||
+    pathname.startsWith('/equipment') ||
+    pathname.startsWith('/erp') ||
+    (pathname.startsWith('/api') && !pathname.startsWith('/api/bot'))
 
-  const user = session?.user ?? null
-
-  const url = request.nextUrl.clone()
-
-  // --- AUTH REDIRECT LOGIC ---
-  // Si no hay usuario y trata de entrar a rutas protegidas, al login
-  if (
-    !user &&
-    (url.pathname.startsWith('/inventory') ||
-      url.pathname.startsWith('/equipment') ||
-      url.pathname.startsWith('/erp') ||
-      (url.pathname.startsWith('/api') && !url.pathname.startsWith('/api/bot')))
-  ) {
-    const loginUrl = url.clone()
+  if (!hasSession && isProtectedRoute) {
+    const loginUrl = request.nextUrl.clone()
     loginUrl.pathname = '/login'
     return NextResponse.redirect(loginUrl)
   }
 
-  // Si hay usuario y está en login, al dashboard del ERP
-  if (user && (url.pathname === '/login' || url.pathname === '/signup' || url.pathname === '/')) {
-    const redirectUrl = url.clone()
-    redirectUrl.pathname = '/erp/dashboard'
-    return NextResponse.redirect(redirectUrl)
+  // Si ya hay sesión y está en login/signup/root, ir al dashboard
+  if (
+    hasSession &&
+    (pathname === '/login' || pathname === '/signup' || pathname === '/')
+  ) {
+    const dashboardUrl = request.nextUrl.clone()
+    dashboardUrl.pathname = '/erp/dashboard'
+    return NextResponse.redirect(dashboardUrl)
   }
 
-  return supabaseResponse
+  return NextResponse.next()
 }
 
 export const config = {
@@ -65,7 +51,6 @@ export const config = {
      * - _next/static (static files)
      * - _next/image (image optimization files)
      * - favicon.ico (favicon file)
-     * Feel free to modify this pattern to include more paths.
      */
     '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
