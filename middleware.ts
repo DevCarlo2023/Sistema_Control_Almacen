@@ -23,9 +23,14 @@ export default async function middleware(request: NextRequest) {
     }
   )
 
+  // Usamos getSession() en lugar de getUser() para evitar llamadas de red
+  // que causan el error 504 MIDDLEWARE_INVOCATION_TIMEOUT en Vercel.
+  // getSession() lee la sesión directamente desde la cookie (sin red).
   const {
-    data: { user },
-  } = await supabase.auth.getUser()
+    data: { session },
+  } = await supabase.auth.getSession()
+
+  const user = session?.user ?? null
 
   const url = request.nextUrl.clone()
 
