@@ -25,18 +25,29 @@ export default function LoginPage() {
       });
 
       if (error) {
-        setError(error.message);
+        // Traducir mensajes comunes de Supabase al español
+        if (error.message === 'Invalid login credentials') {
+          setError('Credenciales incorrectas. Verifica tu correo y contraseña.');
+        } else if (error.message.includes('Email not confirmed')) {
+          setError('Debes confirmar tu correo antes de ingresar.');
+        } else if (error.message.includes('Too many requests')) {
+          setError('Demasiados intentos. Espera unos minutos e intenta de nuevo.');
+        } else {
+          setError(error.message);
+        }
         return;
       }
 
-      if (data.session) {
-        // Usamos hard redirect para que el navegador envíe la cookie
-        // actualizada al servidor en la siguiente request.
-        // Esto evita que el middleware redirija de vuelta al login.
-        window.location.href = '/erp/dashboard';
+      // Redirigir siempre que no haya error (con o sin sesión en la respuesta)
+      // Usar hard redirect para que el middleware reciba la cookie actualizada
+      window.location.href = '/erp/dashboard';
+
+    } catch (err: any) {
+      if (err?.message?.includes('Failed to fetch') || err?.message?.includes('NetworkError')) {
+        setError('No se puede conectar al servidor. Verifica tu conexión a internet.');
+      } else {
+        setError('Error inesperado. Por favor, intenta de nuevo.');
       }
-    } catch (err) {
-      setError('Error al iniciar sesión. Por favor, intenta de nuevo.');
     } finally {
       setLoading(false);
     }
@@ -108,7 +119,7 @@ export default function LoginPage() {
 
             {error && (
               <div className="p-4 bg-destructive/10 border border-destructive/20 text-destructive rounded-2xl text-[11px] font-bold uppercase tracking-wider text-center flex items-center justify-center gap-2">
-                <span>⚠️</span> {error === 'Invalid login credentials' ? 'Credenciales incorrectas' : error}
+                <span>⚠️</span> {error}
               </div>
             )}
 
