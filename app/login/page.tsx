@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -13,7 +12,6 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const router = useRouter();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -21,7 +19,7 @@ export default function LoginPage() {
     setError('');
 
     try {
-      const { error } = await supabase.auth.signInWithPassword({
+      const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
@@ -31,7 +29,12 @@ export default function LoginPage() {
         return;
       }
 
-      router.push('/erp/dashboard');
+      if (data.session) {
+        // Usamos hard redirect para que el navegador envíe la cookie
+        // actualizada al servidor en la siguiente request.
+        // Esto evita que el middleware redirija de vuelta al login.
+        window.location.href = '/erp/dashboard';
+      }
     } catch (err) {
       setError('Error al iniciar sesión. Por favor, intenta de nuevo.');
     } finally {
